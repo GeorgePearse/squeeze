@@ -72,17 +72,27 @@ prek run mypy
 - Test files: Additional docstring rules + `S101` (assert usage)
 - setup.py: Missing module docstring
 
-### 2. ty (Type Checker)
+### 2. ty (Type Checker) - Manual Execution
 - **Rust-based type checker** by Astral - significantly faster than Python-based alternatives
 - **Strict mode enabled** - enforces type annotations
 - **Configuration**: See `pyproject.toml` under `[tool.ty]`
 - **Automatic detection** - Automatically detects virtual environments and reads config
 
+**Running ty:**
+```bash
+# Install ty
+uv tool install ty
+
+# Run type checking manually
+ty check
+ty check path/to/file.py
+```
+
+**Note**: ty is pre-alpha (v0.0.1-alpha.25) and does not yet support pre-commit hook integration. Pre-commit hook support is planned for future releases.
+
 **Key settings:**
 - `strict = true` - Enforces comprehensive type checking
 - `python_version = "3.9"` - Target Python version
-
-**Note**: ty is pre-alpha (v0.0.1-alpha.25) but actively developed by Astral alongside ruff
 
 ### 3. Pre-commit Hooks
 Standard hooks for code hygiene:
@@ -131,11 +141,11 @@ prek cache clean
 prek install-hooks
 ```
 
-### ty fails with type errors
+### ty reports type errors
 These are genuine type errors that need to be fixed:
 ```bash
-# Check which files have issues
-prek run ty
+# Run type checker (since ty doesn't integrate with pre-commit yet)
+ty check
 
 # Fix by adding type annotations
 # See ty output for specific locations
