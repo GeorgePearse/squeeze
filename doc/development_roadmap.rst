@@ -100,45 +100,85 @@ Major Initiatives
 **Motivation**:
 - pynndescent is an external dependency created for UMAP but not tightly integrated
 - Adds a required external dependency that complicates the dependency tree
-- scikit-learn provides mature KDTree/BallTree implementations for nearest neighbor search
-- Reducing external dependencies improves maintainability and reduces bloat
-- pynndescent can remain optional for users who want advanced features, but core UMAP should work with stdlib/scipy/sklearn
+- Reduces coupling and external dependencies improves maintainability
+- pynndescent can remain optional for users who want advanced features, but core UMAP should work with standard libraries
+- Industry-standard vector databases like Qdrant use alternative approaches (HNSW, etc.)
+
+**Reference Implementation**:
+- See Qdrant's vector search architecture: https://github.com/qdrant/qdrant/tree/master/src
+- Qdrant uses HNSW (Hierarchical Navigable Small World) algorithm for production-grade nearest neighbor search
 
 **Scope**:
-- Replace pynndescent's NNDescent with scikit-learn's KDTree/BallTree or native implementation
+- Replace pynndescent's NNDescent with alternatives (see comparison below)
 - Implement missing distance metrics that pynndescent provides
-- Handle both dense and sparse nearest neighbor computation without pynndescent
+- Handle both dense and sparse nearest neighbor computation
 - Make pynndescent optional for advanced/performance-critical use cases
 - Ensure equivalent or better performance for common use cases
+
+**Alternative Implementations Comparison**:
+
+================ ==================== ==================== ==================== ====================
+Criteria         scikit-learn         HNSWlib              FAISS                Annoy
+================ ==================== ==================== ==================== ====================
+Type             KDTree/BallTree      Graph-based (HNSW)   Clustering/HNSW      Random projections
+Speed            Good (small data)    Excellent            Excellent            Good
+GPU Support      No                   No                   Yes (major feature)  No
+Dynamic Updates  Yes                  Yes                  Limited              No (rebuild)
+Distance Metrics Many                 Common               Many                 Limited
+Memory Efficient Yes                  Moderate             Yes                  Yes
+Maintenance      Well-maintained      Active               Well-maintained      Active
+Dependencies     NumPy only           Minimal              Minimal              Minimal
+================ ==================== ==================== ==================== ====================
+
+**Recommended Approach**:
+1. **Default (no new deps)**: Use scikit-learn's KDTree/BallTree for standard cases
+   - Sufficient for small to medium datasets
+   - No additional dependencies
+   - Good for most use cases
+
+2. **Optional (with deps)**: Allow users to opt-in to HNSWlib or FAISS for large-scale deployments
+   - HNSWlib: Best for production use (Qdrant uses this approach)
+   - FAISS: Best for GPU-accelerated workloads
+   - Both have minimal Python dependencies
+
+3. **Fallback Strategy**: Graceful degradation
+   - Use sklearn by default
+   - Warn if user tries to use pynndescent features
+   - Auto-upgrade to HNSWlib if available and beneficial for large datasets
 
 **Implementation Plan**:
 1. Audit all pynndescent usage in the codebase
 2. Identify distance metrics that pynndescent provides that sklearn doesn't
 3. Implement missing distance metrics using scipy.spatial.distance or native code
 4. Replace NNDescent with sklearn's KDTree/BallTree for standard metric cases
-5. Implement fallback for custom metrics
-6. Add comprehensive benchmarking to ensure performance is acceptable
-7. Update tests to work without pynndescent as required dependency
-8. Make pynndescent optional in pyproject.toml
-9. Update documentation to reflect the change
-10. Add migration guide for users who relied on pynndescent features
+5. Add optional HNSWlib support for users who need it
+6. Implement fallback for custom metrics
+7. Add comprehensive benchmarking to ensure performance is acceptable
+8. Update tests to work without pynndescent as required dependency
+9. Make pynndescent optional in pyproject.toml
+10. Update documentation with migration guide and performance notes
+11. Add configuration to choose between backends (sklearn vs HNSWlib vs FAISS)
 
 **Files to Modify**:
 - umap/umap_.py (main implementation - remove pynndescent imports)
 - umap/distances.py (implement missing distance metrics)
 - umap/sparse.py (handle sparse nearest neighbors)
-- pyproject.toml (move pynndescent to optional dependencies)
-- README.rst (update requirements)
+- umap/nndescent.py (new abstraction layer for NN backends)
+- pyproject.toml (move pynndescent to optional, add HNSWlib as optional)
+- README.rst (update requirements and performance notes)
 - tests/ (ensure all tests pass without pynndescent)
+- doc/ (add backend selection guide)
 
 **Estimated Effort**: Large (2-3 weeks)
 
 **Priority**: High (reduces coupling and external dependencies)
 
-**Note**: This is a significant refactoring. Consider:
-- Performance implications of replacing NNDescent with standard approaches
-- Whether certain distance metrics can be implemented efficiently
-- Sparse matrix handling (scipy.sparse has limited distance metric support)
+**Key Considerations**:
+- Performance implications: HNSWlib is 10x+ faster than sklearn for large datasets
+- Sparse matrix handling: scipy.sparse has limited distance metric support (critical for sparse UMAP)
+- Distance metrics: Not all custom metrics may be supported by all backends
+- API compatibility: Ensure the abstraction layer provides a clean interface
+- Benchmarking: Use ann-benchmarks.com for comprehensive performance testing
 
 ---
 
