@@ -92,7 +92,57 @@ Major Initiatives
 
 ---
 
-3. Code Modernization and Technical Debt Reduction
+3. Remove pynndescent Dependency
+---------------------------------
+
+**Status**: Planned
+
+**Motivation**:
+- pynndescent is an external dependency created for UMAP but not tightly integrated
+- Adds a required external dependency that complicates the dependency tree
+- scikit-learn provides mature KDTree/BallTree implementations for nearest neighbor search
+- Reducing external dependencies improves maintainability and reduces bloat
+- pynndescent can remain optional for users who want advanced features, but core UMAP should work with stdlib/scipy/sklearn
+
+**Scope**:
+- Replace pynndescent's NNDescent with scikit-learn's KDTree/BallTree or native implementation
+- Implement missing distance metrics that pynndescent provides
+- Handle both dense and sparse nearest neighbor computation without pynndescent
+- Make pynndescent optional for advanced/performance-critical use cases
+- Ensure equivalent or better performance for common use cases
+
+**Implementation Plan**:
+1. Audit all pynndescent usage in the codebase
+2. Identify distance metrics that pynndescent provides that sklearn doesn't
+3. Implement missing distance metrics using scipy.spatial.distance or native code
+4. Replace NNDescent with sklearn's KDTree/BallTree for standard metric cases
+5. Implement fallback for custom metrics
+6. Add comprehensive benchmarking to ensure performance is acceptable
+7. Update tests to work without pynndescent as required dependency
+8. Make pynndescent optional in pyproject.toml
+9. Update documentation to reflect the change
+10. Add migration guide for users who relied on pynndescent features
+
+**Files to Modify**:
+- umap/umap_.py (main implementation - remove pynndescent imports)
+- umap/distances.py (implement missing distance metrics)
+- umap/sparse.py (handle sparse nearest neighbors)
+- pyproject.toml (move pynndescent to optional dependencies)
+- README.rst (update requirements)
+- tests/ (ensure all tests pass without pynndescent)
+
+**Estimated Effort**: Large (2-3 weeks)
+
+**Priority**: High (reduces coupling and external dependencies)
+
+**Note**: This is a significant refactoring. Consider:
+- Performance implications of replacing NNDescent with standard approaches
+- Whether certain distance metrics can be implemented efficiently
+- Sparse matrix handling (scipy.sparse has limited distance metric support)
+
+---
+
+4. Code Modernization and Technical Debt Reduction
 ---------------------------------------------------
 
 **Status**: In Progress
@@ -102,7 +152,7 @@ Major Initiatives
 
 **Pending**:
 
-3.1 Remove Python 2 Artifacts
+4.1 Remove Python 2 Artifacts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Remove ``from __future__ import print_function`` from:
@@ -117,7 +167,7 @@ Major Initiatives
 
 ---
 
-3.2 Fix NumPy Deprecated Type Aliases
+4.2 Fix NumPy Deprecated Type Aliases
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Replace ``np.bool_`` with ``bool`` or ``np.bool`` in:
@@ -132,7 +182,7 @@ Major Initiatives
 
 ---
 
-3.3 Fix Bitwise Operator Misuse
+4.3 Fix Bitwise Operator Misuse
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Replace bitwise AND (``&``) with logical AND (``and``) in boolean contexts
@@ -146,7 +196,7 @@ Major Initiatives
 
 ---
 
-3.4 Optimize Data Structures
+4.4 Optimize Data Structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Replace list-based queue with ``collections.deque`` in breadth_first_search()
@@ -159,7 +209,7 @@ Major Initiatives
 
 ---
 
-3.5 Resolve Technical Debt (FIXME/TODO Comments)
+4.5 Resolve Technical Debt (FIXME/TODO Comments)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Address FIXME comments in umap/layouts.py regarding uninitialized variables
@@ -172,7 +222,7 @@ Major Initiatives
 
 ---
 
-3.6 Remove Dead Code
+4.6 Remove Dead Code
 ~~~~~~~~~~~~~~~~~~~~~
 
 - Remove sklearn.externals.joblib fallback code (dead since sklearn >= 1.0)
@@ -184,7 +234,7 @@ Major Initiatives
 
 ---
 
-3.7 Update Dependency Specifications
+4.7 Update Dependency Specifications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Review and update minimum version constraints in pyproject.toml
@@ -199,12 +249,12 @@ Major Initiatives
 
 ---
 
-4. Documentation Updates
+5. Documentation Updates
 ------------------------
 
 **Status**: Pending
 
-4.1 Update Installation Instructions
+5.1 Update Installation Instructions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Remove all conda references
@@ -218,7 +268,7 @@ Major Initiatives
 
 ---
 
-4.2 Clarify Optional Dependencies
+5.2 Clarify Optional Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Separate optional dependencies clearly:
@@ -232,7 +282,7 @@ Major Initiatives
 
 ---
 
-4.3 Update Development Status Classifier
+5.3 Update Development Status Classifier
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - pyproject.toml currently lists "Development Status :: 3 - Alpha"
@@ -245,12 +295,12 @@ Major Initiatives
 
 ---
 
-5. Testing Improvements
+6. Testing Improvements
 ------------------------
 
 **Status**: Pending
 
-5.1 Add Type Hints
+6.1 Add Type Hints
 ~~~~~~~~~~~~~~~~~~~
 
 - Add Python type hints throughout the codebase
@@ -264,7 +314,7 @@ Major Initiatives
 
 ---
 
-5.2 Expand Test Coverage
+6.2 Expand Test Coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Add tests for edge cases and error conditions
@@ -290,17 +340,18 @@ Timeline
 ========
 
 **Near-term (1-2 months)**:
-- Complete code modernization (items 3.1-3.6)
-- Remove conda from documentation and CI (item 2)
-- Update documentation (item 4)
+- Complete code modernization (items 4.1-4.7)
+- Remove conda from documentation and CI (item 2) - COMPLETED
+- Remove pynndescent dependency (item 3)
+- Update documentation (item 5)
 
 **Medium-term (2-3 months)**:
 - Begin PyTorch implementation of Parametric UMAP (item 1)
-- Add type hints to core modules (item 5.1)
+- Add type hints to core modules (item 6.1)
 
 **Long-term (3+ months)**:
 - Complete PyTorch migration (item 1)
-- Full type hint coverage (item 5.1)
+- Full type hint coverage (item 6.1)
 - Deprecate TensorFlow support
 
 Contributing
