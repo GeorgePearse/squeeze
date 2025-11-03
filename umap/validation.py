@@ -1,3 +1,7 @@
+"""Validation and trustworthiness calculations for UMAP embeddings."""
+
+from typing import Any, Callable
+
 import numba
 import numpy as np
 from sklearn.neighbors import KDTree
@@ -7,10 +11,27 @@ from umap.distances import named_distances
 
 @numba.njit()
 def trustworthiness_vector_bulk(
-    indices_source,
-    indices_embedded,
-    max_k,
-):  # pragma: no cover
+    indices_source: np.ndarray,
+    indices_embedded: np.ndarray,
+    max_k: int,
+) -> np.ndarray:  # pragma: no cover
+    """Compute trustworthiness vector in bulk for precomputed indices.
+
+    Parameters
+    ----------
+    indices_source : np.ndarray
+        Indices of neighbors in the source space.
+    indices_embedded : np.ndarray
+        Indices of neighbors in the embedded space.
+    max_k : int
+        Maximum number of neighbors to consider.
+
+    Returns
+    -------
+    np.ndarray
+        Trustworthiness values for each k from 0 to max_k.
+
+    """
     n_samples = indices_embedded.shape[0]
     trustworthiness = np.zeros(max_k + 1, dtype=np.float64)
 
@@ -32,7 +53,9 @@ def trustworthiness_vector_bulk(
     return trustworthiness
 
 
-def make_trustworthiness_calculator(metric):  # pragma: no cover
+def make_trustworthiness_calculator(
+    metric: Callable[[Any, Any], float],
+) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:  # pragma: no cover
     """Create a trustworthiness calculator function for a given metric.
 
     Parameters
@@ -48,7 +71,11 @@ def make_trustworthiness_calculator(metric):  # pragma: no cover
     """
 
     @numba.njit(parallel=True)
-    def trustworthiness_vector_lowmem(source, indices_embedded, max_k):
+    def trustworthiness_vector_lowmem(
+        source: np.ndarray,
+        indices_embedded: np.ndarray,
+        max_k: int,
+    ) -> np.ndarray:
         n_samples = indices_embedded.shape[0]
         trustworthiness = np.zeros(max_k + 1, dtype=np.float64)
         dist_vector = np.zeros(n_samples, dtype=np.float64)
@@ -81,11 +108,30 @@ def make_trustworthiness_calculator(metric):  # pragma: no cover
 
 
 def trustworthiness_vector(
-    source,
-    embedding,
-    max_k,
-    metric="euclidean",
-):  # pragma: no cover
+    source: np.ndarray,
+    embedding: np.ndarray,
+    max_k: int,
+    metric: str = "euclidean",
+) -> np.ndarray:  # pragma: no cover
+    """Compute trustworthiness vector for an embedding.
+
+    Parameters
+    ----------
+    source : np.ndarray
+        Original high-dimensional data.
+    embedding : np.ndarray
+        Low-dimensional embedding.
+    max_k : int
+        Maximum number of neighbors to consider.
+    metric : str, optional
+        Distance metric to use, by default "euclidean".
+
+    Returns
+    -------
+    np.ndarray
+        Trustworthiness values for each k from 0 to max_k.
+
+    """
     tree = KDTree(embedding, metric=metric)
     indices_embedded = tree.query(embedding, k=max_k, return_distance=False)
     # Drop the actual point itself
