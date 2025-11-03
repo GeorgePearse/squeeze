@@ -9,7 +9,7 @@ from umap.utils import tau_rand_int
 @numba.njit()
 def clip(val):
     """Standard clamping of a value into a fixed range (in this case -4.0 to
-    4.0)
+    4.0).
 
     Parameters
     ----------
@@ -19,13 +19,13 @@ def clip(val):
     Returns
     -------
     The clamped value, now fixed to be in the range -4.0 to 4.0.
+
     """
     if val > 4.0:
         return 4.0
-    elif val < -4.0:
+    if val < -4.0:
         return -4.0
-    else:
-        return val
+    return val
 
 
 @numba.njit(
@@ -50,6 +50,7 @@ def rdist(x, y):
     Returns
     -------
     The squared euclidean distance between x and y
+
     """
     result = 0.0
     dim = x.shape[0]
@@ -154,10 +155,10 @@ def _optimize_layout_euclidean_single_epoch(
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
             n_neg_samples = int(
-                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i],
             )
 
-            for p in range(n_neg_samples):
+            for _p in range(n_neg_samples):
                 k = tau_rand_int(rng_state_per_sample[j]) % n_vertices
 
                 other = tail_embedding[k]
@@ -196,6 +197,28 @@ def _optimize_layout_euclidean_densmap_epoch_init(
     re_sum,
     phi_sum,
 ):
+    """Initialize density-based variables for a densMAP epoch.
+
+    Parameters
+    ----------
+    head_embedding : array of shape (n_samples, n_components)
+        Current embedding of head points.
+    tail_embedding : array of shape (n_samples, n_components)
+        Current embedding of tail points.
+    head : array
+        Indices of head points in edges.
+    tail : array
+        Indices of tail points in edges.
+    a : float
+        UMAP curve parameter.
+    b : float
+        UMAP curve parameter.
+    re_sum : array of shape (n_samples,)
+        Array to store radial extent sums (modified in place).
+    phi_sum : array of shape (n_samples,)
+        Array to store phi sums (modified in place).
+
+    """
     re_sum.fill(0)
     phi_sum.fill(0)
 
@@ -220,19 +243,35 @@ def _optimize_layout_euclidean_densmap_epoch_init(
 
 
 _nb_optimize_layout_euclidean_single_epoch = numba.njit(
-    _optimize_layout_euclidean_single_epoch, fastmath=True, parallel=False
+    _optimize_layout_euclidean_single_epoch,
+    fastmath=True,
+    parallel=False,
 )
 
 _nb_optimize_layout_euclidean_single_epoch_parallel = numba.njit(
-    _optimize_layout_euclidean_single_epoch, fastmath=True, parallel=True
+    _optimize_layout_euclidean_single_epoch,
+    fastmath=True,
+    parallel=True,
 )
 
 
 def _get_optimize_layout_euclidean_single_epoch_fn(parallel: bool = False):
+    """Get the appropriate optimization function based on parallelization setting.
+
+    Parameters
+    ----------
+    parallel : bool, optional
+        Whether to use parallel optimization, by default False.
+
+    Returns
+    -------
+    callable
+        The optimization function (parallel or serial version).
+
+    """
     if parallel:
         return _nb_optimize_layout_euclidean_single_epoch_parallel
-    else:
-        return _nb_optimize_layout_euclidean_single_epoch
+    return _nb_optimize_layout_euclidean_single_epoch
 
 
 def optimize_layout_euclidean(
@@ -261,7 +300,8 @@ def optimize_layout_euclidean(
     and low dimensional fuzzy simplicial sets. In practice this is done by
     sampling edges based on their membership strength (with the (1-p) terms
     coming from negative sampling similar to word2vec).
-    Parameters
+
+    Parameters.
     ----------
     head_embedding: array of shape (n_samples, n_components)
         The initial embedding to be improved by SGD.
@@ -311,12 +351,13 @@ def optimize_layout_euclidean(
         Keyword arguments for tqdm progress bar.
     move_other: bool (optional, default False)
         Whether to adjust tail_embedding alongside head_embedding
+
     Returns
     -------
     embedding: array of shape (n_samples, n_components)
         The optimized embedding.
-    """
 
+    """
     dim = head_embedding.shape[1]
     alpha = initial_alpha
 
@@ -365,7 +406,9 @@ def optimize_layout_euclidean(
         tqdm_kwds["disable"] = not verbose
 
     rng_state_per_sample = np.full(
-        (head_embedding.shape[0], len(rng_state)), rng_state, dtype=np.int64
+        (head_embedding.shape[0], len(rng_state)),
+        rng_state,
+        dtype=np.int64,
     ) + head_embedding[:, 0].astype(np.float64).view(np.int64).reshape(-1, 1)
 
     for n in tqdm(range(n_epochs), **tqdm_kwds):
@@ -431,7 +474,7 @@ def optimize_layout_euclidean(
         alpha = initial_alpha * (1.0 - (float(n) / float(n_epochs)))
 
         if verbose and n % int(n_epochs / 10) == 0:
-            print("\tcompleted ", n, " / ", n_epochs, "epochs")
+            pass
 
         if epochs_list is not None and n in epochs_list:
             embedding_list.append(head_embedding.copy())
@@ -473,14 +516,13 @@ def _optimize_layout_generic_single_epoch(
             other = tail_embedding[k]
 
             dist_output, grad_dist_output = output_metric(
-                current, other, *output_metric_kwds
+                current,
+                other,
+                *output_metric_kwds,
             )
             _, rev_grad_dist_output = output_metric(other, current, *output_metric_kwds)
 
-            if dist_output > 0.0:
-                w_l = pow((1 + a * pow(dist_output, 2 * b)), -1)
-            else:
-                w_l = 1.0
+            w_l = pow(1 + a * pow(dist_output, 2 * b), -1) if dist_output > 0.0 else 1.0
             grad_coeff = 2 * b * (w_l - 1) / (dist_output + 1e-6)
 
             for d in range(dim):
@@ -494,16 +536,18 @@ def _optimize_layout_generic_single_epoch(
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
             n_neg_samples = int(
-                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i],
             )
 
-            for p in range(n_neg_samples):
+            for _p in range(n_neg_samples):
                 k = tau_rand_int(rng_state_per_sample[j]) % n_vertices
 
                 other = tail_embedding[k]
 
                 dist_output, grad_dist_output = output_metric(
-                    current, other, *output_metric_kwds
+                    current,
+                    other,
+                    *output_metric_kwds,
                 )
 
                 if dist_output > 0.0:
@@ -609,8 +653,8 @@ def optimize_layout_generic(
     -------
     embedding: array of shape (n_samples, n_components)
         The optimized embedding.
-    """
 
+    """
     dim = head_embedding.shape[1]
     alpha = initial_alpha
 
@@ -630,7 +674,9 @@ def optimize_layout_generic(
         tqdm_kwds["disable"] = not verbose
 
     rng_state_per_sample = np.full(
-        (head_embedding.shape[0], len(rng_state)), rng_state, dtype=np.int64
+        (head_embedding.shape[0], len(rng_state)),
+        rng_state,
+        dtype=np.int64,
     ) + head_embedding[:, 0].astype(np.float64).view(np.int64).reshape(-1, 1)
 
     for n in tqdm(range(n_epochs), **tqdm_kwds):
@@ -691,7 +737,9 @@ def _optimize_layout_inverse_single_epoch(
             other = tail_embedding[k]
 
             dist_output, grad_dist_output = output_metric(
-                current, other, *output_metric_kwds
+                current,
+                other,
+                *output_metric_kwds,
             )
 
             w_l = weight[i]
@@ -707,16 +755,18 @@ def _optimize_layout_inverse_single_epoch(
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
             n_neg_samples = int(
-                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i],
             )
 
-            for p in range(n_neg_samples):
+            for _p in range(n_neg_samples):
                 k = tau_rand_int(rng_state) % n_vertices
 
                 other = tail_embedding[k]
 
                 dist_output, grad_dist_output = output_metric(
-                    current, other, *output_metric_kwds
+                    current,
+                    other,
+                    *output_metric_kwds,
                 )
 
                 # w_l = 0.0 # for negative samples, the edge does not exist
@@ -826,8 +876,8 @@ def optimize_layout_inverse(
     -------
     embedding: array of shape (n_samples, n_components)
         The optimized embedding.
-    """
 
+    """
     dim = head_embedding.shape[1]
     alpha = initial_alpha
 
@@ -900,12 +950,13 @@ def _optimize_layout_aligned_euclidean_single_epoch(
 
     max_n_edges = 0
     for e_p_s in epochs_per_sample:
-        if e_p_s.shape[0] >= max_n_edges:
-            max_n_edges = e_p_s.shape[0]
+        max_n_edges = max(e_p_s.shape[0], max_n_edges)
 
     embedding_order = np.arange(n_embeddings).astype(np.int32)
-    np.random.seed(abs(rng_state[0]))
-    np.random.shuffle(embedding_order)
+    # Fisher-Yates shuffle using tau_rand_int for reproducibility
+    for i in range(n_embeddings - 1, 0, -1):
+        j = tau_rand_int(rng_state) % (i + 1)
+        embedding_order[i], embedding_order[j] = embedding_order[j], embedding_order[i]
 
     for i in range(max_n_edges):
         for m in embedding_order:
@@ -938,9 +989,10 @@ def _optimize_layout_aligned_euclidean_single_epoch(
                                     * (
                                         current[d]
                                         - head_embeddings[neighbor_m][
-                                            identified_index, d
+                                            identified_index,
+                                            d,
                                         ]
-                                    )
+                                    ),
                                 )
 
                     current[d] += clip(grad_d) * alpha
@@ -955,14 +1007,17 @@ def _optimize_layout_aligned_euclidean_single_epoch(
                                     other_grad_d -= clip(
                                         (lambda_ * np.exp(-(np.abs(offset) - 1)))
                                         * regularisation_weights[
-                                            m, offset + window_size, k
+                                            m,
+                                            offset + window_size,
+                                            k,
                                         ]
                                         * (
                                             other[d]
                                             - head_embeddings[neighbor_m][
-                                                identified_index, d
+                                                identified_index,
+                                                d,
                                             ]
-                                        )
+                                        ),
                                     )
 
                         other[d] += clip(other_grad_d) * alpha
@@ -972,12 +1027,12 @@ def _optimize_layout_aligned_euclidean_single_epoch(
                 if epochs_per_negative_sample[m][i] > 0:
                     n_neg_samples = int(
                         (n - epoch_of_next_negative_sample[m][i])
-                        / epochs_per_negative_sample[m][i]
+                        / epochs_per_negative_sample[m][i],
                     )
                 else:
                     n_neg_samples = 0
 
-                for p in range(n_neg_samples):
+                for _p in range(n_neg_samples):
                     k = tau_rand_int(rng_state) % tail_embeddings[m].shape[0]
 
                     other = tail_embeddings[m][k]
@@ -1008,14 +1063,17 @@ def _optimize_layout_aligned_euclidean_single_epoch(
                                     grad_d -= clip(
                                         (lambda_ * np.exp(-(np.abs(offset) - 1)))
                                         * regularisation_weights[
-                                            m, offset + window_size, j
+                                            m,
+                                            offset + window_size,
+                                            j,
                                         ]
                                         * (
                                             current[d]
                                             - head_embeddings[neighbor_m][
-                                                identified_index, d
+                                                identified_index,
+                                                d,
                                             ]
-                                        )
+                                        ),
                                     )
 
                         current[d] += clip(grad_d) * alpha
@@ -1051,16 +1109,16 @@ def optimize_layout_aligned_euclidean(
 
     epochs_per_negative_sample = numba.typed.List.empty_list(numba.types.float32[::1])
     epoch_of_next_negative_sample = numba.typed.List.empty_list(
-        numba.types.float32[::1]
+        numba.types.float32[::1],
     )
     epoch_of_next_sample = numba.typed.List.empty_list(numba.types.float32[::1])
 
     for m in range(len(heads)):
         epochs_per_negative_sample.append(
-            epochs_per_sample[m].astype(np.float32) / negative_sample_rate
+            epochs_per_sample[m].astype(np.float32) / negative_sample_rate,
         )
         epoch_of_next_negative_sample.append(
-            epochs_per_negative_sample[m].astype(np.float32)
+            epochs_per_negative_sample[m].astype(np.float32),
         )
         epoch_of_next_sample.append(epochs_per_sample[m].astype(np.float32))
 

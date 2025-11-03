@@ -1,9 +1,7 @@
 import warnings
-
 from warnings import warn
 
 import numpy as np
-
 import scipy.sparse
 import scipy.sparse.csgraph
 from sklearn.decomposition import TruncatedSVD
@@ -11,7 +9,7 @@ from sklearn.manifold import SpectralEmbedding
 from sklearn.metrics import pairwise_distances
 from sklearn.metrics.pairwise import _VALID_METRICS as SKLEARN_PAIRWISE_VALID_METRICS
 
-from umap.distances import pairwise_special_metric, SPECIAL_METRICS
+from umap.distances import SPECIAL_METRICS, pairwise_special_metric
 from umap.sparse import SPARSE_SPECIAL_METRICS, sparse_named_distances
 
 
@@ -22,7 +20,7 @@ def component_layout(
     dim,
     random_state,
     metric="euclidean",
-    metric_kwds={},
+    metric_kwds=None,
 ):
     """Provide a layout relating the separate connected components. This is done
     by taking the centroid of each component and then performing a spectral embedding
@@ -57,7 +55,10 @@ def component_layout(
     component_embedding: array of shape (n_components, dim)
         The ``dim``-dimensional embedding of the ``n_components``-many
         connected components.
+
     """
+    if metric_kwds is None:
+        metric_kwds = {}
     if data is None:
         # We don't have data to work with; just guess
         return np.random.random(size=(n_components, dim)) * 10.0
@@ -76,9 +77,12 @@ def component_layout(
         elif linkage == "single":
             linkage = np.min
         else:
+            msg = (
+                f"Unrecognized linkage '{linkage}'. Please choose from "
+                "'average', 'complete', or 'single'"
+            )
             raise ValueError(
-                "Unrecognized linkage '%s'. Please choose from "
-                "'average', 'complete', or 'single'" % linkage
+                msg,
             )
         for c_i in range(n_components):
             dm_i = data[component_labels == c_i]
@@ -93,7 +97,8 @@ def component_layout(
         if scipy.sparse.isspmatrix(component_centroids):
             warn(
                 "Forcing component centroids to dense; if you are running out of "
-                "memory then consider increasing n_neighbors."
+                "memory then consider increasing n_neighbors.",
+                stacklevel=2,
             )
             component_centroids = component_centroids.toarray()
 
@@ -109,33 +114,41 @@ def component_layout(
                 metric=SPARSE_SPECIAL_METRICS[metric],
                 kwds=metric_kwds,
             )
+        elif callable(metric) and scipy.sparse.isspmatrix(data):
+            function_to_name_mapping = {
+                sparse_named_distances[k]: k
+                for k in set(SKLEARN_PAIRWISE_VALID_METRICS)
+                & set(sparse_named_distances.keys())
+            }
+            try:
+                metric_name = function_to_name_mapping[metric]
+            except KeyError:
+                msg = (
+                    "Multicomponent layout for custom "
+                    "sparse metrics is not implemented at "
+                    "this time."
+                )
+                raise NotImplementedError(
+                    msg,
+                )
+            distance_matrix = pairwise_distances(
+                component_centroids,
+                metric=metric_name,
+                **metric_kwds,
+            )
         else:
-            if callable(metric) and scipy.sparse.isspmatrix(data):
-                function_to_name_mapping = {
-                    sparse_named_distances[k]: k
-                    for k in set(SKLEARN_PAIRWISE_VALID_METRICS)
-                    & set(sparse_named_distances.keys())
-                }
-                try:
-                    metric_name = function_to_name_mapping[metric]
-                except KeyError:
-                    raise NotImplementedError(
-                        "Multicomponent layout for custom "
-                        "sparse metrics is not implemented at "
-                        "this time."
-                    )
-                distance_matrix = pairwise_distances(
-                    component_centroids, metric=metric_name, **metric_kwds
-                )
-            else:
-                distance_matrix = pairwise_distances(
-                    component_centroids, metric=metric, **metric_kwds
-                )
+            distance_matrix = pairwise_distances(
+                component_centroids,
+                metric=metric,
+                **metric_kwds,
+            )
 
     affinity_matrix = np.exp(-(distance_matrix**2))
 
     component_embedding = SpectralEmbedding(
-        n_components=dim, affinity="precomputed", random_state=random_state
+        n_components=dim,
+        affinity="precomputed",
+        random_state=random_state,
     ).fit_transform(affinity_matrix)
     component_embedding /= component_embedding.max()
 
@@ -150,7 +163,7 @@ def multi_component_layout(
     dim,
     random_state,
     metric="euclidean",
-    metric_kwds={},
+    metric_kwds=None,
     init="random",
     tol=0.0,
     maxiter=0,
@@ -204,8 +217,10 @@ def multi_component_layout(
     -------
     embedding: array of shape (n_samples, dim)
         The initial embedding of ``graph``.
-    """
 
+    """
+    if metric_kwds is None:
+        metric_kwds = {}
     result = np.empty((graph.shape[0], dim), dtype=np.float32)
 
     if n_components > 2 * dim:
@@ -266,12 +281,11 @@ def spectral_layout(
     dim,
     random_state,
     metric="euclidean",
-    metric_kwds={},
+    metric_kwds=None,
     tol=0.0,
     maxiter=0,
 ):
-    """
-    Given a graph compute the spectral embedding of the graph. This is
+    """Given a graph compute the spectral embedding of the graph. This is
     simply the eigenvectors of the laplacian of the graph. Here we use the
     normalized laplacian.
 
@@ -300,7 +314,10 @@ def spectral_layout(
     -------
     embedding: array of shape (n_vertices, dim)
         The spectral embedding of the graph.
+
     """
+    if metric_kwds is None:
+        metric_kwds = {}
     return _spectral_layout(
         data=data,
         graph=graph,
@@ -320,7 +337,7 @@ def tswspectral_layout(
     dim,
     random_state,
     metric="euclidean",
-    metric_kwds={},
+    metric_kwds=None,
     method=None,
     tol=0.0,
     maxiter=0,
@@ -377,7 +394,10 @@ def tswspectral_layout(
     -------
     embedding: array of shape (n_vertices, dim)
         The spectral embedding of the graph.
+
     """
+    if metric_kwds is None:
+        metric_kwds = {}
     return _spectral_layout(
         data=data,
         graph=graph,
@@ -398,7 +418,7 @@ def _spectral_layout(
     dim,
     random_state,
     metric="euclidean",
-    metric_kwds={},
+    metric_kwds=None,
     init="random",
     method=None,
     tol=0.0,
@@ -459,8 +479,11 @@ def _spectral_layout(
     -------
     embedding: array of shape (n_vertices, dim)
         The spectral embedding of the graph.
+
     """
-    n_samples = graph.shape[0]
+    if metric_kwds is None:
+        metric_kwds = {}
+    graph.shape[0]
     n_components, labels = scipy.sparse.csgraph.connected_components(graph)
 
     if n_components > 1:
@@ -506,9 +529,12 @@ def _spectral_layout(
                 # algorithm="arpack"
             ).fit_transform(L)
         else:
-            raise ValueError(
+            msg = (
                 "The init parameter must be either 'random' or 'tsvd': "
                 f"{init} is invalid."
+            )
+            raise ValueError(
+                msg,
             )
         # For such a normalized Laplacian, the first eigenvector is always
         # proportional to sqrt(degrees). We thus replace the first t-SVD guess
@@ -540,7 +566,8 @@ def _spectral_layout(
                     maxiter=maxiter or 5 * graph.shape[0],
                 )
         else:
-            raise ValueError("Method should either be None, 'eigsh' or 'lobpcg'")
+            msg = "Method should either be None, 'eigsh' or 'lobpcg'"
+            raise ValueError(msg)
 
         order = np.argsort(eigenvalues)[1:k]
         return eigenvectors[:, order]
@@ -549,6 +576,7 @@ def _spectral_layout(
             "Spectral initialisation failed! The eigenvector solver\n"
             "failed. This is likely due to too small an eigengap. Consider\n"
             "adding some noise or jitter to your data.\n\n"
-            "Falling back to random initialisation!"
+            "Falling back to random initialisation!",
+            stacklevel=2,
         )
         return gen.uniform(low=-10.0, high=10.0, size=(graph.shape[0], dim))

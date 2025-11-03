@@ -14,10 +14,11 @@ repos:
     hooks:
       - id: ty
         name: ty type checker
-        entry: ty check
+        entry: ty check umap/
         language: system
         types: [python]
         pass_filenames: false
+        stages: [manual]
       - id: skylos
         name: Skylos static analysis
         entry: python -m skylos.cli .

@@ -5,10 +5,10 @@
 import time
 from warnings import warn
 
-import numpy as np
 import numba
-from sklearn.utils.validation import check_is_fitted
+import numpy as np
 import scipy.sparse
+from sklearn.utils.validation import check_is_fitted
 
 
 @numba.njit(parallel=True)
@@ -27,6 +27,7 @@ def fast_knn_indices(X, n_neighbors):
     -------
     knn_indices: array of shape (n_samples, n_neighbors)
         The indices on the ``n_neighbors`` closest points in the dataset.
+
     """
     knn_indices = np.empty((X.shape[0], n_neighbors), dtype=np.int32)
     for row in numba.prange(X.shape[0]):
@@ -49,6 +50,7 @@ def tau_rand_int(state):
     Returns
     -------
     A (pseudo)-random int32 value
+
     """
     state[0] = (((state[0] & 4294967294) << 12) & 0xFFFFFFFF) ^ (
         (((state[0] << 13) & 0xFFFFFFFF) ^ state[0]) >> 19
@@ -65,7 +67,7 @@ def tau_rand_int(state):
 
 @numba.njit("f4(i8[:])")
 def tau_rand(state):
-    """A fast (pseudo)-random number generator for floats in the range [0,1]
+    """A fast (pseudo)-random number generator for floats in the range [0,1].
 
     Parameters
     ----------
@@ -75,6 +77,7 @@ def tau_rand(state):
     Returns
     -------
     A (pseudo)-random float32 in the interval [0, 1]
+
     """
     integer = tau_rand_int(state)
     return abs(float(integer) / 0x7FFFFFFF)
@@ -91,6 +94,7 @@ def norm(vec):
     Returns
     -------
     The l2 norm of vec.
+
     """
     result = 0.0
     for i in range(vec.shape[0]):
@@ -117,8 +121,9 @@ def submatrix(dmat, indices_col, n_neighbors):
     -------
     submat: array, shape (n_samples, n_neighbors)
         The corresponding submatrix.
+
     """
-    n_samples_transform, n_samples_fit = dmat.shape
+    n_samples_transform, _n_samples_fit = dmat.shape
     submat = np.zeros((n_samples_transform, n_neighbors), dtype=dmat.dtype)
     for i in numba.prange(n_samples_transform):
         for j in numba.prange(n_neighbors):
@@ -128,13 +133,23 @@ def submatrix(dmat, indices_col, n_neighbors):
 
 # Generates a timestamp for use in logging messages when verbose=True
 def ts():
+    """Generate a timestamp string for logging.
+
+    Returns
+    -------
+    str
+        Current timestamp as a string.
+
+    """
     return time.ctime(time.time())
 
 
 # I'm not enough of a numba ninja to numba this successfully.
 # np.arrays of lists, which are objects...
 def csr_unique(matrix, return_index=True, return_inverse=True, return_counts=True):
-    """Find the unique elements of a sparse csr matrix.
+    """Find the unique rows of a sparse CSR matrix.
+
+    Find the unique elements of a sparse csr matrix.
     We don't explicitly construct the unique matrix leaving that to the user
     who may not want to duplicate a massive array in memory.
     Returns the indices of the input array that give the unique values.
@@ -157,7 +172,8 @@ def csr_unique(matrix, return_index=True, return_inverse=True, return_counts=Tru
     """
     lil_matrix = matrix.tolil()
     rows = np.asarray(
-        [tuple(x + y) for x, y in zip(lil_matrix.rows, lil_matrix.data)], dtype=object
+        [tuple(x + y) for x, y in zip(lil_matrix.rows, lil_matrix.data)],
+        dtype=object,
     )
     return_values = return_counts + return_inverse + return_index
     return np.unique(
@@ -169,19 +185,20 @@ def csr_unique(matrix, return_index=True, return_inverse=True, return_counts=Tru
 
 
 def disconnected_vertices(model):
-    """
-    Returns a boolean vector indicating which vertices are disconnected from the umap graph.
+    """Returns a boolean vector indicating which vertices are disconnected from the umap graph.
     These vertices will often be scattered across the space and make it difficult to focus on the main
     manifold.  They can either be filtered and have UMAP re-run or simply filtered from the interactive plotting tool
     via the subset_points parameter.
     Use ~disconnected_vertices(model) to only plot the connected points.
-    Parameters
+
+    Parameters.
     ----------
     model: a trained UMAP model
 
     Returns
     -------
     A boolean vector indicating which points are disconnected
+
     """
     check_is_fitted(model, "graph_")
     if model.unique:
@@ -206,7 +223,7 @@ def average_nn_distance(dist_matrix):
     An array with the average distance to each points nearest neighbors
 
     """
-    (row_idx, col_idx, val) = scipy.sparse.find(dist_matrix)
+    (row_idx, _col_idx, val) = scipy.sparse.find(dist_matrix)
 
     # Count/sum is done per row
     count_non_zero_elems = np.bincount(row_idx)
@@ -216,7 +233,8 @@ def average_nn_distance(dist_matrix):
     if any(np.isnan(averages)):
         warn(
             "Embedding contains disconnected vertices which will be ignored."
-            "Use umap.utils.disconnected_vertices() to identify them."
+            "Use umap.utils.disconnected_vertices() to identify them.",
+            stacklevel=2,
         )
 
     return averages
