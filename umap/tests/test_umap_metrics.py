@@ -1,14 +1,14 @@
-import numpy as np
-from numpy.testing import assert_array_almost_equal
-import umap.distances as dist
-import umap.sparse as spdist
-
 import re
+
+import numpy as np
+import pytest
+from numpy.testing import assert_array_almost_equal
+from scipy.version import full_version as scipy_full_version_
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import BallTree
-from scipy.version import full_version as scipy_full_version_
-import pytest
 
+import umap.distances as dist
+import umap.sparse as spdist
 
 scipy_full_version = tuple(
     int(n)
@@ -25,8 +25,8 @@ scipy_full_version = tuple(
 # ----------------------------------
 
 
-def run_test_metric(metric, test_data, dist_matrix, with_grad=False):
-    """Core utility function to test target metric on test data"""
+def run_test_metric(metric, test_data, dist_matrix, with_grad=False) -> None:
+    """Core utility function to test target metric on test data."""
     if with_grad:
         dist_function = dist.named_distances_with_gradients[metric]
     else:
@@ -44,11 +44,11 @@ def run_test_metric(metric, test_data, dist_matrix, with_grad=False):
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric {}".format(metric),
+        err_msg=f"Distances don't match for metric {metric}",
     )
 
 
-def spatial_check(metric, spatial_data, spatial_distances, with_grad=False):
+def spatial_check(metric, spatial_data, spatial_distances, with_grad=False) -> None:
     # Check that metric is supported for this test, otherwise, fail!
     assert metric in spatial_distances, f"{metric} not valid for spatial data"
     dist_matrix = pairwise_distances(spatial_data, metric=metric)
@@ -65,7 +65,7 @@ def spatial_check(metric, spatial_data, spatial_distances, with_grad=False):
     run_test_metric(metric, spatial_data, dist_matrix, with_grad=with_grad)
 
 
-def binary_check(metric, binary_data, binary_distances):
+def binary_check(metric, binary_data, binary_distances) -> None:
     # Check that metric is supported for this test, otherwise, fail!
     assert metric in binary_distances, f"{metric} not valid for binary data"
     dist_matrix = pairwise_distances(binary_data, metric=metric)
@@ -82,8 +82,8 @@ def binary_check(metric, binary_data, binary_distances):
     run_test_metric(metric, binary_data, dist_matrix)
 
 
-def run_test_sparse_metric(metric, sparse_test_data, dist_matrix):
-    """Core utility function to run test of target metric on sparse data"""
+def run_test_sparse_metric(metric, sparse_test_data, dist_matrix) -> None:
+    """Core utility function to run test of target metric on sparse data."""
     dist_function = spdist.sparse_named_distances[metric]
     if metric in spdist.sparse_need_n_features:
         test_matrix = np.array(
@@ -99,7 +99,7 @@ def run_test_sparse_metric(metric, sparse_test_data, dist_matrix):
                     for j in range(sparse_test_data.shape[0])
                 ]
                 for i in range(sparse_test_data.shape[0])
-            ]
+            ],
         )
     else:
         test_matrix = np.array(
@@ -114,22 +114,23 @@ def run_test_sparse_metric(metric, sparse_test_data, dist_matrix):
                     for j in range(sparse_test_data.shape[0])
                 ]
                 for i in range(sparse_test_data.shape[0])
-            ]
+            ],
         )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Sparse distances don't match " "for metric {}".format(metric),
+        err_msg=f"Sparse distances don't match for metric {metric}",
     )
 
 
-def sparse_spatial_check(metric, sparse_spatial_data):
+def sparse_spatial_check(metric, sparse_spatial_data) -> None:
     # Check that metric is supported for this test, otherwise, fail!
-    assert (
-        metric in spdist.sparse_named_distances
-    ), f"{metric} not supported for sparse data"
+    assert metric in spdist.sparse_named_distances, (
+        f"{metric} not supported for sparse data"
+    )
     dist_matrix = pairwise_distances(
-        np.asarray(sparse_spatial_data.todense()), metric=metric
+        np.asarray(sparse_spatial_data.todense()),
+        metric=metric,
     )
 
     if metric in ("braycurtis", "dice", "sokalsneath", "yule"):
@@ -144,13 +145,14 @@ def sparse_spatial_check(metric, sparse_spatial_data):
     run_test_sparse_metric(metric, sparse_spatial_data, dist_matrix)
 
 
-def sparse_binary_check(metric, sparse_binary_data):
+def sparse_binary_check(metric, sparse_binary_data) -> None:
     # Check that metric is supported for this test, otherwise, fail!
-    assert (
-        metric in spdist.sparse_named_distances
-    ), f"{metric} not supported for sparse data"
+    assert metric in spdist.sparse_named_distances, (
+        f"{metric} not supported for sparse data"
+    )
     dist_matrix = pairwise_distances(
-        np.asarray(sparse_binary_data.todense()), metric=metric
+        np.asarray(sparse_binary_data.todense()),
+        metric=metric,
     )
     if metric in ("jaccard", "dice", "sokalsneath", "yule"):
         dist_matrix[np.where(~np.isfinite(dist_matrix))] = 0.0
@@ -169,39 +171,39 @@ def sparse_binary_check(metric, sparse_binary_data):
 # --------------------
 
 
-def test_euclidean(spatial_data, spatial_distances):
+def test_euclidean(spatial_data, spatial_distances) -> None:
     spatial_check("euclidean", spatial_data, spatial_distances)
 
 
-def test_manhattan(spatial_data, spatial_distances):
+def test_manhattan(spatial_data, spatial_distances) -> None:
     spatial_check("manhattan", spatial_data, spatial_distances)
 
 
-def test_chebyshev(spatial_data, spatial_distances):
+def test_chebyshev(spatial_data, spatial_distances) -> None:
     spatial_check("chebyshev", spatial_data, spatial_distances)
 
 
-def test_minkowski(spatial_data, spatial_distances):
+def test_minkowski(spatial_data, spatial_distances) -> None:
     spatial_check("minkowski", spatial_data, spatial_distances)
 
 
-def test_hamming(spatial_data, spatial_distances):
+def test_hamming(spatial_data, spatial_distances) -> None:
     spatial_check("hamming", spatial_data, spatial_distances)
 
 
-def test_canberra(spatial_data, spatial_distances):
+def test_canberra(spatial_data, spatial_distances) -> None:
     spatial_check("canberra", spatial_data, spatial_distances)
 
 
-def test_braycurtis(spatial_data, spatial_distances):
+def test_braycurtis(spatial_data, spatial_distances) -> None:
     spatial_check("braycurtis", spatial_data, spatial_distances)
 
 
-def test_cosine(spatial_data, spatial_distances):
+def test_cosine(spatial_data, spatial_distances) -> None:
     spatial_check("cosine", spatial_data, spatial_distances)
 
 
-def test_correlation(spatial_data, spatial_distances):
+def test_correlation(spatial_data, spatial_distances) -> None:
     spatial_check("correlation", spatial_data, spatial_distances)
 
 
@@ -210,42 +212,43 @@ def test_correlation(spatial_data, spatial_distances):
 # --------------------
 
 
-def test_jaccard(binary_data, binary_distances):
+def test_jaccard(binary_data, binary_distances) -> None:
     binary_check("jaccard", binary_data, binary_distances)
 
 
-def test_matching(binary_data, binary_distances):
+def test_matching(binary_data, binary_distances) -> None:
     binary_check("matching", binary_data, binary_distances)
 
 
-def test_dice(binary_data, binary_distances):
+def test_dice(binary_data, binary_distances) -> None:
     binary_check("dice", binary_data, binary_distances)
 
 
 @pytest.mark.skipif(
-    scipy_full_version >= (1, 9), reason="deprecated in SciPy 1.9, removed in 1.11"
+    scipy_full_version >= (1, 9),
+    reason="deprecated in SciPy 1.9, removed in 1.11",
 )
-def test_kulsinski(binary_data, binary_distances):
+def test_kulsinski(binary_data, binary_distances) -> None:
     binary_check("kulsinski", binary_data, binary_distances)
 
 
-def test_rogerstanimoto(binary_data, binary_distances):
+def test_rogerstanimoto(binary_data, binary_distances) -> None:
     binary_check("rogerstanimoto", binary_data, binary_distances)
 
 
-def test_russellrao(binary_data, binary_distances):
+def test_russellrao(binary_data, binary_distances) -> None:
     binary_check("russellrao", binary_data, binary_distances)
 
 
-def test_sokalmichener(binary_data, binary_distances):
+def test_sokalmichener(binary_data, binary_distances) -> None:
     binary_check("sokalmichener", binary_data, binary_distances)
 
 
-def test_sokalsneath(binary_data, binary_distances):
+def test_sokalsneath(binary_data, binary_distances) -> None:
     binary_check("sokalsneath", binary_data, binary_distances)
 
 
-def test_yule(binary_data, binary_distances):
+def test_yule(binary_data, binary_distances) -> None:
     binary_check("yule", binary_data, binary_distances)
 
 
@@ -254,39 +257,39 @@ def test_yule(binary_data, binary_distances):
 # ---------------------------
 
 
-def test_sparse_euclidean(sparse_spatial_data):
+def test_sparse_euclidean(sparse_spatial_data) -> None:
     sparse_spatial_check("euclidean", sparse_spatial_data)
 
 
-def test_sparse_manhattan(sparse_spatial_data):
+def test_sparse_manhattan(sparse_spatial_data) -> None:
     sparse_spatial_check("manhattan", sparse_spatial_data)
 
 
-def test_sparse_chebyshev(sparse_spatial_data):
+def test_sparse_chebyshev(sparse_spatial_data) -> None:
     sparse_spatial_check("chebyshev", sparse_spatial_data)
 
 
-def test_sparse_minkowski(sparse_spatial_data):
+def test_sparse_minkowski(sparse_spatial_data) -> None:
     sparse_spatial_check("minkowski", sparse_spatial_data)
 
 
-def test_sparse_hamming(sparse_spatial_data):
+def test_sparse_hamming(sparse_spatial_data) -> None:
     sparse_spatial_check("hamming", sparse_spatial_data)
 
 
-def test_sparse_canberra(sparse_spatial_data):
+def test_sparse_canberra(sparse_spatial_data) -> None:
     sparse_spatial_check("canberra", sparse_spatial_data)
 
 
-def test_sparse_cosine(sparse_spatial_data):
+def test_sparse_cosine(sparse_spatial_data) -> None:
     sparse_spatial_check("cosine", sparse_spatial_data)
 
 
-def test_sparse_correlation(sparse_spatial_data):
+def test_sparse_correlation(sparse_spatial_data) -> None:
     sparse_spatial_check("correlation", sparse_spatial_data)
 
 
-def test_sparse_braycurtis(sparse_spatial_data):
+def test_sparse_braycurtis(sparse_spatial_data) -> None:
     sparse_spatial_check("braycurtis", sparse_spatial_data)
 
 
@@ -295,45 +298,46 @@ def test_sparse_braycurtis(sparse_spatial_data):
 # ---------------------------
 
 
-def test_sparse_jaccard(sparse_binary_data):
+def test_sparse_jaccard(sparse_binary_data) -> None:
     sparse_binary_check("jaccard", sparse_binary_data)
 
 
-def test_sparse_matching(sparse_binary_data):
+def test_sparse_matching(sparse_binary_data) -> None:
     sparse_binary_check("matching", sparse_binary_data)
 
 
-def test_sparse_dice(sparse_binary_data):
+def test_sparse_dice(sparse_binary_data) -> None:
     sparse_binary_check("dice", sparse_binary_data)
 
 
 @pytest.mark.skipif(
-    scipy_full_version >= (1, 9), reason="deprecated in SciPy 1.9, removed in 1.11"
+    scipy_full_version >= (1, 9),
+    reason="deprecated in SciPy 1.9, removed in 1.11",
 )
-def test_sparse_kulsinski(sparse_binary_data):
+def test_sparse_kulsinski(sparse_binary_data) -> None:
     sparse_binary_check("kulsinski", sparse_binary_data)
 
 
-def test_sparse_rogerstanimoto(sparse_binary_data):
+def test_sparse_rogerstanimoto(sparse_binary_data) -> None:
     sparse_binary_check("rogerstanimoto", sparse_binary_data)
 
 
-def test_sparse_russellrao(sparse_binary_data):
+def test_sparse_russellrao(sparse_binary_data) -> None:
     sparse_binary_check("russellrao", sparse_binary_data)
 
 
-def test_sparse_sokalmichener(sparse_binary_data):
+def test_sparse_sokalmichener(sparse_binary_data) -> None:
     sparse_binary_check("sokalmichener", sparse_binary_data)
 
 
-def test_sparse_sokalsneath(sparse_binary_data):
+def test_sparse_sokalsneath(sparse_binary_data) -> None:
     sparse_binary_check("sokalsneath", sparse_binary_data)
 
 
 # --------------------------------
 # Standardised/weighted Distances
 # --------------------------------
-def test_seuclidean(spatial_data):
+def test_seuclidean(spatial_data) -> None:
     v = np.abs(np.random.randn(spatial_data.shape[1]))
     dist_matrix = pairwise_distances(spatial_data, metric="seuclidean", V=v)
     test_matrix = np.array(
@@ -343,19 +347,20 @@ def test_seuclidean(spatial_data):
                 for j in range(spatial_data.shape[0])
             ]
             for i in range(spatial_data.shape[0])
-        ]
+        ],
     )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric seuclidean",
+        err_msg="Distances don't match for metric seuclidean",
     )
 
 
 @pytest.mark.skipif(
-    scipy_full_version < (1, 8), reason="incorrect function in scipy<1.8"
+    scipy_full_version < (1, 8),
+    reason="incorrect function in scipy<1.8",
 )
-def test_weighted_minkowski(spatial_data):
+def test_weighted_minkowski(spatial_data) -> None:
     v = np.abs(np.random.randn(spatial_data.shape[1]))
     dist_matrix = pairwise_distances(spatial_data, metric="minkowski", w=v, p=3)
     test_matrix = np.array(
@@ -365,16 +370,16 @@ def test_weighted_minkowski(spatial_data):
                 for j in range(spatial_data.shape[0])
             ]
             for i in range(spatial_data.shape[0])
-        ]
+        ],
     )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric weighted_minkowski",
+        err_msg="Distances don't match for metric weighted_minkowski",
     )
 
 
-def test_mahalanobis(spatial_data):
+def test_mahalanobis(spatial_data) -> None:
     v = np.cov(np.transpose(spatial_data))
     dist_matrix = pairwise_distances(spatial_data, metric="mahalanobis", VI=v)
     test_matrix = np.array(
@@ -384,16 +389,16 @@ def test_mahalanobis(spatial_data):
                 for j in range(spatial_data.shape[0])
             ]
             for i in range(spatial_data.shape[0])
-        ]
+        ],
     )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric mahalanobis",
+        err_msg="Distances don't match for metric mahalanobis",
     )
 
 
-def test_haversine(spatial_data):
+def test_haversine(spatial_data) -> None:
     tree = BallTree(spatial_data[:, :2], metric="haversine")
     dist_matrix, _ = tree.query(spatial_data[:, :2], k=spatial_data.shape[0])
     test_matrix = np.array(
@@ -403,17 +408,17 @@ def test_haversine(spatial_data):
                 for j in range(spatial_data.shape[0])
             ]
             for i in range(spatial_data.shape[0])
-        ]
+        ],
     )
     test_matrix.sort(axis=1)
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric haversine",
+        err_msg="Distances don't match for metric haversine",
     )
 
 
-def test_hellinger(spatial_data):
+def test_hellinger(spatial_data) -> None:
     hellinger_data = np.abs(spatial_data[:-2].copy())
     hellinger_data = hellinger_data / hellinger_data.sum(axis=1)[:, np.newaxis]
     hellinger_data = np.sqrt(hellinger_data)
@@ -428,21 +433,22 @@ def test_hellinger(spatial_data):
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric hellinger",
+        err_msg="Distances don't match for metric hellinger",
     )
 
     # Ensure ll_dirichlet runs
     test_matrix = dist.pairwise_special_metric(
-        np.abs(spatial_data[:-2]), metric="ll_dirichlet"
+        np.abs(spatial_data[:-2]),
+        metric="ll_dirichlet",
     )
-    assert (
-        test_matrix is not None
-    ), "Pairwise Special Metric with LL Dirichlet metric failed"
+    assert test_matrix is not None, (
+        "Pairwise Special Metric with LL Dirichlet metric failed"
+    )
 
 
-def test_sparse_hellinger(sparse_spatial_data):
+def test_sparse_hellinger(sparse_spatial_data) -> None:
     dist_matrix = dist.pairwise_special_metric(
-        np.abs(sparse_spatial_data[:-2].toarray())
+        np.abs(sparse_spatial_data[:-2].toarray()),
     )
     test_matrix = np.array(
         [
@@ -456,13 +462,13 @@ def test_sparse_hellinger(sparse_spatial_data):
                 for j in range(sparse_spatial_data.shape[0] - 2)
             ]
             for i in range(sparse_spatial_data.shape[0] - 2)
-        ]
+        ],
     )
 
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Sparse distances don't match " "for metric hellinger",
+        err_msg="Sparse distances don't match for metric hellinger",
         decimal=3,
     )
 
@@ -479,14 +485,14 @@ def test_sparse_hellinger(sparse_spatial_data):
                 for j in range(sparse_spatial_data.shape[0])
             ]
             for i in range(sparse_spatial_data.shape[0])
-        ]
+        ],
     )
-    assert (
-        test_matrix is not None
-    ), "Pairwise Special Metric with LL Dirichlet metric failed"
+    assert test_matrix is not None, (
+        "Pairwise Special Metric with LL Dirichlet metric failed"
+    )
 
 
-def test_grad_metrics_match_metrics(spatial_data, spatial_distances):
+def test_grad_metrics_match_metrics(spatial_data, spatial_distances) -> None:
     for metric in dist.named_distances_with_gradients:
         if metric in spatial_distances:
             spatial_check(metric, spatial_data, spatial_distances, with_grad=True)
@@ -502,12 +508,12 @@ def test_grad_metrics_match_metrics(spatial_data, spatial_distances):
                 for j in range(spatial_data.shape[0])
             ]
             for i in range(spatial_data.shape[0])
-        ]
+        ],
     )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric seuclidean",
+        err_msg="Distances don't match for metric seuclidean",
     )
 
     if scipy_full_version >= (1, 8):
@@ -517,17 +523,20 @@ def test_grad_metrics_match_metrics(spatial_data, spatial_distances):
             [
                 [
                     dist.weighted_minkowski_grad(
-                        spatial_data[i], spatial_data[j], v, p=3
+                        spatial_data[i],
+                        spatial_data[j],
+                        v,
+                        p=3,
                     )[0]
                     for j in range(spatial_data.shape[0])
                 ]
                 for i in range(spatial_data.shape[0])
-            ]
+            ],
         )
         assert_array_almost_equal(
             test_matrix,
             dist_matrix,
-            err_msg="Distances don't match " "for metric weighted_minkowski",
+            err_msg="Distances don't match for metric weighted_minkowski",
         )
 
     # Mahalanobis
@@ -540,18 +549,19 @@ def test_grad_metrics_match_metrics(spatial_data, spatial_distances):
                 for j in range(spatial_data.shape[0])
             ]
             for i in range(spatial_data.shape[0])
-        ]
+        ],
     )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
         decimal=5,
-        err_msg="Distances don't match " "for metric mahalanobis",
+        err_msg="Distances don't match for metric mahalanobis",
     )
 
     # Hellinger
     dist_matrix = dist.pairwise_special_metric(
-        np.abs(spatial_data[:-2]), np.abs(spatial_data[:-2])
+        np.abs(spatial_data[:-2]),
+        np.abs(spatial_data[:-2]),
     )
     test_matrix = np.array(
         [
@@ -560,10 +570,10 @@ def test_grad_metrics_match_metrics(spatial_data, spatial_distances):
                 for j in range(spatial_data.shape[0] - 2)
             ]
             for i in range(spatial_data.shape[0] - 2)
-        ]
+        ],
     )
     assert_array_almost_equal(
         test_matrix,
         dist_matrix,
-        err_msg="Distances don't match " "for metric hellinger",
+        err_msg="Distances don't match for metric hellinger",
     )

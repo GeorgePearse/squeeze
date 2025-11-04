@@ -3,31 +3,31 @@
 # ===============================
 
 import warnings
-import numpy as np
-from sklearn.metrics import pairwise_distances
-import pytest
+
 import numba
-from umap import UMAP
+import numpy as np
+import pytest
+from sklearn.metrics import pairwise_distances
 
 # verify that we can import this; potentially for later use
-import umap.validation
+from umap import UMAP
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def test_umap_negative_op(nn_data):
+def test_umap_negative_op(nn_data) -> None:
     u = UMAP(set_op_mix_ratio=-1.0)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_too_large_op(nn_data):
+def test_umap_too_large_op(nn_data) -> None:
     u = UMAP(set_op_mix_ratio=1.5)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_too_large_min_dist(nn_data):
+def test_umap_bad_too_large_min_dist(nn_data) -> None:
     u = UMAP(min_dist=2.0)
     # a RuntimeWarning about division by zero in a,b curve fitting is expected
     # caught and ignored for this test
@@ -37,91 +37,91 @@ def test_umap_bad_too_large_min_dist(nn_data):
             u.fit(nn_data)
 
 
-def test_umap_negative_min_dist(nn_data):
+def test_umap_negative_min_dist(nn_data) -> None:
     u = UMAP(min_dist=-1)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_n_components(nn_data):
+def test_umap_negative_n_components(nn_data) -> None:
     u = UMAP(n_components=-1)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_non_integer_n_components(nn_data):
+def test_umap_non_integer_n_components(nn_data) -> None:
     u = UMAP(n_components=1.5)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_too_small_n_neighbours(nn_data):
+def test_umap_too_small_n_neighbours(nn_data) -> None:
     u = UMAP(n_neighbors=0.5)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_n_neighbours(nn_data):
+def test_umap_negative_n_neighbours(nn_data) -> None:
     u = UMAP(n_neighbors=-1)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_metric(nn_data):
+def test_umap_bad_metric(nn_data) -> None:
     u = UMAP(metric=45)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_learning_rate(nn_data):
+def test_umap_negative_learning_rate(nn_data) -> None:
     u = UMAP(learning_rate=-1.5)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_repulsion(nn_data):
+def test_umap_negative_repulsion(nn_data) -> None:
     u = UMAP(repulsion_strength=-0.5)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_sample_rate(nn_data):
+def test_umap_negative_sample_rate(nn_data) -> None:
     u = UMAP(negative_sample_rate=-1)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_init(nn_data):
+def test_umap_bad_init(nn_data) -> None:
     u = UMAP(init="foobar")
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_numeric_init(nn_data):
+def test_umap_bad_numeric_init(nn_data) -> None:
     u = UMAP(init=42)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_matrix_init(nn_data):
+def test_umap_bad_matrix_init(nn_data) -> None:
     u = UMAP(init=np.array([[0, 0, 0], [0, 0, 0]]))
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_n_epochs(nn_data):
+def test_umap_negative_n_epochs(nn_data) -> None:
     u = UMAP(n_epochs=-2)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_negative_target_n_neighbours(nn_data):
+def test_umap_negative_target_n_neighbours(nn_data) -> None:
     u = UMAP(target_n_neighbors=1)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_output_metric(nn_data):
+def test_umap_bad_output_metric(nn_data) -> None:
     u = UMAP(output_metric="foobar")
     with pytest.raises(ValueError):
         u.fit(nn_data)
@@ -133,38 +133,38 @@ def test_umap_bad_output_metric(nn_data):
         u.fit(nn_data)
 
 
-def test_haversine_on_highd(nn_data):
+def test_haversine_on_highd(nn_data) -> None:
     u = UMAP(metric="haversine")
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_haversine_embed_to_highd(nn_data):
+def test_umap_haversine_embed_to_highd(nn_data) -> None:
     u = UMAP(n_components=3, output_metric="haversine")
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_too_many_neighbors_warns(nn_data):
+def test_umap_too_many_neighbors_warns(nn_data) -> None:
     u = UMAP(a=1.2, b=1.75, n_neighbors=2000, n_epochs=11, init="random")
     u.fit(nn_data[:100,])
     assert u._a == 1.2
     assert u._b == 1.75
 
 
-def test_densmap_lambda(nn_data):
+def test_densmap_lambda(nn_data) -> None:
     u = UMAP(densmap=True, dens_lambda=-1.0)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_densmap_var_shift(nn_data):
+def test_densmap_var_shift(nn_data) -> None:
     u = UMAP(densmap=True, dens_var_shift=-1.0)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_densmap_frac(nn_data):
+def test_densmap_frac(nn_data) -> None:
     u = UMAP(densmap=True, dens_frac=-1.0)
     with pytest.raises(ValueError):
         u.fit(nn_data)
@@ -173,19 +173,19 @@ def test_densmap_frac(nn_data):
         u.fit(nn_data)
 
 
-def test_umap_unique_and_precomputed(nn_data):
+def test_umap_unique_and_precomputed(nn_data) -> None:
     u = UMAP(metric="precomputed", unique=True)
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_densmap_bad_output_metric(nn_data):
+def test_densmap_bad_output_metric(nn_data) -> None:
     u = UMAP(densmap=True, output_metric="haversine")
     with pytest.raises(ValueError):
         u.fit(nn_data)
 
 
-def test_umap_bad_n_components(nn_data):
+def test_umap_bad_n_components(nn_data) -> None:
     u = UMAP(n_components=2.3)
     with pytest.raises(ValueError):
         u.fit(nn_data)
@@ -197,7 +197,7 @@ def test_umap_bad_n_components(nn_data):
         u.fit(nn_data)
 
 
-def test_umap_bad_metrics(nn_data):
+def test_umap_bad_metrics(nn_data) -> None:
     u = UMAP(metric="foobar")
     with pytest.raises(ValueError):
         u.fit(nn_data)
@@ -216,7 +216,7 @@ def test_umap_bad_metrics(nn_data):
     # assert_raises(ValueError, u.fit, nn_data)
 
 
-def test_umap_bad_n_jobs(nn_data):
+def test_umap_bad_n_jobs(nn_data) -> None:
     u = UMAP(n_jobs=-2)
     with pytest.raises(ValueError):
         u.fit(nn_data)
@@ -225,7 +225,7 @@ def test_umap_bad_n_jobs(nn_data):
         u.fit(nn_data)
 
 
-def test_umap_custom_distance_w_grad(nn_data):
+def test_umap_custom_distance_w_grad(nn_data) -> None:
     @numba.njit()
     def dist1(x, y):
         return np.sum(np.abs(x - y))
@@ -245,7 +245,7 @@ def test_umap_custom_distance_w_grad(nn_data):
     assert len(warnings) <= 1
 
 
-def test_umap_bad_output_metric_no_grad(nn_data):
+def test_umap_bad_output_metric_no_grad(nn_data) -> None:
     @numba.njit()
     def dist1(x, y):
         return np.sum(np.abs(x - y))
@@ -255,13 +255,13 @@ def test_umap_bad_output_metric_no_grad(nn_data):
         u.fit(nn_data)
 
 
-def test_umap_bad_hellinger_data(nn_data):
+def test_umap_bad_hellinger_data(nn_data) -> None:
     u = UMAP(metric="hellinger")
     with pytest.raises(ValueError):
         u.fit(-nn_data)
 
 
-def test_umap_update_bad_params(nn_data):
+def test_umap_update_bad_params(nn_data) -> None:
     dmat = pairwise_distances(nn_data[:100])
     u = UMAP(metric="precomputed", n_epochs=11)
     u.fit(dmat)
@@ -274,7 +274,7 @@ def test_umap_update_bad_params(nn_data):
         u.update(nn_data[100:200])
 
 
-def test_umap_fit_data_and_targets_compliant():
+def test_umap_fit_data_and_targets_compliant() -> None:
     # x and y are required to be the same length
     u = UMAP()
     x = np.random.uniform(0, 1, (256, 10))
@@ -294,7 +294,7 @@ def test_umap_fit_data_and_targets_compliant():
         u.fit(x, [])
 
 
-def test_umap_fit_instance_returned():
+def test_umap_fit_instance_returned() -> None:
     # Test that fit returns a new UMAP instance
 
     # Passing both data and targets
@@ -311,7 +311,7 @@ def test_umap_fit_instance_returned():
     assert isinstance(res, UMAP)
 
 
-def test_umap_inverse_transform_fails_expectedly(sparse_spatial_data, nn_data):
+def test_umap_inverse_transform_fails_expectedly(sparse_spatial_data, nn_data) -> None:
     u = UMAP(n_epochs=11)
     u.fit(sparse_spatial_data[:100])
     with pytest.raises(ValueError):

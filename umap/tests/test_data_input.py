@@ -1,6 +1,7 @@
 import numpy as np
-import pytest as pytest
+import pytest
 from numba import njit
+
 from umap import UMAP
 
 
@@ -21,9 +22,8 @@ def nan_dist(a: np.ndarray, b: np.ndarray):
     return 0, a
 
 
-def test_check_input_data(all_finite_data, inverse_data):
-    """
-    Data input to UMAP gets checked for liability.
+def test_check_input_data(all_finite_data, inverse_data) -> None:
+    """Data input to UMAP gets checked for liability.
     This tests checks the if data input is dismissed/accepted
     according to the "ensure_all_finite" keyword as used by
     sklearn.
@@ -44,7 +44,7 @@ def test_check_input_data(all_finite_data, inverse_data):
     inf_nan_data[1] = np.inf
 
     # wrapper to call each data handling function of UMAP in a convenient way
-    def call_umap_functions(data, ensure_all_finite):
+    def call_umap_functions(data, ensure_all_finite) -> None:
         u = UMAP(metric=nan_dist)
         if ensure_all_finite is None:
             u.fit_transform(data)

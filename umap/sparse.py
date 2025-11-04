@@ -2,7 +2,6 @@
 # Enough simple sparse operations in numba to enable sparse UMAP
 #
 # License: BSD 3 clause
-from __future__ import print_function
 
 import locale
 
@@ -27,10 +26,9 @@ def arr_unique(arr):
 def arr_union(ar1, ar2):
     if ar1.shape[0] == 0:
         return ar2
-    elif ar2.shape[0] == 0:
+    if ar2.shape[0] == 0:
         return ar1
-    else:
-        return arr_unique(np.concatenate((ar1, ar2)))
+    return arr_unique(np.concatenate((ar1, ar2)))
 
 
 # Just reproduce a simpler version of numpy intersect1d (not numba supported
@@ -155,16 +153,17 @@ def general_sset_intersection(
     result_val,
     right_complement=False,
     mix_weight=0.5,
-):
-
+) -> None:
     left_min = max(data1.min() / 2.0, 1.0e-8)
     if right_complement:
         right_min = min(
-            max((1.0 - data2).min() / 2.0, 1.0e-8), 1e-4
+            max((1.0 - data2).min() / 2.0, 1.0e-8),
+            1e-4,
         )  # All right vals may be large!
     else:
         right_min = min(
-            max(data2.min() / 2.0, 1.0e-8), 1e-4
+            max(data2.min() / 2.0, 1.0e-8),
+            1e-4,
         )  # All right vals may be large!
 
     for idx in range(result_row.shape[0]):
@@ -179,22 +178,18 @@ def general_sset_intersection(
         right_val = right_min
         for k in range(indptr2[i], indptr2[i + 1]):
             if indices2[k] == j:
-                if right_complement:
-                    right_val = 1.0 - data2[k]
-                else:
-                    right_val = data2[k]
+                right_val = 1.0 - data2[k] if right_complement else data2[k]
 
         if left_val > left_min or right_val > right_min:
             if mix_weight < 0.5:
                 result_val[idx] = left_val * pow(
-                    right_val, mix_weight / (1.0 - mix_weight)
+                    right_val,
+                    mix_weight / (1.0 - mix_weight),
                 )
             else:
                 result_val[idx] = (
                     pow(left_val, (1.0 - mix_weight) / mix_weight) * right_val
                 )
-
-    return
 
 
 @numba.njit()
@@ -208,7 +203,7 @@ def general_sset_union(
     result_row,
     result_col,
     result_val,
-):
+) -> None:
     left_min = max(data1.min() / 2.0, 1.0e-8)
     right_min = max(data2.min() / 2.0, 1.0e-8)
 
@@ -228,12 +223,10 @@ def general_sset_union(
 
         result_val[idx] = left_val + right_val - left_val * right_val
 
-    return
-
 
 @numba.njit()
 def sparse_euclidean(ind1, data1, ind2, data2):
-    aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
+    _aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
     result = 0.0
     for i in range(aux_data.shape[0]):
         result += aux_data[i] ** 2
@@ -242,7 +235,7 @@ def sparse_euclidean(ind1, data1, ind2, data2):
 
 @numba.njit()
 def sparse_manhattan(ind1, data1, ind2, data2):
-    aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
+    _aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
     result = 0.0
     for i in range(aux_data.shape[0]):
         result += np.abs(aux_data[i])
@@ -251,7 +244,7 @@ def sparse_manhattan(ind1, data1, ind2, data2):
 
 @numba.njit()
 def sparse_chebyshev(ind1, data1, ind2, data2):
-    aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
+    _aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
     result = 0.0
     for i in range(aux_data.shape[0]):
         result = max(result, np.abs(aux_data[i]))
@@ -260,7 +253,7 @@ def sparse_chebyshev(ind1, data1, ind2, data2):
 
 @numba.njit()
 def sparse_minkowski(ind1, data1, ind2, data2, p=2.0):
-    aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
+    _aux_inds, aux_data = sparse_diff(ind1, data1, ind2, data2)
     result = 0.0
     for i in range(aux_data.shape[0]):
         result += np.abs(aux_data[i]) ** p
@@ -282,14 +275,14 @@ def sparse_canberra(ind1, data1, ind2, data2):
     numer_inds, numer_data = sparse_diff(ind1, data1, ind2, data2)
     numer_data = np.abs(numer_data)
 
-    val_inds, val_data = sparse_mul(numer_inds, numer_data, denom_inds, denom_data)
+    _val_inds, val_data = sparse_mul(numer_inds, numer_data, denom_inds, denom_data)
 
     return np.sum(val_data)
 
 
 @numba.njit()
 def sparse_bray_curtis(ind1, data1, ind2, data2):  # pragma: no cover
-    denom_inds, denom_data = sparse_sum(ind1, data1, ind2, data2)
+    _denom_inds, denom_data = sparse_sum(ind1, data1, ind2, data2)
     denom_data = np.abs(denom_data)
 
     if denom_data.shape[0] == 0:
@@ -300,7 +293,7 @@ def sparse_bray_curtis(ind1, data1, ind2, data2):  # pragma: no cover
     if denominator == 0:
         return 0.0
 
-    numer_inds, numer_data = sparse_diff(ind1, data1, ind2, data2)
+    _numer_inds, numer_data = sparse_diff(ind1, data1, ind2, data2)
     numer_data = np.abs(numer_data)
 
     numerator = np.sum(numer_data)
@@ -315,8 +308,7 @@ def sparse_jaccard(ind1, data1, ind2, data2):
 
     if num_non_zero == 0:
         return 0.0
-    else:
-        return float(num_non_zero - num_equal) / num_non_zero
+    return float(num_non_zero - num_equal) / num_non_zero
 
 
 @numba.njit()
@@ -336,8 +328,7 @@ def sparse_dice(ind1, data1, ind2, data2):
 
     if num_not_equal == 0.0:
         return 0.0
-    else:
-        return num_not_equal / (2.0 * num_true_true + num_not_equal)
+    return num_not_equal / (2.0 * num_true_true + num_not_equal)
 
 
 @numba.njit()
@@ -348,10 +339,9 @@ def sparse_kulsinski(ind1, data1, ind2, data2, n_features):
 
     if num_not_equal == 0:
         return 0.0
-    else:
-        return float(num_not_equal - num_true_true + n_features) / (
-            num_not_equal + n_features
-        )
+    return float(num_not_equal - num_true_true + n_features) / (
+        num_not_equal + n_features
+    )
 
 
 @numba.njit()
@@ -372,8 +362,7 @@ def sparse_russellrao(ind1, data1, ind2, data2, n_features):
 
     if num_true_true == np.sum(data1 != 0) and num_true_true == np.sum(data2 != 0):
         return 0.0
-    else:
-        return float(n_features - num_true_true) / (n_features)
+    return float(n_features - num_true_true) / (n_features)
 
 
 @numba.njit()
@@ -393,13 +382,12 @@ def sparse_sokal_sneath(ind1, data1, ind2, data2):
 
     if num_not_equal == 0.0:
         return 0.0
-    else:
-        return num_not_equal / (0.5 * num_true_true + num_not_equal)
+    return num_not_equal / (0.5 * num_true_true + num_not_equal)
 
 
 @numba.njit()
 def sparse_cosine(ind1, data1, ind2, data2):
-    aux_inds, aux_data = sparse_mul(ind1, data1, ind2, data2)
+    _aux_inds, aux_data = sparse_mul(ind1, data1, ind2, data2)
     result = 0.0
     norm1 = norm(data1)
     norm2 = norm(data2)
@@ -409,15 +397,14 @@ def sparse_cosine(ind1, data1, ind2, data2):
 
     if norm1 == 0.0 and norm2 == 0.0:
         return 0.0
-    elif norm1 == 0.0 or norm2 == 0.0:
+    if norm1 == 0.0 or norm2 == 0.0:
         return 1.0
-    else:
-        return 1.0 - (result / (norm1 * norm2))
+    return 1.0 - (result / (norm1 * norm2))
 
 
 @numba.njit()
 def sparse_hellinger(ind1, data1, ind2, data2):
-    aux_inds, aux_data = sparse_mul(ind1, data1, ind2, data2)
+    _aux_inds, aux_data = sparse_mul(ind1, data1, ind2, data2)
     result = 0.0
     norm1 = np.sum(data1)
     norm2 = np.sum(data2)
@@ -428,24 +415,22 @@ def sparse_hellinger(ind1, data1, ind2, data2):
 
     if norm1 == 0.0 and norm2 == 0.0:
         return 0.0
-    elif norm1 == 0.0 or norm2 == 0.0:
+    if norm1 == 0.0 or norm2 == 0.0:
         return 1.0
-    elif result > sqrt_norm_prod:
+    if result > sqrt_norm_prod:
         return 0.0
-    else:
-        return np.sqrt(1.0 - (result / sqrt_norm_prod))
+    return np.sqrt(1.0 - (result / sqrt_norm_prod))
 
 
 @numba.njit()
 def sparse_correlation(ind1, data1, ind2, data2, n_features):
-
     mu_x = 0.0
     mu_y = 0.0
     dot_product = 0.0
 
     if ind1.shape[0] == 0 and ind2.shape[0] == 0:
         return 0.0
-    elif ind1.shape[0] == 0 or ind2.shape[0] == 0:
+    if ind1.shape[0] == 0 or ind2.shape[0] == 0:
         return 1.0
 
     for i in range(data1.shape[0]):
@@ -465,10 +450,10 @@ def sparse_correlation(ind1, data1, ind2, data2, n_features):
         shifted_data2[i] = data2[i] - mu_y
 
     norm1 = np.sqrt(
-        (norm(shifted_data1) ** 2) + (n_features - ind1.shape[0]) * (mu_x**2)
+        (norm(shifted_data1) ** 2) + (n_features - ind1.shape[0]) * (mu_x**2),
     )
     norm2 = np.sqrt(
-        (norm(shifted_data2) ** 2) + (n_features - ind2.shape[0]) * (mu_y**2)
+        (norm(shifted_data2) ** 2) + (n_features - ind2.shape[0]) * (mu_y**2),
     )
 
     dot_prod_inds, dot_prod_data = sparse_mul(ind1, shifted_data1, ind2, shifted_data2)
@@ -491,10 +476,9 @@ def sparse_correlation(ind1, data1, ind2, data2, n_features):
 
     if norm1 == 0.0 and norm2 == 0.0:
         return 0.0
-    elif dot_product == 0.0:
+    if dot_product == 0.0:
         return 1.0
-    else:
-        return 1.0 - (dot_product / (norm1 * norm2))
+    return 1.0 - (dot_product / (norm1 * norm2))
 
 
 @numba.njit()
@@ -520,8 +504,7 @@ def log_beta(x, y):
         for i in range(1, int(a)):
             value += np.log(i) - np.log(b + i)
         return value
-    else:
-        return approx_log_Gamma(x) + approx_log_Gamma(y) - approx_log_Gamma(x + y)
+    return approx_log_Gamma(x) + approx_log_Gamma(y) - approx_log_Gamma(x + y)
 
 
 @numba.njit()
@@ -543,7 +526,7 @@ def sparse_ll_dirichlet(ind1, data1, ind2, data2):
 
     if n1 == 0 and n2 == 0:
         return 0.0
-    elif n1 == 0 or n2 == 0:
+    if n1 == 0 or n2 == 0:
         return 1e8
 
     log_b = 0.0
@@ -565,7 +548,6 @@ def sparse_ll_dirichlet(ind1, data1, ind2, data2):
 
     self_denom1 = 0.0
     for d1 in data1:
-
         self_denom1 += log_single_beta(d1)
 
     self_denom2 = 0.0
@@ -574,7 +556,7 @@ def sparse_ll_dirichlet(ind1, data1, ind2, data2):
 
     return np.sqrt(
         1.0 / n2 * (log_b - log_beta(n1, n2) - (self_denom2 - log_single_beta(n2)))
-        + 1.0 / n1 * (log_b - log_beta(n2, n1) - (self_denom1 - log_single_beta(n1)))
+        + 1.0 / n1 * (log_b - log_beta(n2, n1) - (self_denom1 - log_single_beta(n1))),
     )
 
 

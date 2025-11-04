@@ -1,12 +1,12 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
 
 [project]
-name = "umap-learn"
+name = "umap"
 version = "0.5.9.post2"
 description = "Uniform Manifold Approximation and Projection"
-readme = "README.rst"
+readme = "README.md"
 license = {text = "BSD"}
 keywords = ["dimension reduction", "umap", "t-sne", "manifold"]
 classifiers = [
@@ -67,3 +67,34 @@ zip-safe = false
 
 [tool.setuptools.package-data]
 "*" = ["*.pyx", "*.pxd"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["FBT001", "FBT002", "FBT003"]  # Boolean arguments are OK in scientific code
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint.per-file-ignores]
+"umap/tests/*" = [
+    "D100",    # Missing module docstring
+    "D101",    # Missing class docstring
+    "S101",    # Use of assert (required in tests)
+]
+"setup.py" = ["D100"]
+
+
+[tool.pytest.ini_options]
+testmon_db = ".testmon.db"
+addopts = "-v"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-source = "umap"
+module-name = "umap._hnsw_backend"

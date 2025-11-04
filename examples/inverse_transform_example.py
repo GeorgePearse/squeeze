@@ -24,7 +24,7 @@ corners = np.array(
         [-1.9, 6.4],
         [-5.4, -6.3],
         [8.3, 4.0],
-    ]  # 7  # 4  # 1  # 0
+    ],  # 7  # 4  # 1  # 0
 )
 
 test_pts = np.array(
@@ -33,7 +33,7 @@ test_pts = np.array(
         + (corners[2] * (1 - x) + corners[3] * x) * y
         for y in np.linspace(0, 1, 10)
         for x in np.linspace(0, 1, 10)
-    ]
+    ],
 )
 
 inv_transformed_points = trans.inverse_transform(test_pts)
@@ -52,7 +52,8 @@ fig, ax = plt.subplots(10, 10)
 for i in range(10):
     for j in range(10):
         ax[i, j].imshow(
-            inv_transformed_points[i * 10 + j].reshape(28, 28), origin="upper"
+            inv_transformed_points[i * 10 + j].reshape(28, 28),
+            origin="upper",
         )
         ax[i, j].get_xaxis().set_visible(False)
         ax[i, j].get_yaxis().set_visible(False)

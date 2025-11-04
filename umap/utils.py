@@ -1,45 +1,52 @@
+"""Utility functions for UMAP."""
+
+from __future__ import annotations
+
 # Author: Leland McInnes <leland.mcinnes@gmail.com>
 #
 # License: BSD 3 clause
-
 import time
+from typing import TYPE_CHECKING
 from warnings import warn
 
-import numpy as np
 import numba
-from sklearn.utils.validation import check_is_fitted
+import numpy as np
 import scipy.sparse
+from sklearn.utils.validation import check_is_fitted
+
+if TYPE_CHECKING:
+    from umap.umap_ import UMAP
 
 
 @numba.njit(parallel=True)
-def fast_knn_indices(X, n_neighbors):
-    """A fast computation of knn indices.
+def fast_knn_indices(x: np.ndarray, n_neighbors: int) -> np.ndarray:
+    """Compute knn indices quickly.
 
     Parameters
     ----------
-    X: array of shape (n_samples, n_features)
+    x: array of shape (n_samples, n_features)
         The input data to compute the k-neighbor indices of.
 
     n_neighbors: int
-        The number of nearest neighbors to compute for each sample in ``X``.
+        The number of nearest neighbors to compute for each sample in ``x``.
 
     Returns
     -------
     knn_indices: array of shape (n_samples, n_neighbors)
         The indices on the ``n_neighbors`` closest points in the dataset.
+
     """
-    knn_indices = np.empty((X.shape[0], n_neighbors), dtype=np.int32)
-    for row in numba.prange(X.shape[0]):
-        # v = np.argsort(X[row])  # Need to call argsort this way for numba
-        v = X[row].argsort(kind="quicksort")
+    knn_indices = np.empty((x.shape[0], n_neighbors), dtype=np.int32)
+    for row in numba.prange(x.shape[0]):
+        v = x[row].argsort(kind="quicksort")
         v = v[:n_neighbors]
         knn_indices[row] = v
     return knn_indices
 
 
 @numba.njit("i4(i8[:])")
-def tau_rand_int(state):
-    """A fast (pseudo)-random number generator.
+def tau_rand_int(state: np.ndarray) -> int:
+    """Generate a fast (pseudo)-random integer.
 
     Parameters
     ----------
@@ -49,6 +56,7 @@ def tau_rand_int(state):
     Returns
     -------
     A (pseudo)-random int32 value
+
     """
     state[0] = (((state[0] & 4294967294) << 12) & 0xFFFFFFFF) ^ (
         (((state[0] << 13) & 0xFFFFFFFF) ^ state[0]) >> 19
@@ -64,8 +72,8 @@ def tau_rand_int(state):
 
 
 @numba.njit("f4(i8[:])")
-def tau_rand(state):
-    """A fast (pseudo)-random number generator for floats in the range [0,1]
+def tau_rand(state: np.ndarray) -> float:
+    """Generate a fast (pseudo)-random float in the range [0,1].
 
     Parameters
     ----------
@@ -75,22 +83,26 @@ def tau_rand(state):
     Returns
     -------
     A (pseudo)-random float32 in the interval [0, 1]
+
     """
     integer = tau_rand_int(state)
     return abs(float(integer) / 0x7FFFFFFF)
 
 
 @numba.njit()
-def norm(vec):
+def norm(vec: np.ndarray) -> float:
     """Compute the (standard l2) norm of a vector.
 
     Parameters
     ----------
-    vec: array of shape (dim,)
+    vec: np.ndarray
+        Array of shape (dim,) representing a vector.
 
     Returns
     -------
-    The l2 norm of vec.
+    float
+        The l2 norm of vec.
+
     """
     result = 0.0
     for i in range(vec.shape[0]):
@@ -99,7 +111,11 @@ def norm(vec):
 
 
 @numba.njit(parallel=True)
-def submatrix(dmat, indices_col, n_neighbors):
+def submatrix(
+    dmat: np.ndarray,
+    indices_col: np.ndarray,
+    n_neighbors: int,
+) -> np.ndarray:
     """Return a submatrix given an orginal matrix and the indices to keep.
 
     Parameters
@@ -117,8 +133,9 @@ def submatrix(dmat, indices_col, n_neighbors):
     -------
     submat: array, shape (n_samples, n_neighbors)
         The corresponding submatrix.
+
     """
-    n_samples_transform, n_samples_fit = dmat.shape
+    n_samples_transform, _n_samples_fit = dmat.shape
     submat = np.zeros((n_samples_transform, n_neighbors), dtype=dmat.dtype)
     for i in numba.prange(n_samples_transform):
         for j in numba.prange(n_neighbors):
@@ -126,38 +143,62 @@ def submatrix(dmat, indices_col, n_neighbors):
     return submat
 
 
-# Generates a timestamp for use in logging messages when verbose=True
-def ts():
+def ts() -> str:
+    """Generate a timestamp string for logging.
+
+    Returns
+    -------
+    str
+        Current timestamp as a string.
+
+    """
     return time.ctime(time.time())
 
 
-# I'm not enough of a numba ninja to numba this successfully.
-# np.arrays of lists, which are objects...
-def csr_unique(matrix, return_index=True, return_inverse=True, return_counts=True):
-    """Find the unique elements of a sparse csr matrix.
+def csr_unique(
+    matrix: scipy.sparse.csr_matrix,
+    return_index: bool = True,
+    return_inverse: bool = True,
+    return_counts: bool = True,
+) -> np.ndarray | tuple[np.ndarray, ...]:
+    """Find the unique rows of a sparse CSR matrix.
+
+    Find the unique elements of a sparse csr matrix.
     We don't explicitly construct the unique matrix leaving that to the user
     who may not want to duplicate a massive array in memory.
     Returns the indices of the input array that give the unique values.
     Returns the indices of the unique array that reconstructs the input array.
     Returns the number of times each unique row appears in the input matrix.
 
-    matrix: a csr matrix
-    return_index = bool, optional
+    Parameters
+    ----------
+    matrix: scipy.sparse.csr_matrix
+        a csr matrix
+    return_index: bool, optional
         If true, return the row indices of 'matrix'
     return_inverse: bool, optional
         If true, return the indices of the unique array that can be
            used to reconstruct 'matrix'.
-    return_counts = bool, optional
-        If true, returns the number of times each unique item appears in 'matrix'
+    return_counts: bool, optional
+        If true, returns the number of times each unique item appears
+        in 'matrix'
 
-    The unique matrix can computed via
-    unique_matrix = matrix[index]
-    and the original matrix reconstructed via
-    unique_matrix[inverse]
+    Returns
+    -------
+    Union[np.ndarray, tuple[np.ndarray, ...]]
+        Depending on the return flags, returns arrays of indices, inverse
+        indices, and/or counts.
+
+    Notes
+    -----
+    The unique matrix can computed via unique_matrix = matrix[index]
+    and the original matrix reconstructed via unique_matrix[inverse]
+
     """
     lil_matrix = matrix.tolil()
     rows = np.asarray(
-        [tuple(x + y) for x, y in zip(lil_matrix.rows, lil_matrix.data)], dtype=object
+        [tuple(x + y) for x, y in zip(lil_matrix.rows, lil_matrix.data)],
+        dtype=object,
     )
     return_values = return_counts + return_inverse + return_index
     return np.unique(
@@ -168,20 +209,26 @@ def csr_unique(matrix, return_index=True, return_inverse=True, return_counts=Tru
     )[1 : (return_values + 1)]
 
 
-def disconnected_vertices(model):
-    """
-    Returns a boolean vector indicating which vertices are disconnected from the umap graph.
-    These vertices will often be scattered across the space and make it difficult to focus on the main
-    manifold.  They can either be filtered and have UMAP re-run or simply filtered from the interactive plotting tool
-    via the subset_points parameter.
+def disconnected_vertices(model: UMAP) -> np.ndarray:
+    """Return a boolean vector indicating which vertices are disconnected.
+
+    Returns a boolean vector indicating which vertices are disconnected from
+    the umap graph. These vertices will often be scattered across the space
+    and make it difficult to focus on the main manifold.  They can either be
+    filtered and have UMAP re-run or simply filtered from the interactive
+    plotting tool via the subset_points parameter.
     Use ~disconnected_vertices(model) to only plot the connected points.
+
     Parameters
     ----------
-    model: a trained UMAP model
+    model: UMAP
+        a trained UMAP model
 
     Returns
     -------
-    A boolean vector indicating which points are disconnected
+    np.ndarray
+        A boolean vector indicating which points are disconnected
+
     """
     check_is_fitted(model, "graph_")
     if model.unique:
@@ -193,20 +240,21 @@ def disconnected_vertices(model):
     return vertices_disconnected
 
 
-def average_nn_distance(dist_matrix):
-    """Calculate the average distance to each points nearest neighbors.
+def average_nn_distance(dist_matrix: scipy.sparse.csr_matrix) -> np.ndarray:
+    """Calculate the average distance to each point's nearest neighbors.
 
     Parameters
     ----------
-    dist_matrix: a csr_matrix
+    dist_matrix: scipy.sparse.csr_matrix
         A distance matrix (usually umap_model.graph_)
 
     Returns
     -------
-    An array with the average distance to each points nearest neighbors
+    np.ndarray
+        An array with the average distance to each point's nearest neighbors
 
     """
-    (row_idx, col_idx, val) = scipy.sparse.find(dist_matrix)
+    (row_idx, _col_idx, val) = scipy.sparse.find(dist_matrix)
 
     # Count/sum is done per row
     count_non_zero_elems = np.bincount(row_idx)
@@ -215,8 +263,9 @@ def average_nn_distance(dist_matrix):
 
     if any(np.isnan(averages)):
         warn(
-            "Embedding contains disconnected vertices which will be ignored."
-            "Use umap.utils.disconnected_vertices() to identify them."
+            "Embedding contains disconnected vertices which will be ignored. "
+            "Use umap.utils.disconnected_vertices() to identify them.",
+            stacklevel=2,
         )
 
     return averages

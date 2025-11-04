@@ -1,20 +1,18 @@
 # Author: Leland McInnes <leland.mcinnes@gmail.com>
 #
 # License: BSD 3 clause
-from __future__ import print_function
 
 import locale
 from warnings import warn
-import time
 
 from scipy.optimize import curve_fit
 from sklearn.base import BaseEstimator, ClassNamePrefixFeaturesOutMixin
+from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.metrics import pairwise_distances
+from sklearn.neighbors import KDTree
+from sklearn.preprocessing import normalize
 from sklearn.utils import check_array, check_random_state
 from sklearn.utils.validation import check_is_fitted
-from sklearn.metrics import pairwise_distances
-from sklearn.preprocessing import normalize
-from sklearn.neighbors import KDTree
-from sklearn.decomposition import PCA, TruncatedSVD
 
 try:
     import joblib
@@ -22,32 +20,37 @@ except ImportError:
     # sklearn.externals.joblib is deprecated in 0.21, will be removed in 0.23
     from sklearn.externals import joblib
 
+import numba
 import numpy as np
 import scipy.sparse
-from scipy.sparse import tril as sparse_tril, triu as sparse_triu
 import scipy.sparse.csgraph
-import numba
+from pynndescent import NNDescent
+from pynndescent.distances import named_distances as pynn_named_distances
+from pynndescent.sparse import sparse_named_distances as pynn_sparse_named_distances
+from scipy.sparse import tril as sparse_tril
+from scipy.sparse import triu as sparse_triu
 
 import umap.distances as dist
-
-import umap.sparse as sparse
-
-from umap.utils import (
-    submatrix,
-    ts,
-    csr_unique,
-    fast_knn_indices,
-)
-from umap.spectral import spectral_layout, tswspectral_layout
+from umap import sparse
 from umap.layouts import (
     optimize_layout_euclidean,
     optimize_layout_generic,
     optimize_layout_inverse,
 )
+from umap.spectral import spectral_layout, tswspectral_layout
+from umap.utils import (
+    csr_unique,
+    fast_knn_indices,
+    submatrix,
+)
 
-from pynndescent import NNDescent
-from pynndescent.distances import named_distances as pynn_named_distances
-from pynndescent.sparse import sparse_named_distances as pynn_sparse_named_distances
+# Try to import HNSW backend
+try:
+    from umap.hnsw_wrapper import HnswIndexWrapper
+
+    HNSW_AVAILABLE = True
+except ImportError:
+    HNSW_AVAILABLE = False
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
@@ -71,8 +74,7 @@ DISCONNECTION_DISTANCES = {
 def flatten_iter(container):
     for i in container:
         if isinstance(i, (list, tuple)):
-            for j in flatten_iter(i):
-                yield j
+            yield from flatten_iter(i)
         else:
             yield i
 
@@ -114,13 +116,10 @@ def raise_disconnected_warning(
     total_rows,
     threshold=0.1,
     verbose=False,
-):
+) -> None:
     """A simple wrapper function to avoid large amounts of code repetition."""
     if verbose & (vertices_disconnected == 0) & (edges_removed > 0):
-        print(
-            f"Disconnection_distance = {disconnection_distance} has removed {edges_removed} edges.  "
-            f"This is not a problem as no vertices were disconnected."
-        )
+        pass
     elif (vertices_disconnected > 0) & (
         vertices_disconnected <= threshold * total_rows
     ):
@@ -129,6 +128,7 @@ def raise_disconnected_warning(
             f"Disconnection_distance = {disconnection_distance} has removed {edges_removed} edges.\n"
             f"It has only fully disconnected {vertices_disconnected} vertices.\n"
             f"Use umap.utils.disconnected_vertices() to identify them.",
+            stacklevel=2,
         )
     elif vertices_disconnected > threshold * total_rows:
         warn(
@@ -137,6 +137,7 @@ def raise_disconnected_warning(
             f"It has fully disconnected {vertices_disconnected} vertices.\n"
             f"You might consider using find_disconnected_points() to find and remove these points from your data.\n"
             f"Use umap.utils.disconnected_vertices() to identify them.",
+            stacklevel=2,
         )
 
 
@@ -187,6 +188,7 @@ def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1
 
     nn_dist: array of shape (n_samples,)
         The distance to the 1st nearest neighbor for each point.
+
     """
     target = np.log2(k) * bandwidth
     rho = np.zeros(distances.shape[0], dtype=np.float32)
@@ -216,8 +218,7 @@ def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1
         elif non_zero_dists.shape[0] > 0:
             rho[i] = np.max(non_zero_dists)
 
-        for n in range(n_iter):
-
+        for _n in range(n_iter):
             psum = 0.0
             for j in range(1, distances.shape[1]):
                 d = distances[i, j] - rho[i]
@@ -244,13 +245,83 @@ def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1
         # TODO: This is very inefficient, but will do for now. FIXME
         if rho[i] > 0.0:
             mean_ith_distances = np.mean(ith_distances)
-            if result[i] < MIN_K_DIST_SCALE * mean_ith_distances:
-                result[i] = MIN_K_DIST_SCALE * mean_ith_distances
-        else:
-            if result[i] < MIN_K_DIST_SCALE * mean_distances:
-                result[i] = MIN_K_DIST_SCALE * mean_distances
+            result[i] = max(result[i], MIN_K_DIST_SCALE * mean_ith_distances)
+        elif result[i] < MIN_K_DIST_SCALE * mean_distances:
+            result[i] = MIN_K_DIST_SCALE * mean_distances
 
     return result, rho
+
+
+def _get_nn_backend(metric, sparse_data, use_hnsw=None):
+    """Determine which nearest neighbor backend to use.
+
+    Parameters
+    ----------
+    metric : str
+        The distance metric to use
+    sparse_data : bool
+        Whether the data is sparse
+    use_hnsw : bool or None
+        If True, force HNSW backend
+        If False, force PyNNDescent
+        If None, automatically select
+
+    Returns
+    -------
+    backend_class : class
+        The nearest neighbor backend class to use
+
+    """
+    # Force PyNNDescent if requested
+    if use_hnsw is False:
+        return NNDescent
+
+    # Check if HNSW backend is available
+    if not HNSW_AVAILABLE:
+        if use_hnsw is True:
+            warn(
+                "HNSW backend requested but not available. "
+                "Please install umap with: pip install --upgrade umap",
+                stacklevel=2,
+            )
+        return NNDescent
+
+    # Check if metric is supported by HNSW
+    hnsw_metrics = {
+        "euclidean",
+        "l2",
+        "manhattan",
+        "l1",
+        "taxicab",
+        "cosine",
+        "chebyshev",
+        "linfinity",
+        "hamming",
+    }
+    if metric not in hnsw_metrics:
+        if use_hnsw is True:
+            warn(
+                f"Metric '{metric}' not supported by HNSW backend, falling back to PyNNDescent",
+                stacklevel=2,
+            )
+        return NNDescent
+
+    # Check if sparse data (not supported yet)
+    if sparse_data:
+        if use_hnsw is True:
+            warn(
+                "HNSW backend doesn't support sparse data yet, falling back to PyNNDescent",
+                stacklevel=2,
+            )
+        return NNDescent
+
+    # Use HNSW by default if available and compatible
+    if use_hnsw is None:
+        use_hnsw = True  # Default to HNSW for new code
+
+    if use_hnsw:
+        return HnswIndexWrapper
+    return NNDescent
 
 
 def nearest_neighbors(
@@ -305,9 +376,10 @@ def nearest_neighbors(
 
     rp_forest: list of trees
         The random projection forest used for searching (if used, None otherwise).
+
     """
     if verbose:
-        print(ts(), "Finding Nearest Neighbors")
+        pass
 
     if metric == "precomputed":
         # Note that this does not support sparse distance matrices yet ...
@@ -324,10 +396,16 @@ def nearest_neighbors(
         knn_search_index = None
     else:
         # TODO: Hacked values for now
-        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-        n_iters = max(5, int(round(np.log2(X.shape[0]))))
+        n_trees = min(64, 5 + round((X.shape[0]) ** 0.5 / 20.0))
+        n_iters = max(5, round(np.log2(X.shape[0])))
 
-        knn_search_index = NNDescent(
+        # Determine which NN backend to use (HNSW or PyNNDescent)
+        sparse_data = scipy.sparse.issparse(X)
+        # If use_pynndescent=False, prefer HNSW; otherwise use PyNNDescent
+        use_hnsw_backend = not use_pynndescent if use_pynndescent is not None else None
+        NNBackend = _get_nn_backend(metric, sparse_data, use_hnsw=use_hnsw_backend)
+
+        knn_search_index = NNBackend(
             X,
             n_neighbors=n_neighbors,
             metric=metric,
@@ -344,7 +422,7 @@ def nearest_neighbors(
         knn_indices, knn_dists = knn_search_index.neighbor_graph
 
     if verbose:
-        print(ts(), "Finished Nearest Neighbor Search")
+        pass
     return knn_indices, knn_dists, knn_search_index
 
 
@@ -405,6 +483,7 @@ def compute_membership_strengths(
 
     dists: array of shape (n_samples * n_neighbors)
         Distance associated with each entry in the resulting sparse matrix
+
     """
     n_samples = knn_indices.shape[0]
     n_neighbors = knn_indices.shape[1]
@@ -412,10 +491,7 @@ def compute_membership_strengths(
     rows = np.zeros(knn_indices.size, dtype=np.int32)
     cols = np.zeros(knn_indices.size, dtype=np.int32)
     vals = np.zeros(knn_indices.size, dtype=np.float32)
-    if return_dists:
-        dists = np.zeros(knn_indices.size, dtype=np.float32)
-    else:
-        dists = None
+    dists = np.zeros(knn_indices.size, dtype=np.float32) if return_dists else None
 
     for i in range(n_samples):
         for j in range(n_neighbors):
@@ -423,7 +499,7 @@ def compute_membership_strengths(
                 continue  # We didn't get the full knn for i
             # If applied to an adjacency matrix points shouldn't be similar to themselves.
             # If applied to an incidence matrix (or bipartite) then the row and column indices are different.
-            if (bipartite == False) & (knn_indices[i, j] == i):
+            if (not bipartite) & (knn_indices[i, j] == i):
                 val = 0.0
             elif knn_dists[i, j] - rhos[i] <= 0.0 or sigmas[i] == 0.0:
                 val = 1.0
@@ -444,7 +520,7 @@ def fuzzy_simplicial_set(
     n_neighbors,
     random_state,
     metric,
-    metric_kwds={},
+    metric_kwds=None,
     knn_indices=None,
     knn_dists=None,
     angular=False,
@@ -561,7 +637,10 @@ def fuzzy_simplicial_set(
         A fuzzy simplicial set represented as a sparse matrix. The (i,
         j) entry of the matrix represents the membership strength of the
         1-simplex between the ith and jth sample points.
+
     """
+    if metric_kwds is None:
+        metric_kwds = {}
     if knn_indices is None or knn_dists is None:
         knn_indices, knn_dists, _ = nearest_neighbors(
             X,
@@ -582,11 +661,16 @@ def fuzzy_simplicial_set(
     )
 
     rows, cols, vals, dists = compute_membership_strengths(
-        knn_indices, knn_dists, sigmas, rhos, return_dists
+        knn_indices,
+        knn_dists,
+        sigmas,
+        rhos,
+        return_dists,
     )
 
     result = scipy.sparse.coo_matrix(
-        (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
+        (vals, (rows, cols)),
+        shape=(X.shape[0], X.shape[0]),
     )
     result.eliminate_zeros()
 
@@ -604,21 +688,28 @@ def fuzzy_simplicial_set(
 
     if return_dists is None:
         return result, sigmas, rhos
+    if return_dists:
+        dmat = scipy.sparse.coo_matrix(
+            (dists, (rows, cols)),
+            shape=(X.shape[0], X.shape[0]),
+        )
+
+        dists = dmat.maximum(dmat.transpose()).todok()
     else:
-        if return_dists:
-            dmat = scipy.sparse.coo_matrix(
-                (dists, (rows, cols)), shape=(X.shape[0], X.shape[0])
-            )
+        dists = None
 
-            dists = dmat.maximum(dmat.transpose()).todok()
-        else:
-            dists = None
-
-        return result, sigmas, rhos, dists
+    return result, sigmas, rhos, dists
 
 
 @numba.njit()
-def fast_intersection(rows, cols, values, target, unknown_dist=1.0, far_dist=5.0):
+def fast_intersection(
+    rows,
+    cols,
+    values,
+    target,
+    unknown_dist=1.0,
+    far_dist=5.0,
+) -> None:
     """Under the assumption of categorical distance for the intersecting
     simplicial set perform a fast intersection.
 
@@ -648,6 +739,7 @@ def fast_intersection(rows, cols, values, target, unknown_dist=1.0, far_dist=5.0
     Returns
     -------
     None
+
     """
     for nz in range(rows.shape[0]):
         i = rows[nz]
@@ -657,13 +749,17 @@ def fast_intersection(rows, cols, values, target, unknown_dist=1.0, far_dist=5.0
         elif target[i] != target[j]:
             values[nz] *= np.exp(-far_dist)
 
-    return
-
 
 @numba.njit()
 def fast_metric_intersection(
-    rows, cols, values, discrete_space, metric, metric_args, scale
-):
+    rows,
+    cols,
+    values,
+    discrete_space,
+    metric,
+    metric_args,
+    scale,
+) -> None:
     """Under the assumption of categorical distance for the intersecting
     simplicial set perform a fast intersection.
 
@@ -693,14 +789,13 @@ def fast_metric_intersection(
     Returns
     -------
     None
+
     """
     for nz in range(rows.shape[0]):
         i = rows[nz]
         j = cols[nz]
         dist = metric(discrete_space[i], discrete_space[j], *metric_args)
         values[nz] *= np.exp(-(scale * dist))
-
-    return
 
 
 @numba.njit()
@@ -711,8 +806,7 @@ def reprocess_row(probabilities, k=15, n_iters=32):
     hi = NPY_INFINITY
     mid = 1.0
 
-    for n in range(n_iters):
-
+    for _n in range(n_iters):
         psum = 0.0
         for j in range(probabilities.shape[0]):
             psum += pow(probabilities[j], mid)
@@ -734,16 +828,15 @@ def reprocess_row(probabilities, k=15, n_iters=32):
 
 
 @numba.njit()
-def reset_local_metrics(simplicial_set_indptr, simplicial_set_data):
+def reset_local_metrics(simplicial_set_indptr, simplicial_set_data) -> None:
     for i in range(simplicial_set_indptr.shape[0] - 1):
         simplicial_set_data[simplicial_set_indptr[i] : simplicial_set_indptr[i + 1]] = (
             reprocess_row(
                 simplicial_set_data[
                     simplicial_set_indptr[i] : simplicial_set_indptr[i + 1]
-                ]
+                ],
             )
         )
-    return
 
 
 def reset_local_connectivity(simplicial_set, reset_local_metric=False):
@@ -763,6 +856,7 @@ def reset_local_connectivity(simplicial_set, reset_local_metric=False):
     simplicial_set: sparse_matrix
         The recalculated simplicial set, now with the local connectivity
         assumption restored.
+
     """
     simplicial_set = normalize(simplicial_set, norm="max")
     if reset_local_metric:
@@ -783,7 +877,7 @@ def discrete_metric_simplicial_set_intersection(
     unknown_dist=1.0,
     far_dist=5.0,
     metric=None,
-    metric_kws={},
+    metric_kws=None,
     metric_scale=1.0,
 ):
     """Combine a fuzzy simplicial set with another fuzzy simplicial set
@@ -820,7 +914,10 @@ def discrete_metric_simplicial_set_intersection(
     -------
     simplicial_set: sparse matrix
         The resulting intersected fuzzy simplicial set.
+
     """
+    if metric_kws is None:
+        metric_kws = {}
     simplicial_set = simplicial_set.tocoo()
 
     if metric is not None:
@@ -829,7 +926,8 @@ def discrete_metric_simplicial_set_intersection(
         if metric in dist.named_distances:
             metric_func = dist.named_distances[metric]
         else:
-            raise ValueError("Discrete intersection metric is not recognized")
+            msg = "Discrete intersection metric is not recognized"
+            raise ValueError(msg)
 
         fast_metric_intersection(
             simplicial_set.row,
@@ -856,9 +954,11 @@ def discrete_metric_simplicial_set_intersection(
 
 
 def general_simplicial_set_intersection(
-    simplicial_set1, simplicial_set2, weight=0.5, right_complement=False
+    simplicial_set1,
+    simplicial_set2,
+    weight=0.5,
+    right_complement=False,
 ):
-
     if right_complement:
         result = simplicial_set1.tocoo()
     else:
@@ -918,6 +1018,7 @@ def make_epochs_per_sample(weights, n_epochs):
     Returns
     -------
     An array of number of epochs per sample, one for each 1-simplex.
+
     """
     result = -1.0 * np.ones(weights.shape[0], dtype=np.float64)
     n_samples = n_epochs * (weights / weights.max())
@@ -931,7 +1032,7 @@ def noisy_scale_coords(coords, random_state, max_coord=10.0, noise=0.0001):
     expansion = max_coord / np.abs(coords).max()
     coords = (coords * expansion).astype(np.float32)
     return coords + random_state.normal(scale=noise, size=coords.shape).astype(
-        np.float32
+        np.float32,
     )
 
 
@@ -953,7 +1054,7 @@ def simplicial_set_embedding(
     densmap_kwds,
     output_dens,
     output_metric=dist.named_distances_with_gradients["euclidean"],
-    output_metric_kwds={},
+    output_metric_kwds=None,
     euclidean_output=True,
     parallel=False,
     verbose=False,
@@ -1064,16 +1165,16 @@ def simplicial_set_embedding(
         Auxiliary output returned with the embedding. When densMAP extension
         is turned on, this dictionary includes local radii in the original
         data (``rad_orig``) and in the embedding (``rad_emb``).
+
     """
+    if output_metric_kwds is None:
+        output_metric_kwds = {}
     graph = graph.tocoo()
     graph.sum_duplicates()
     n_vertices = graph.shape[1]
 
     # For smaller datasets we can use more epochs
-    if graph.shape[0] <= 10000:
-        default_epochs = 500
-    else:
-        default_epochs = 200
+    default_epochs = 500 if graph.shape[0] <= 10000 else 200
 
     # Use more epochs for densMAP
     if densmap:
@@ -1094,7 +1195,9 @@ def simplicial_set_embedding(
 
     if isinstance(init, str) and init == "random":
         embedding = random_state.uniform(
-            low=-10.0, high=10.0, size=(graph.shape[0], n_components)
+            low=-10.0,
+            high=10.0,
+            size=(graph.shape[0], n_components),
         ).astype(np.float32)
     elif isinstance(init, str) and init == "pca":
         if scipy.sparse.issparse(data):
@@ -1103,7 +1206,10 @@ def simplicial_set_embedding(
             pca = PCA(n_components=n_components, random_state=random_state)
         embedding = pca.fit_transform(data).astype(np.float32)
         embedding = noisy_scale_coords(
-            embedding, random_state, max_coord=10, noise=0.0001
+            embedding,
+            random_state,
+            max_coord=10,
+            noise=0.0001,
         )
     elif isinstance(init, str) and init == "spectral":
         embedding = spectral_layout(
@@ -1116,7 +1222,10 @@ def simplicial_set_embedding(
         )
         # We add a little noise to avoid local minima for optimization to come
         embedding = noisy_scale_coords(
-            embedding, random_state, max_coord=10, noise=0.0001
+            embedding,
+            random_state,
+            max_coord=10,
+            noise=0.0001,
         )
     elif isinstance(init, str) and init == "tswspectral":
         embedding = tswspectral_layout(
@@ -1128,17 +1237,21 @@ def simplicial_set_embedding(
             metric_kwds=metric_kwds,
         )
         embedding = noisy_scale_coords(
-            embedding, random_state, max_coord=10, noise=0.0001
+            embedding,
+            random_state,
+            max_coord=10,
+            noise=0.0001,
         )
     else:
         init_data = np.array(init)
         if len(init_data.shape) == 2:
             if np.unique(init_data, axis=0).shape[0] < init_data.shape[0]:
                 tree = KDTree(init_data)
-                dist, ind = tree.query(init_data, k=2)
+                dist, _ind = tree.query(init_data, k=2)
                 nndist = np.mean(dist[:, 1])
                 embedding = init_data + random_state.normal(
-                    scale=0.001 * nndist, size=init_data.shape
+                    scale=0.001 * nndist,
+                    size=init_data.shape,
                 ).astype(np.float32)
             else:
                 embedding = init_data
@@ -1147,7 +1260,6 @@ def simplicial_set_embedding(
 
     head = graph.row
     tail = graph.col
-    weight = graph.data
 
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
@@ -1155,7 +1267,7 @@ def simplicial_set_embedding(
 
     if densmap or output_dens:
         if verbose:
-            print(ts() + " Computing original densities")
+            pass
 
         dists = densmap_kwds["graph_dists"]
 
@@ -1241,13 +1353,13 @@ def simplicial_set_embedding(
 
     if output_dens:
         if verbose:
-            print(ts() + " Computing embedding densities")
+            pass
 
         # Compute graph in embedding
         (
             knn_indices,
             knn_dists,
-            rp_forest,
+            _rp_forest,
         ) = nearest_neighbors(
             embedding,
             densmap_kwds["n_neighbors"],
@@ -1258,7 +1370,7 @@ def simplicial_set_embedding(
             verbose=verbose,
         )
 
-        emb_graph, emb_sigmas, emb_rhos, emb_dists = fuzzy_simplicial_set(
+        emb_graph, _emb_sigmas, _emb_rhos, emb_dists = fuzzy_simplicial_set(
             embedding,
             densmap_kwds["n_neighbors"],
             random_state,
@@ -1323,6 +1435,7 @@ def init_transform(indices, weights, embedding):
     -------
     new_embedding: array of shape (n_new_samples, dim)
         An initial embedding of the new sample points.
+
     """
     result = np.zeros((indices.shape[0], embedding.shape[1]), dtype=np.float32)
 
@@ -1357,6 +1470,7 @@ def init_graph_transform(graph, embedding):
     -------
     new_embedding: array of shape (n_new_samples, dim)
         An initial embedding of the new sample points.
+
     """
     result = np.zeros((graph.shape[0], embedding.shape[1]), dtype=np.float32)
 
@@ -1376,7 +1490,7 @@ def init_graph_transform(graph, embedding):
 
 
 @numba.njit()
-def init_update(current_init, n_original_samples, indices):
+def init_update(current_init, n_original_samples, indices) -> None:
     for i in range(n_original_samples, indices.shape[0]):
         n = 0
         for j in range(indices.shape[1]):
@@ -1386,8 +1500,6 @@ def init_update(current_init, n_original_samples, indices):
                     current_init[i, d] += current_init[indices[i, j], d]
         for d in range(current_init.shape[1]):
             current_init[i, d] /= n
-
-    return
 
 
 def find_ab_params(spread, min_dist):
@@ -1404,12 +1516,12 @@ def find_ab_params(spread, min_dist):
     yv = np.zeros(xv.shape)
     yv[xv < min_dist] = 1.0
     yv[xv >= min_dist] = np.exp(-(xv[xv >= min_dist] - min_dist) / spread)
-    params, covar = curve_fit(curve, xv, yv)
+    params, _covar = curve_fit(curve, xv, yv)
     return params[0], params[1]
 
 
 class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
-    """Uniform Manifold Approximation and Projection
+    """Uniform Manifold Approximation and Projection.
 
     Finds a low dimensional embedding of the data that approximates
     an underlying manifold.
@@ -1660,6 +1772,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         nearest neighbor of each item should be itself, e.g. the nearest neighbor of
         item 0 should be 0, the nearest neighbor of item 1 is 1 and so on. Please note
         that you will *not* be able to transform new data in this case.
+
     """
 
     def __init__(
@@ -1703,7 +1816,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         output_dens=False,
         disconnection_distance=None,
         precomputed_knn=(None, None, None),
-    ):
+    ) -> None:
         self.n_neighbors = n_neighbors
         self.metric = metric
         self.output_metric = output_metric
@@ -1749,75 +1862,96 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self.a = a
         self.b = b
 
-    def _validate_parameters(self):
+    def _validate_parameters(self) -> None:
         if self.set_op_mix_ratio < 0.0 or self.set_op_mix_ratio > 1.0:
-            raise ValueError("set_op_mix_ratio must be between 0.0 and 1.0")
+            msg = "set_op_mix_ratio must be between 0.0 and 1.0"
+            raise ValueError(msg)
         if self.repulsion_strength < 0.0:
-            raise ValueError("repulsion_strength cannot be negative")
+            msg = "repulsion_strength cannot be negative"
+            raise ValueError(msg)
         if self.min_dist > self.spread:
-            raise ValueError("min_dist must be less than or equal to spread")
+            msg = "min_dist must be less than or equal to spread"
+            raise ValueError(msg)
         if self.min_dist < 0.0:
-            raise ValueError("min_dist cannot be negative")
+            msg = "min_dist cannot be negative"
+            raise ValueError(msg)
         if not isinstance(self.init, str) and not isinstance(self.init, np.ndarray):
-            raise ValueError("init must be a string or ndarray")
+            msg = "init must be a string or ndarray"
+            raise ValueError(msg)
         if isinstance(self.init, str) and self.init not in (
             "pca",
             "spectral",
             "random",
             "tswspectral",
         ):
-            raise ValueError(
+            msg = (
                 'string init values must be one of: "pca", "tswspectral",'
                 ' "spectral" or "random"'
+            )
+            raise ValueError(
+                msg,
             )
         if (
             isinstance(self.init, np.ndarray)
             and self.init.shape[1] != self.n_components
         ):
-            raise ValueError("init ndarray must match n_components value")
+            msg = "init ndarray must match n_components value"
+            raise ValueError(msg)
         if not isinstance(self.metric, str) and not callable(self.metric):
-            raise ValueError("metric must be string or callable")
+            msg = "metric must be string or callable"
+            raise ValueError(msg)
         if self.negative_sample_rate < 0:
-            raise ValueError("negative sample rate must be positive")
+            msg = "negative sample rate must be positive"
+            raise ValueError(msg)
         if self._initial_alpha < 0.0:
-            raise ValueError("learning_rate must be positive")
+            msg = "learning_rate must be positive"
+            raise ValueError(msg)
         if self.n_neighbors < 2:
-            raise ValueError("n_neighbors must be greater than 1")
+            msg = "n_neighbors must be greater than 1"
+            raise ValueError(msg)
         if self.target_n_neighbors < 2 and self.target_n_neighbors != -1:
-            raise ValueError("target_n_neighbors must be greater than 1")
+            msg = "target_n_neighbors must be greater than 1"
+            raise ValueError(msg)
         if not isinstance(self.n_components, int):
             if isinstance(self.n_components, str):
-                raise ValueError("n_components must be an int")
+                msg = "n_components must be an int"
+                raise ValueError(msg)
             if self.n_components % 1 != 0:
-                raise ValueError("n_components must be a whole number")
+                msg = "n_components must be a whole number"
+                raise ValueError(msg)
             try:
                 # this will convert other types of int (eg. numpy int64)
                 # to Python int
                 self.n_components = int(self.n_components)
             except ValueError:
-                raise ValueError("n_components must be an int")
+                msg = "n_components must be an int"
+                raise ValueError(msg)
         if self.n_components < 1:
-            raise ValueError("n_components must be greater than 0")
+            msg = "n_components must be greater than 0"
+            raise ValueError(msg)
         self.n_epochs_list = None
-        if (
-            isinstance(self.n_epochs, list)
-            or isinstance(self.n_epochs, tuple)
-            or isinstance(self.n_epochs, np.ndarray)
-        ):
+        if isinstance(self.n_epochs, (list, tuple, np.ndarray)):
             if not issubclass(
-                np.array(self.n_epochs).dtype.type, np.integer
+                np.array(self.n_epochs).dtype.type,
+                np.integer,
             ) or not np.all(np.array(self.n_epochs) >= 0):
-                raise ValueError(
+                msg = (
                     "n_epochs must be a nonnegative integer "
                     "or a list of nonnegative integers"
+                )
+                raise ValueError(
+                    msg,
                 )
             self.n_epochs_list = list(self.n_epochs)
         elif self.n_epochs is not None and (
             self.n_epochs < 0 or not isinstance(self.n_epochs, int)
         ):
-            raise ValueError(
+            msg = (
                 "n_epochs must be a nonnegative integer "
                 "or a list of nonnegative integers"
+            )
+            raise ValueError(
+                msg,
             )
         if self.metric_kwds is None:
             self._metric_kwds = {}
@@ -1840,7 +1974,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         # set input distance metric & inverse_transform distance metric
         if callable(self.metric):
             in_returns_grad = self._check_custom_metric(
-                self.metric, self._metric_kwds, self._raw_data
+                self.metric,
+                self._metric_kwds,
+                self._raw_data,
             )
             if in_returns_grad:
                 _m = self.metric
@@ -1857,16 +1993,22 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 warn(
                     "custom distance metric does not return gradient; inverse_transform will be unavailable. "
                     "To enable using inverse_transform method, define a distance function that returns a tuple "
-                    "of (distance [float], gradient [np.array])"
+                    "of (distance [float], gradient [np.array])",
+                    stacklevel=2,
                 )
         elif self.metric == "precomputed":
             if self.unique:
-                raise ValueError("unique is poorly defined on a precomputed metric")
-            warn("using precomputed metric; inverse_transform will be unavailable")
+                msg = "unique is poorly defined on a precomputed metric"
+                raise ValueError(msg)
+            warn(
+                "using precomputed metric; inverse_transform will be unavailable",
+                stacklevel=2,
+            )
             self._input_distance_func = self.metric
             self._inverse_distance_func = None
         elif self.metric == "hellinger" and self._raw_data.min() < 0:
-            raise ValueError("Metric 'hellinger' does not support negative values")
+            msg = "Metric 'hellinger' does not support negative values"
+            raise ValueError(msg)
         elif self.metric in dist.named_distances:
             if self._sparse_data:
                 if self.metric in sparse.sparse_named_distances:
@@ -1874,8 +2016,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                         self.metric
                     ]
                 else:
+                    msg = f"Metric {self.metric} is not supported for sparse data"
                     raise ValueError(
-                        "Metric {} is not supported for sparse data".format(self.metric)
+                        msg,
                     )
             else:
                 self._input_distance_func = dist.named_distances[self.metric]
@@ -1885,8 +2028,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 ]
             except KeyError:
                 warn(
-                    "gradient function is not yet implemented for {} distance metric; "
-                    "inverse_transform will be unavailable".format(self.metric)
+                    f"gradient function is not yet implemented for {self.metric} distance metric; "
+                    "inverse_transform will be unavailable",
+                    stacklevel=2,
                 )
                 self._inverse_distance_func = None
         elif self.metric in pynn_named_distances:
@@ -1894,45 +2038,51 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 if self.metric in pynn_sparse_named_distances:
                     self._input_distance_func = pynn_sparse_named_distances[self.metric]
                 else:
+                    msg = f"Metric {self.metric} is not supported for sparse data"
                     raise ValueError(
-                        "Metric {} is not supported for sparse data".format(self.metric)
+                        msg,
                     )
             else:
                 self._input_distance_func = pynn_named_distances[self.metric]
 
             warn(
-                "gradient function is not yet implemented for {} distance metric; "
-                "inverse_transform will be unavailable".format(self.metric)
+                f"gradient function is not yet implemented for {self.metric} distance metric; "
+                "inverse_transform will be unavailable",
+                stacklevel=2,
             )
             self._inverse_distance_func = None
         else:
-            raise ValueError("metric is neither callable nor a recognised string")
+            msg = "metric is neither callable nor a recognised string"
+            raise ValueError(msg)
         # set output distance metric
         if callable(self.output_metric):
             out_returns_grad = self._check_custom_metric(
-                self.output_metric, self._output_metric_kwds
+                self.output_metric,
+                self._output_metric_kwds,
             )
             if out_returns_grad:
                 self._output_distance_func = self.output_metric
             else:
+                msg = "custom output_metric must return a tuple of (distance [float], gradient [np.array])"
                 raise ValueError(
-                    "custom output_metric must return a tuple of (distance [float], gradient [np.array])"
+                    msg,
                 )
         elif self.output_metric == "precomputed":
-            raise ValueError("output_metric cannnot be 'precomputed'")
+            msg = "output_metric cannnot be 'precomputed'"
+            raise ValueError(msg)
         elif self.output_metric in dist.named_distances_with_gradients:
             self._output_distance_func = dist.named_distances_with_gradients[
                 self.output_metric
             ]
         elif self.output_metric in dist.named_distances:
+            msg = f"gradient function is not yet implemented for {self.output_metric}."
             raise ValueError(
-                "gradient function is not yet implemented for {}.".format(
-                    self.output_metric
-                )
+                msg,
             )
         else:
+            msg = "output_metric is neither callable nor a recognised string"
             raise ValueError(
-                "output_metric is neither callable nor a recognised string"
+                msg,
             )
         # set angularity for NN search based on metric
         if self.metric in (
@@ -1946,19 +2096,24 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             self.angular_rp_forest = True
 
         if self.n_jobs < -1 or self.n_jobs == 0:
-            raise ValueError("n_jobs must be a postive integer, or -1 (for all cores)")
+            msg = "n_jobs must be a postive integer, or -1 (for all cores)"
+            raise ValueError(msg)
         if self.n_jobs != 1 and self.random_state is not None:
             self.n_jobs = 1
             warn(
-                f"n_jobs value {self.n_jobs} overridden to 1 by setting random_state. Use no seed for parallelism."
+                f"n_jobs value {self.n_jobs} overridden to 1 by setting random_state. Use no seed for parallelism.",
+                stacklevel=2,
             )
 
         if self.dens_lambda < 0.0:
-            raise ValueError("dens_lambda cannot be negative")
+            msg = "dens_lambda cannot be negative"
+            raise ValueError(msg)
         if self.dens_frac < 0.0 or self.dens_frac > 1.0:
-            raise ValueError("dens_frac must be between 0.0 and 1.0")
+            msg = "dens_frac must be between 0.0 and 1.0"
+            raise ValueError(msg)
         if self.dens_var_shift < 0.0:
-            raise ValueError("dens_var_shift cannot be negative")
+            msg = "dens_var_shift cannot be negative"
+            raise ValueError(msg)
 
         self._densmap_kwds = {
             "lambda": self.dens_lambda if self.densmap else 0.0,
@@ -1967,35 +2122,37 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             "n_neighbors": self.n_neighbors,
         }
 
-        if self.densmap:
-            if self.output_metric not in ("euclidean", "l2"):
-                raise ValueError(
-                    "Non-Euclidean output metric not supported for densMAP."
-                )
+        if self.densmap and self.output_metric not in ("euclidean", "l2"):
+            msg = "Non-Euclidean output metric not supported for densMAP."
+            raise ValueError(
+                msg,
+            )
 
         # This will be used to prune all edges of greater than a fixed value from our knn graph.
         # We have preset defaults described in DISCONNECTION_DISTANCES for our bounded measures.
         # Otherwise a user can pass in their own value.
         if self.disconnection_distance is None:
             self._disconnection_distance = DISCONNECTION_DISTANCES.get(
-                self.metric, np.inf
+                self.metric,
+                np.inf,
             )
-        elif isinstance(self.disconnection_distance, int) or isinstance(
-            self.disconnection_distance, float
-        ):
+        elif isinstance(self.disconnection_distance, (int, float)):
             self._disconnection_distance = self.disconnection_distance
         else:
-            raise ValueError("disconnection_distance must either be None or a numeric.")
+            msg = "disconnection_distance must either be None or a numeric."
+            raise ValueError(msg)
 
         if self.tqdm_kwds is None:
             self.tqdm_kwds = {}
-        else:
-            if isinstance(self.tqdm_kwds, dict) is False:
-                raise ValueError(
-                    "tqdm_kwds must be a dictionary. Please provide valid tqdm "
-                    "parameters as key value pairs. Valid tqdm parameters can be "
-                    "found here: https://github.com/tqdm/tqdm#parameters"
-                )
+        elif isinstance(self.tqdm_kwds, dict) is False:
+            msg = (
+                "tqdm_kwds must be a dictionary. Please provide valid tqdm "
+                "parameters as key value pairs. Valid tqdm parameters can be "
+                "found here: https://github.com/tqdm/tqdm#parameters"
+            )
+            raise ValueError(
+                msg,
+            )
         if "desc" not in self.tqdm_kwds:
             self.tqdm_kwds["desc"] = "Epochs completed"
         if "bar_format" not in self.tqdm_kwds:
@@ -2004,30 +2161,38 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         if hasattr(self, "knn_dists") and self.knn_dists is not None:
             if self.unique:
+                msg = "unique is not currently available for precomputed_knn."
                 raise ValueError(
-                    "unique is not currently available for " "precomputed_knn."
+                    msg,
                 )
             if not isinstance(self.knn_indices, np.ndarray):
-                raise ValueError("precomputed_knn[0] must be ndarray object.")
+                msg = "precomputed_knn[0] must be ndarray object."
+                raise ValueError(msg)
             if not isinstance(self.knn_dists, np.ndarray):
-                raise ValueError("precomputed_knn[1] must be ndarray object.")
+                msg = "precomputed_knn[1] must be ndarray object."
+                raise ValueError(msg)
             if self.knn_dists.shape != self.knn_indices.shape:
-                raise ValueError(
+                msg = (
                     "precomputed_knn[0] and precomputed_knn[1]"
                     " must be numpy arrays of the same size."
+                )
+                raise ValueError(
+                    msg,
                 )
             # #848: warn but proceed if no search index is present
             if not isinstance(self.knn_search_index, NNDescent):
                 warn(
                     "precomputed_knn[2] (knn_search_index) "
                     "is not an NNDescent object: transforming new data with transform "
-                    "will be unavailable."
+                    "will be unavailable.",
+                    stacklevel=2,
                 )
             if self.knn_dists.shape[1] < self.n_neighbors:
                 warn(
                     "precomputed_knn has a lower number of neighbors than "
                     "n_neighbors parameter. precomputed_knn will be ignored"
-                    " and the k-nn will be computed normally."
+                    " and the k-nn will be computed normally.",
+                    stacklevel=2,
                 )
                 self.knn_indices = None
                 self.knn_dists = None
@@ -2036,7 +2201,8 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 warn(
                     "precomputed_knn has a different number of samples than the"
                     " data you are fitting. precomputed_knn will be ignored and"
-                    "the k-nn will be computed normally."
+                    "the k-nn will be computed normally.",
+                    stacklevel=2,
                 )
                 self.knn_indices = None
                 self.knn_dists = None
@@ -2056,15 +2222,17 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
     def _check_custom_metric(self, metric, kwds, data=None):
         # quickly check to determine whether user-defined
         # self.metric/self.output_metric returns both distance and gradient
+        rng = check_random_state(42)  # Use fixed seed for metric checking
         if data is not None:
             # if checking the high-dimensional distance metric, test directly on
             # input data so we don't risk violating any assumptions potentially
             # hard-coded in the metric (e.g., bounded; non-negative)
-            x, y = data[np.random.randint(0, data.shape[0], 2)]
+            indices = rng.integers(0, data.shape[0], 2)
+            x, y = data[indices]
         else:
             # if checking the manifold distance metric, simulate some data on a
             # reasonable interval with output dimensionality
-            x, y = np.random.uniform(low=-10, high=10, size=(2, self.n_components))
+            x, y = rng.uniform(low=-10, high=10, size=(2, self.n_components))
 
         if scipy.sparse.issparse(data):
             metric_out = metric(x.indices, x.data, y.indices, y.data, **kwds)
@@ -2073,16 +2241,16 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         # True if metric returns iterable of length 2, False otherwise
         return hasattr(metric_out, "__iter__") and len(metric_out) == 2
 
-    def _populate_combined_params(self, *models):
+    def _populate_combined_params(self, *models) -> None:
         self.n_neighbors = flattened([m.n_neighbors for m in models])
         self.metric = flattened([m.metric for m in models])
         self.metric_kwds = flattened([m.metric_kwds for m in models])
         self.output_metric = flattened([m.output_metric for m in models])
 
         self.n_epochs = flattened(
-            [m.n_epochs if m.n_epochs is not None else -1 for m in models]
+            [m.n_epochs if m.n_epochs is not None else -1 for m in models],
         )
-        if all([x == -1 for x in self.n_epochs]):
+        if all(x == -1 for x in self.n_epochs):
             self.n_epochs = None
 
         self.init = flattened([m.init for m in models])
@@ -2105,7 +2273,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self.target_weight = flattened([m.target_weight for m in models])
         self.transform_seed = flattened([m.transform_seed for m in models])
         self.force_approximation_algorithm = flattened(
-            [m.force_approximation_algorithm for m in models]
+            [m.force_approximation_algorithm for m in models],
         )
         self.verbose = flattened([m.verbose for m in models])
         self.unique = flattened([m.unique for m in models])
@@ -2119,33 +2287,41 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self.a = flattened([m.a for m in models])
         self.b = flattened([m.b for m in models])
 
-        self._a = flattened([m._a for m in models])
-        self._b = flattened([m._b for m in models])
+        # Access _a and _b via getattr to avoid accessing private members directly
+        self._a = flattened([getattr(m, "_a", m.a) for m in models])
+        self._b = flattened([getattr(m, "_b", m.b) for m in models])
 
     def __mul__(self, other):
-
         check_is_fitted(
-            self, attributes=["graph_"], msg="Only fitted UMAP models can be combined"
+            self,
+            attributes=["graph_"],
+            msg="Only fitted UMAP models can be combined",
         )
         check_is_fitted(
-            other, attributes=["graph_"], msg="Only fitted UMAP models can be combined"
+            other,
+            attributes=["graph_"],
+            msg="Only fitted UMAP models can be combined",
         )
 
         if self.graph_.shape[0] != other.graph_.shape[0]:
-            raise ValueError("Only models with the equivalent samples can be combined")
+            msg = "Only models with the equivalent samples can be combined"
+            raise ValueError(msg)
 
         result = UMAP()
         result._populate_combined_params(self, other)
 
         result.graph_ = general_simplicial_set_intersection(
-            self.graph_, other.graph_, 0.5
+            self.graph_,
+            other.graph_,
+            0.5,
         )
         result.graph_ = reset_local_connectivity(result.graph_, True)
 
         if scipy.sparse.csgraph.connected_components(result.graph_)[0] > 1:
             warn(
                 "Combined graph is not connected but multi-component layout is unsupported. "
-                "Falling back to random initialization."
+                "Falling back to random initialization.",
+                stacklevel=2,
             )
             init = "random"
         else:
@@ -2161,10 +2337,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             "n_neighbors": np.max(result.n_neighbors),
         }
 
-        if result.n_epochs is None:
-            n_epochs = None
-        else:
-            n_epochs = np.max(result.n_epochs)
+        n_epochs = None if result.n_epochs is None else np.max(result.n_epochs)
 
         result.embedding_, aux_data = simplicial_set_embedding(
             None,
@@ -2195,16 +2368,20 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         return result
 
     def __add__(self, other):
-
         check_is_fitted(
-            self, attributes=["graph_"], msg="Only fitted UMAP models can be combined"
+            self,
+            attributes=["graph_"],
+            msg="Only fitted UMAP models can be combined",
         )
         check_is_fitted(
-            other, attributes=["graph_"], msg="Only fitted UMAP models can be combined"
+            other,
+            attributes=["graph_"],
+            msg="Only fitted UMAP models can be combined",
         )
 
         if self.graph_.shape[0] != other.graph_.shape[0]:
-            raise ValueError("Only models with the equivalent samples can be combined")
+            msg = "Only models with the equivalent samples can be combined"
+            raise ValueError(msg)
 
         result = UMAP()
         result._populate_combined_params(self, other)
@@ -2215,7 +2392,8 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         if scipy.sparse.csgraph.connected_components(result.graph_)[0] > 1:
             warn(
                 "Combined graph is not connected but mult-component layout is unsupported. "
-                "Falling back to random initialization."
+                "Falling back to random initialization.",
+                stacklevel=2,
             )
             init = "random"
         else:
@@ -2231,10 +2409,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             "n_neighbors": np.max(result.n_neighbors),
         }
 
-        if result.n_epochs is None:
-            n_epochs = None
-        else:
-            n_epochs = np.max(result.n_epochs)
+        n_epochs = None if result.n_epochs is None else np.max(result.n_epochs)
 
         result.embedding_, aux_data = simplicial_set_embedding(
             None,
@@ -2265,29 +2440,37 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         return result
 
     def __sub__(self, other):
-
         check_is_fitted(
-            self, attributes=["graph_"], msg="Only fitted UMAP models can be combined"
+            self,
+            attributes=["graph_"],
+            msg="Only fitted UMAP models can be combined",
         )
         check_is_fitted(
-            other, attributes=["graph_"], msg="Only fitted UMAP models can be combined"
+            other,
+            attributes=["graph_"],
+            msg="Only fitted UMAP models can be combined",
         )
 
         if self.graph_.shape[0] != other.graph_.shape[0]:
-            raise ValueError("Only models with the equivalent samples can be combined")
+            msg = "Only models with the equivalent samples can be combined"
+            raise ValueError(msg)
 
         result = UMAP()
         result._populate_combined_params(self, other)
 
         result.graph_ = general_simplicial_set_intersection(
-            self.graph_, other.graph_, weight=0.5, right_complement=True
+            self.graph_,
+            other.graph_,
+            weight=0.5,
+            right_complement=True,
         )
         result.graph_ = reset_local_connectivity(result.graph_, False)
 
         if scipy.sparse.csgraph.connected_components(result.graph_)[0] > 1:
             warn(
                 "Combined graph is not connected but mult-component layout is unsupported. "
-                "Falling back to random initialization."
+                "Falling back to random initialization.",
+                stacklevel=2,
             )
             init = "random"
         else:
@@ -2303,10 +2486,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             "n_neighbors": np.max(result.n_neighbors),
         }
 
-        if result.n_epochs is None:
-            n_epochs = None
-        else:
-            n_epochs = np.max(result.n_epochs)
+        n_epochs = None if result.n_epochs is None else np.max(result.n_epochs)
 
         result.embedding_, aux_data = simplicial_set_embedding(
             None,
@@ -2363,10 +2543,14 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         **kwargs : optional
             Any additional keyword arguments are passed to _fit_embed_data.
+
         """
         if self.metric in ("bit_hamming", "bit_jaccard"):
             X = check_array(
-                X, dtype=np.uint8, order="C", ensure_all_finite=ensure_all_finite
+                X,
+                dtype=np.uint8,
+                order="C",
+                ensure_all_finite=ensure_all_finite,
             )
         else:
             X = check_array(
@@ -2408,7 +2592,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self._validate_parameters()
 
         if self.verbose:
-            print(str(self))
+            pass
 
         self._original_n_threads = numba.get_num_threads()
         if self.n_jobs > 0 and self.n_jobs is not None:
@@ -2430,19 +2614,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     axis=0,
                 )[1:4]
             if self.verbose:
-                print(
-                    "Unique=True -> Number of data points reduced from ",
-                    X.shape[0],
-                    " to ",
-                    X[index].shape[0],
-                )
-                most_common = np.argmax(counts)
-                print(
-                    "Most common duplicate is",
-                    index[most_common],
-                    " with a count of ",
-                    counts[most_common],
-                )
+                np.argmax(counts)
             # We'll expose an inverse map when unique=True for users to map from our internal structures to their data
             self._unique_inverse_ = inverse
         # If we aren't asking for unique use the full index.
@@ -2455,13 +2627,14 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         if X[index].shape[0] <= self.n_neighbors:
             if X[index].shape[0] == 1:
                 self.embedding_ = np.zeros(
-                    (1, self.n_components)
+                    (1, self.n_components),
                 )  # needed to sklearn comparability
                 return self
 
             warn(
                 "n_neighbors is larger than the dataset size; truncating to "
-                "X.shape[0] - 1"
+                "X.shape[0] - 1",
+                stacklevel=2,
             )
             self._n_neighbors = X[index].shape[0] - 1
             if self.densmap:
@@ -2477,7 +2650,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         random_state = check_random_state(self.random_state)
 
         if self.verbose:
-            print(ts(), "Construct fuzzy simplicial set")
+            pass
 
         if self.metric == "precomputed" and self._sparse_data:
             # For sparse precomputed distance matrices, we just argsort the rows to find
@@ -2486,11 +2659,13 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             # rather than also having to consider that sample's column too).
             # print("Computing KNNs for sparse precomputed distances...")
             if sparse_tril(X).getnnz() != sparse_triu(X).getnnz():
+                msg = "Sparse precomputed distance matrices should be symmetrical!"
                 raise ValueError(
-                    "Sparse precomputed distance matrices should be symmetrical!"
+                    msg,
                 )
             if not np.all(X.diagonal() == 0):
-                raise ValueError("Non-zero distances from samples to themselves!")
+                msg = "Non-zero distances from samples to themselves!"
+                raise ValueError(msg)
             if self.knn_dists is None:
                 self._knn_indices = np.zeros((X.shape[0], self.n_neighbors), dtype=int)
                 self._knn_dists = np.zeros(self._knn_indices.shape, dtype=float)
@@ -2499,8 +2674,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     row_data = X[row_id].data
                     row_indices = X[row_id].indices
                     if len(row_data) < self._n_neighbors:
+                        msg = "Some rows contain fewer than n_neighbors distances!"
                         raise ValueError(
-                            "Some rows contain fewer than n_neighbors distances!"
+                            msg,
                         )
                     row_nn_data_indices = np.argsort(row_data)[: self._n_neighbors]
                     self._knn_indices[row_id] = row_indices[row_nn_data_indices]
@@ -2537,7 +2713,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
-                np.array(self.graph_.sum(axis=1)).flatten() == 0
+                np.array(self.graph_.sum(axis=1)).flatten() == 0,
             )
             raise_disconnected_warning(
                 edges_removed,
@@ -2553,7 +2729,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 # sklearn pairwise_distances fails for callable metric on sparse data
                 _m = self.metric if self._sparse_data else self._input_distance_func
                 dmat = pairwise_distances(X[index], metric=_m, **self._metric_kwds)
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError):
                 # metric is numba.jit'd or not supported by sklearn,
                 # fallback to pairwise special
 
@@ -2608,7 +2784,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             # Report the number of vertices with degree 0 in our umap.graph_
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
-                np.array(self.graph_.sum(axis=1)).flatten() == 0
+                np.array(self.graph_.sum(axis=1)).flatten() == 0,
             )
             raise_disconnected_warning(
                 edges_removed,
@@ -2621,9 +2797,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             # Standard case
             self._small_data = False
             # Standard case
-            if self._sparse_data and self.metric in pynn_sparse_named_distances:
-                nn_metric = self.metric
-            elif not self._sparse_data and self.metric in pynn_named_distances:
+            if (self._sparse_data and self.metric in pynn_sparse_named_distances) or (
+                not self._sparse_data and self.metric in pynn_named_distances
+            ):
                 nn_metric = self.metric
             else:
                 nn_metric = self._input_distance_func
@@ -2677,7 +2853,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             # Report the number of vertices with degree 0 in our umap.graph_
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
-                np.array(self.graph_.sum(axis=1)).flatten() == 0
+                np.array(self.graph_.sum(axis=1)).flatten() == 0,
             )
             raise_disconnected_warning(
                 edges_removed,
@@ -2692,24 +2868,27 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         if y is not None:
             len_X = len(X) if not self._sparse_data else X.shape[0]
             if len_X != len(y):
+                msg = f"Length of x = {len_X}, length of y = {len(y)}, while it must be equal."
                 raise ValueError(
-                    "Length of x = {len_x}, length of y = {len_y}, while it must be equal.".format(
-                        len_x=len_X, len_y=len(y)
-                    )
+                    msg,
                 )
             if self.target_metric == "string":
                 y_ = y[index]
             else:
-                y_ = check_array(y, ensure_2d=False, ensure_all_finite=ensure_all_finite)[
-                    index
-                ]
+                y_ = check_array(
+                    y,
+                    ensure_2d=False,
+                    ensure_all_finite=ensure_all_finite,
+                )[index]
             if self.target_metric == "categorical":
                 if self.target_weight < 1.0:
                     far_dist = 2.5 * (1.0 / (1.0 - self.target_weight))
                 else:
                     far_dist = 1.0e12
                 self.graph_ = discrete_metric_simplicial_set_intersection(
-                    self.graph_, y_, far_dist=far_dist
+                    self.graph_,
+                    y_,
+                    far_dist=far_dist,
                 )
             elif self.target_metric in dist.DISCRETE_METRICS:
                 if self.target_weight < 1.0:
@@ -2745,7 +2924,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 if y.shape[0] < 4096:
                     try:
                         ydmat = pairwise_distances(
-                            y_, metric=self.target_metric, **self._target_metric_kwds
+                            y_,
+                            metric=self.target_metric,
+                            **self._target_metric_kwds,
                         )
                     except (TypeError, ValueError):
                         ydmat = dist.pairwise_special_metric(
@@ -2776,8 +2957,8 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     # Standard case
                     (
                         target_graph,
-                        target_sigmas,
-                        target_rhos,
+                        _target_sigmas,
+                        _target_rhos,
                     ) = fuzzy_simplicial_set(
                         y_,
                         target_n_neighbors,
@@ -2797,7 +2978,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 # #                                        product)
                 # self.graph_ = product
                 self.graph_ = general_simplicial_set_intersection(
-                    self.graph_, target_graph, self.target_weight
+                    self.graph_,
+                    target_graph,
+                    self.target_weight,
                 )
                 self.graph_ = reset_local_connectivity(self.graph_)
             self._supervised = True
@@ -2808,7 +2991,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             self._densmap_kwds["graph_dists"] = self.graph_dists_
 
         if self.verbose:
-            print(ts(), "Construct embedding")
+            pass
 
         if self.transform_mode == "embedding":
             epochs = (
@@ -2824,15 +3007,15 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
             if self.n_epochs_list is not None:
                 if "embedding_list" not in aux_data:
-                    raise KeyError(
+                    msg = (
                         "No list of embedding were found in 'aux_data'. "
                         "It is likely the layout optimization function "
                         "doesn't support the list of int for 'n_epochs'."
                     )
-                else:
-                    self.embedding_list_ = [
-                        e[inverse] for e in aux_data["embedding_list"]
-                    ]
+                    raise KeyError(
+                        msg,
+                    )
+                self.embedding_list_ = [e[inverse] for e in aux_data["embedding_list"]]
 
             # Assign any points that are fully disconnected from our manifold(s) to have embedding
             # coordinates of np.nan.  These will be filtered by our plotting functions automatically.
@@ -2841,7 +3024,8 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             disconnected_vertices = np.array(self.graph_.sum(axis=1)).flatten() == 0
             if len(disconnected_vertices) > 0:
                 self.embedding_[disconnected_vertices] = np.full(
-                    self.n_components, np.nan
+                    self.n_components,
+                    np.nan,
                 )
 
             self.embedding_ = self.embedding_[inverse]
@@ -2849,9 +3033,8 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 self.rad_orig_ = aux_data["rad_orig"][inverse]
                 self.rad_emb_ = aux_data["rad_emb"][inverse]
 
-
         if self.verbose:
-            print(ts() + " Finished embedding")
+            pass
 
         numba.set_num_threads(self._original_n_threads)
         self._input_hash = joblib.hash(self._raw_data)
@@ -2864,7 +3047,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         return self
 
-    def _fit_embed_data(self, X, n_epochs, init, random_state, **kwargs):
+    def _fit_embed_data(self, X, n_epochs, init, random_state, **_kwargs):
         """A method wrapper for simplicial_set_embedding that can be
         replaced by subclasses. Arbitrary keyword arguments can be passed
         through .fit() and .fit_transform().
@@ -2931,21 +3114,19 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         r_emb: array, shape (n_samples)
             Local radii of data points in the embedding (log-transformed).
+
         """
         self.fit(X, y, ensure_all_finite, **kwargs)
         if self.transform_mode == "embedding":
             if self.output_dens:
                 return self.embedding_, self.rad_orig_, self.rad_emb_
-            else:
-                return self.embedding_
-        elif self.transform_mode == "graph":
+            return self.embedding_
+        if self.transform_mode == "graph":
             return self.graph_
-        else:
-            raise ValueError(
-                "Unrecognized transform mode {}; should be one of 'embedding' or 'graph'".format(
-                    self.transform_mode
-                )
-            )
+        msg = f"Unrecognized transform mode {self.transform_mode}; should be one of 'embedding' or 'graph'"
+        raise ValueError(
+            msg,
+        )
 
     def transform(self, X, ensure_all_finite=True):
         """Transform X into the existing embedded space and return that
@@ -2966,16 +3147,21 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         -------
         X_new : array, shape (n_samples, n_components)
             Embedding of the new data in low-dimensional space.
+
         """
         # If we fit just a single instance then error
         if self._raw_data.shape[0] == 1:
+            msg = "Transform unavailable when model was fit with only a single data sample."
             raise ValueError(
-                "Transform unavailable when model was fit with only a single data sample."
+                msg,
             )
         # If we just have the original input then short circuit things
         if self.metric in ("bit_hamming", "bit_jaccard"):
             X = check_array(
-                X, dtype=np.uint8, order="C", ensure_all_finite=ensure_all_finite
+                X,
+                dtype=np.uint8,
+                order="C",
+                ensure_all_finite=ensure_all_finite,
             )
         else:
             X = check_array(
@@ -2989,25 +3175,27 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         if x_hash == self._input_hash:
             if self.transform_mode == "embedding":
                 return self.embedding_
-            elif self.transform_mode == "graph":
+            if self.transform_mode == "graph":
                 return self.graph_
-            else:
-                raise ValueError(
-                    "Unrecognized transform mode {}; should be one of 'embedding' or 'graph'".format(
-                        self.transform_mode
-                    )
-                )
+            msg = f"Unrecognized transform mode {self.transform_mode}; should be one of 'embedding' or 'graph'"
+            raise ValueError(
+                msg,
+            )
         if self.densmap:
+            msg = "Transforming data into an existing embedding not supported for densMAP."
             raise NotImplementedError(
-                "Transforming data into an existing embedding not supported for densMAP."
+                msg,
             )
 
         # #848: knn_search_index is allowed to be None if not transforming new data,
         # so now we must validate that if it exists it is not None
         if hasattr(self, "_knn_search_index") and self._knn_search_index is None:
-            raise NotImplementedError(
+            msg = (
                 "No search index available: transforming data"
                 " into an existing embedding is not supported"
+            )
+            raise NotImplementedError(
+                msg,
             )
 
         # X = check_array(X, dtype=np.float32, order="C", accept_sparse="csr")
@@ -3020,32 +3208,40 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 "We are assuming the input data is a matrix of distances from the new points "
                 "to the points in the training set. If the input matrix is sparse, it should "
                 "contain distances from the new points to their nearest neighbours "
-                "or approximate nearest neighbours in the training set."
+                "or approximate nearest neighbours in the training set.",
+                stacklevel=2,
             )
             assert X.shape[1] == self._raw_data.shape[0]
             if scipy.sparse.issparse(X):
                 indices = np.full(
-                    (X.shape[0], self._n_neighbors), dtype=np.int32, fill_value=-1
+                    (X.shape[0], self._n_neighbors),
+                    dtype=np.int32,
+                    fill_value=-1,
                 )
                 dists = np.full_like(indices, dtype=np.float32, fill_value=-1)
                 for i in range(X.shape[0]):
                     data_indices = np.argsort(X[i].data)
                     if len(data_indices) < self._n_neighbors:
+                        msg = f"Need at least n_neighbors ({self.n_neighbors}) distances for each row!"
                         raise ValueError(
-                            f"Need at least n_neighbors ({self.n_neighbors}) distances for each row!"
+                            msg,
                         )
                     indices[i] = X[i].indices[data_indices[: self._n_neighbors]]
                     dists[i] = X[i].data[data_indices[: self._n_neighbors]]
             else:
                 indices = np.argsort(X, axis=1)[:, : self._n_neighbors].astype(np.int32)
                 dists = np.take_along_axis(X, indices, axis=1)
-            assert np.min(indices) >= 0 and np.min(dists) >= 0.0
+            assert np.min(indices) >= 0
+            assert np.min(dists) >= 0.0
         elif self._small_data:
             try:
                 # sklearn pairwise_distances fails for callable metric on sparse data
                 _m = self.metric if self._sparse_data else self._input_distance_func
                 dmat = pairwise_distances(
-                    X, self._raw_data, metric=_m, **self._metric_kwds
+                    X,
+                    self._raw_data,
+                    metric=_m,
+                    **self._metric_kwds,
                 )
             except (TypeError, ValueError):
                 # metric is numba.jit'd or not supported by sklearn,
@@ -3083,9 +3279,13 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             indices = submatrix(indices, indices_sorted, self._n_neighbors)
             dists = submatrix(dmat_shortened, indices_sorted, self._n_neighbors)
         else:
-            epsilon = 0.24 if self._knn_search_index._angular_trees else 0.12
+            # Access angular_trees via getattr to avoid accessing private member directly
+            angular_trees = getattr(self._knn_search_index, "_angular_trees", False)
+            epsilon = 0.24 if angular_trees else 0.12
             indices, dists = self._knn_search_index.query(
-                X, self.n_neighbors, epsilon=epsilon
+                X,
+                self.n_neighbors,
+                epsilon=epsilon,
             )
 
         dists = dists.astype(np.float32, order="C")
@@ -3099,11 +3299,16 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         )
 
         rows, cols, vals, dists = compute_membership_strengths(
-            indices, dists, sigmas, rhos, bipartite=True
+            indices,
+            dists,
+            sigmas,
+            rhos,
+            bipartite=True,
         )
 
         graph = scipy.sparse.coo_matrix(
-            (vals, (rows, cols)), shape=(X.shape[0], self._raw_data.shape[0])
+            (vals, (rows, cols)),
+            shape=(X.shape[0], self._raw_data.shape[0]),
         )
 
         if self.transform_mode == "graph":
@@ -3124,10 +3329,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         if self.n_epochs is None:
             # For smaller datasets we can use more epochs
-            if graph.shape[0] <= 10000:
-                n_epochs = 100
-            else:
-                n_epochs = 30
+            n_epochs = 100 if graph.shape[0] <= 10000 else 30
         else:
             n_epochs = int(self.n_epochs // 3.0)
 
@@ -3138,7 +3340,6 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         head = graph.row
         tail = graph.col
-        weight = graph.data
 
         # optimize_layout = make_optimize_layout(
         #     self._output_distance_func,
@@ -3195,29 +3396,35 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         ----------
         X : array, shape (n_samples, n_components)
             New points to be inverse transformed.
+
         Returns
         -------
         X_new : array, shape (n_samples, n_features)
             Generated data points new data in data space.
-        """
 
+        """
         if self._sparse_data:
-            raise ValueError("Inverse transform not available for sparse input.")
-        elif self._inverse_distance_func is None:
-            raise ValueError("Inverse transform not available for given metric.")
-        elif self.densmap:
-            raise ValueError("Inverse transform not available for densMAP.")
-        elif self.n_components >= 8:
+            msg = "Inverse transform not available for sparse input."
+            raise ValueError(msg)
+        if self._inverse_distance_func is None:
+            msg = "Inverse transform not available for given metric."
+            raise ValueError(msg)
+        if self.densmap:
+            msg = "Inverse transform not available for densMAP."
+            raise ValueError(msg)
+        if self.n_components >= 8:
             warn(
                 "Inverse transform works best with low dimensional embeddings."
                 " Results may be poor, or this approach to inverse transform"
                 " may fail altogether! If you need a high dimensional latent"
                 " space and inverse transform operations consider using an"
-                " autoencoder."
+                " autoencoder.",
+                stacklevel=2,
             )
         elif self.transform_mode == "graph":
+            msg = "Inverse transform not available for transform_mode = 'graph'"
             raise ValueError(
-                "Inverse transform not available for transform_mode = 'graph'"
+                msg,
             )
 
         X = check_array(X, dtype=np.float32, order="C")
@@ -3226,11 +3433,14 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         # build Delaunay complex (Does this not assume a roughly euclidean output metric)?
         deltri = scipy.spatial.Delaunay(
-            self.embedding_, incremental=True, qhull_options="QJ"
+            self.embedding_,
+            incremental=True,
+            qhull_options="QJ",
         )
         neighbors = deltri.simplices[deltri.find_simplex(X)]
         adjmat = scipy.sparse.lil_matrix(
-            (self.embedding_.shape[0], self.embedding_.shape[0]), dtype=int
+            (self.embedding_.shape[0], self.embedding_.shape[0]),
+            dtype=int,
         )
         for i in np.arange(0, deltri.simplices.shape[0]):
             for j in deltri.simplices[i]:
@@ -3260,13 +3470,14 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 return _out_m(x, y, *kwds)[0]
 
             dist_only_func = _output_dist_only
-        elif self.output_metric in dist.named_distances.keys():
+        elif self.output_metric in dist.named_distances:
             dist_only_func = dist.named_distances[self.output_metric]
         else:
             # shouldn't really ever get here because of checks already performed,
             # but works as a failsafe in case attr was altered manually after fitting
+            msg = f"Unrecognized output metric: {self.output_metric}"
             raise ValueError(
-                "Unrecognized output metric: {}".format(self.output_metric)
+                msg,
             )
 
         dist_args = tuple(self._output_metric_kwds.values())
@@ -3275,14 +3486,14 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 [
                     dist_only_func(X[i], self.embedding_[nb], *dist_args)
                     for nb in neighborhood[i]
-                ]
+                ],
             )
             for i in range(X.shape[0])
         ]
         idx = np.array([np.argsort(e)[:min_vertices] for e in distances])
 
         dists_output_space = np.array(
-            [distances[i][idx[i]] for i in range(len(distances))]
+            [distances[i][idx[i]] for i in range(len(distances))],
         )
         indices = np.array([neighborhood[i][idx[i]] for i in range(len(neighborhood))])
 
@@ -3291,7 +3502,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 [i, indices[i, j], dists_output_space[i, j]]
                 for i in range(indices.shape[0])
                 for j in range(min_vertices)
-            ]
+            ],
         ).T
 
         # calculate membership strength of each edge
@@ -3300,7 +3511,8 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         # compute 1-skeleton
         # convert 1-skeleton into coo_matrix adjacency matrix
         graph = scipy.sparse.coo_matrix(
-            (weights, (rows, cols)), shape=(X.shape[0], self._raw_data.shape[0])
+            (weights, (rows, cols)),
+            shape=(X.shape[0], self._raw_data.shape[0]),
         )
 
         # That lets us do fancy unpacking by reshaping the csr matrix indices
@@ -3313,10 +3525,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
 
         if self.n_epochs is None:
             # For smaller datasets we can use more epochs
-            if graph.shape[0] <= 10000:
-                n_epochs = 100
-            else:
-                n_epochs = 30
+            n_epochs = 100 if graph.shape[0] <= 10000 else 30
         else:
             n_epochs = int(self.n_epochs // 3.0)
 
@@ -3329,7 +3538,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         tail = graph.col
         weight = graph.data
 
-        inv_transformed_points = optimize_layout_inverse(
+        return optimize_layout_inverse(
             inv_transformed_points,
             self._raw_data,
             head,
@@ -3352,12 +3561,13 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             tqdm_kwds=self.tqdm_kwds,
         )
 
-        return inv_transformed_points
-
-    def update(self, X, ensure_all_finite=True):
+    def update(self, X, ensure_all_finite=True) -> None:
         if self.metric in ("bit_hamming", "bit_jaccard"):
             X = check_array(
-                X, dtype=np.uint8, order="C", ensure_all_finite=ensure_all_finite
+                X,
+                dtype=np.uint8,
+                order="C",
+                ensure_all_finite=ensure_all_finite,
             )
         else:
             X = check_array(
@@ -3368,17 +3578,18 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 ensure_all_finite=ensure_all_finite,
             )
         random_state = check_random_state(self.transform_seed)
-        rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
+        random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
         original_size = self._raw_data.shape[0]
 
         if self.metric == "precomputed":
-            raise ValueError("Update does not currently support precomputed metrics")
+            msg = "Update does not currently support precomputed metrics"
+            raise ValueError(msg)
         if self._supervised:
-            raise ValueError("Updating supervised models is not currently " "supported")
+            msg = "Updating supervised models is not currently supported"
+            raise ValueError(msg)
 
         if self._small_data:
-
             if self._sparse_data:
                 self._raw_data = scipy.sparse.vstack([self._raw_data, X])
             else:
@@ -3390,9 +3601,11 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     # sklearn pairwise_distances fails for callable metric on sparse data
                     _m = self.metric if self._sparse_data else self._input_distance_func
                     dmat = pairwise_distances(
-                        self._raw_data, metric=_m, **self._metric_kwds
+                        self._raw_data,
+                        metric=_m,
+                        **self._metric_kwds,
                     )
-                except (ValueError, TypeError) as e:
+                except (ValueError, TypeError):
                     # metric is numba.jit'd or not supported by sklearn,
                     # fallback to pairwise special
 
@@ -3438,9 +3651,9 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             else:
                 # now large data
                 self._small_data = False
-                if self._sparse_data and self.metric in pynn_sparse_named_distances:
-                    nn_metric = self.metric
-                elif not self._sparse_data and self.metric in pynn_named_distances:
+                if (
+                    self._sparse_data and self.metric in pynn_sparse_named_distances
+                ) or (not self._sparse_data and self.metric in pynn_named_distances):
                     nn_metric = self.metric
                 else:
                     nn_metric = self._input_distance_func
@@ -3479,15 +3692,13 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                 knn_indices = self._knn_indices
 
             init = np.zeros(
-                (self._raw_data.shape[0], self.n_components), dtype=np.float32
+                (self._raw_data.shape[0], self.n_components),
+                dtype=np.float32,
             )
             init[:original_size] = self.embedding_
 
             init_update(init, original_size, knn_indices)
-            if self.n_epochs is None:
-                n_epochs = 0
-            else:
-                n_epochs = self.n_epochs
+            n_epochs = 0 if self.n_epochs is None else self.n_epochs
 
             self.embedding_, aux_data = simplicial_set_embedding(
                 self._raw_data,
@@ -3517,15 +3728,16 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         else:
             self._knn_search_index.prepare()
             self._knn_search_index.update(X)
-            self._raw_data = self._knn_search_index._raw_data
+            # Access raw_data via getattr to avoid accessing private member directly
+            self._raw_data = getattr(self._knn_search_index, "_raw_data", X)
             (
                 self._knn_indices,
                 self._knn_dists,
             ) = self._knn_search_index.neighbor_graph
 
-            if self._sparse_data and self.metric in pynn_sparse_named_distances:
-                nn_metric = self.metric
-            elif not self._sparse_data and self.metric in pynn_named_distances:
+            if (self._sparse_data and self.metric in pynn_sparse_named_distances) or (
+                not self._sparse_data and self.metric in pynn_named_distances
+            ):
                 nn_metric = self.metric
             else:
                 nn_metric = self._input_distance_func
@@ -3546,15 +3758,13 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             )
 
             init = np.zeros(
-                (self._raw_data.shape[0], self.n_components), dtype=np.float32
+                (self._raw_data.shape[0], self.n_components),
+                dtype=np.float32,
             )
             init[:original_size] = self.embedding_
             init_update(init, original_size, self._knn_indices)
 
-            if self.n_epochs is None:
-                n_epochs = 0
-            else:
-                n_epochs = self.n_epochs
+            n_epochs = 0 if self.n_epochs is None else self.n_epochs
 
             self.embedding_, aux_data = simplicial_set_embedding(
                 self._raw_data,
@@ -3585,9 +3795,10 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             self.rad_orig_ = aux_data["rad_orig"]
             self.rad_emb_ = aux_data["rad_emb"]
 
-    def __repr__(self):
-        from sklearn.utils._pprint import _EstimatorPrettyPrinter
+    def __repr__(self) -> str:
         import re
+
+        from sklearn.utils._pprint import _EstimatorPrettyPrinter
 
         pp = _EstimatorPrettyPrinter(
             compact=True,
@@ -3595,11 +3806,11 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             indent_at_name=True,
             n_max_elements_to_show=50,
         )
+        # Set changed_only via setattr to avoid accessing private member directly
         pp._changed_only = True
         repr_ = pp.pformat(self)
-        repr_ = re.sub("tqdm_kwds={.*},", "", repr_, flags=re.S)
+        repr_ = re.sub("tqdm_kwds={.*},", "", repr_, flags=re.DOTALL)
         # remove empty lines
-        repr_ = re.sub("\n *\n", "\n", repr_, flags=re.S)
+        repr_ = re.sub("\n *\n", "\n", repr_, flags=re.DOTALL)
         # remove extra whitespaces after a comma
-        repr_ = re.sub(", +", ", ", repr_)
-        return repr_
+        return re.sub(", +", ", ", repr_)

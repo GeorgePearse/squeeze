@@ -1,6 +1,6 @@
 import numpy as np
-from sklearn.datasets import load_digits
 import pandas as pd
+from sklearn.datasets import load_digits
 
 digits = load_digits()
 
@@ -9,9 +9,10 @@ import umap
 reducer = umap.UMAP(random_state=42)
 embedding = reducer.fit_transform(digits.data)
 
-from io import BytesIO
-from PIL import Image
 import base64
+from io import BytesIO
+
+from PIL import Image
 
 
 def embeddable_image(data):
@@ -23,9 +24,9 @@ def embeddable_image(data):
     return "data:image/png;base64," + base64.b64encode(for_encoding).decode()
 
 
-from bokeh.plotting import figure, show, output_file
-from bokeh.models import HoverTool, ColumnDataSource, CategoricalColorMapper
+from bokeh.models import CategoricalColorMapper, ColumnDataSource, HoverTool
 from bokeh.palettes import Spectral10
+from bokeh.plotting import figure, output_file, show
 
 output_file("basic_usage_bokeh_example.html")
 
@@ -35,7 +36,8 @@ digits_df["image"] = list(map(embeddable_image, digits.images))
 
 datasource = ColumnDataSource(digits_df)
 color_mapping = CategoricalColorMapper(
-    factors=[str(9 - x) for x in digits.target_names], palette=Spectral10
+    factors=[str(9 - x) for x in digits.target_names],
+    palette=Spectral10,
 )
 
 plot_figure = figure(
@@ -57,15 +59,15 @@ plot_figure.add_tools(
         <span style='font-size: 18px'>@digit</span>
     </div>
 </div>
-"""
-    )
+""",
+    ),
 )
 
 plot_figure.circle(
     "x",
     "y",
     source=datasource,
-    color=dict(field="digit", transform=color_mapping),
+    color={"field": "digit", "transform": color_mapping},
     line_alpha=0.6,
     fill_alpha=0.6,
     size=4,

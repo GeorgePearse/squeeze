@@ -1,5 +1,4 @@
-"""
-UMAP on the Fashion MNIST Digits dataset using Datashader
+"""UMAP on the Fashion MNIST Digits dataset using Datashader.
 ---------------------------------------------------------
 
 This is a simple example of using UMAP on the Fashion-MNIST
@@ -12,16 +11,18 @@ problem. It supports coloring by categorical variables
 or by density (as is common in datashader examples).
 """
 
-import umap
+import os
+
+import datashader as ds
+import datashader.transfer_functions as tf
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
-import os
-import datashader as ds
-import datashader.utils as utils
-import datashader.transfer_functions as tf
-import matplotlib.pyplot as plt
 import seaborn as sns
+from datashader import utils
+
+import umap
 
 sns.set(context="paper", style="white")
 

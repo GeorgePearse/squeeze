@@ -1,6 +1,7 @@
-import sklearn.datasets
-import pandas as pd
 import numpy as np
+import pandas as pd
+import sklearn.datasets
+
 import umap
 import umap.plot
 
@@ -21,12 +22,15 @@ hover_data["item"] = hover_data.label.map(
         "7": "Sneaker",
         "8": "Bag",
         "9": "Ankle Boot",
-    }
+    },
 )
 
 umap.plot.output_file("plotting_interactive_example.html")
 
 p = umap.plot.interactive(
-    mapper, labels=fmnist.target[:30000], hover_data=hover_data, point_size=2
+    mapper,
+    labels=fmnist.target[:30000],
+    hover_data=hover_data,
+    point_size=2,
 )
 umap.plot.show(p)

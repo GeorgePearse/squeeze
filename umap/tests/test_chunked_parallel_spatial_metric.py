@@ -1,12 +1,15 @@
-import pytest
-import numba
 import os
+
+import numba
 import numpy as np
+import pytest
 from numpy.testing import assert_array_equal
+
 from umap import distances as dist
 
 benchmark_only = pytest.mark.skipif(
-    "BENCHARM_TEST" not in os.environ, reason="Benchmark tests skipped"
+    "BENCHARM_TEST" not in os.environ,
+    reason="Benchmark tests skipped",
 )
 # Constants for benchmark
 WARMUP_ROUNDS = 5
@@ -18,11 +21,14 @@ ROUNDS = 10
 # --------
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def stashed_previous_impl_for_regression_test():
     @numba.njit(parallel=True, nogil=True)
     def stashed_chunked_parallel_special_metric(
-        X, Y=None, metric=dist.named_distances["hellinger"], chunk_size=16
+        X,
+        Y=None,
+        metric=dist.named_distances["hellinger"],
+        chunk_size=16,
     ):
         if Y is None:
             row_size = col_size = X.shape[0]
@@ -68,11 +74,14 @@ def stashed_previous_impl_for_regression_test():
     return stashed_chunked_parallel_special_metric
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def workaround_590_impl():
     @numba.njit(parallel=True, nogil=True)
     def chunked_parallel_special_metric(
-        X, Y=None, metric=dist.named_distances["hellinger"], chunk_size=16
+        X,
+        Y=None,
+        metric=dist.named_distances["hellinger"],
+        chunk_size=16,
     ):
         if Y is None:
             size = X.shape[0]
@@ -117,7 +126,7 @@ def workaround_590_impl():
     return chunked_parallel_special_metric
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def benchmark_data(request):
     shape = request.param
     spatial_data = np.random.randn(*shape).astype(np.float32)
@@ -129,17 +138,20 @@ def benchmark_data(request):
 
 @benchmark_only
 def test_chunked_parallel_alternative_implementations(
-    spatial_data, workaround_590_impl
-):
+    spatial_data,
+    workaround_590_impl,
+) -> None:
     # Base tests that must pass!
     dist_matrix_x = workaround_590_impl(np.abs(spatial_data[:-2]))
     dist_matrix_xy = workaround_590_impl(
-        np.abs(spatial_data[:-2]), np.abs(spatial_data[:-2])
+        np.abs(spatial_data[:-2]),
+        np.abs(spatial_data[:-2]),
     )
 
     dist_matrix_x_full = dist.chunked_parallel_special_metric(np.abs(spatial_data[:-2]))
     dist_matrix_xy_full = dist.chunked_parallel_special_metric(
-        np.abs(spatial_data[:-2]), np.abs(spatial_data[:-2])
+        np.abs(spatial_data[:-2]),
+        np.abs(spatial_data[:-2]),
     )
 
     assert_array_equal(
@@ -159,12 +171,12 @@ def test_chunked_parallel_alternative_implementations(
 def test_chunked_parallel_special_metric_implementation_hellinger(
     spatial_data,
     stashed_previous_impl_for_regression_test,
-):
-
+) -> None:
     # Base tests that must pass!
     dist_matrix_x = dist.chunked_parallel_special_metric(np.abs(spatial_data[:-2]))
     dist_matrix_xy = dist.chunked_parallel_special_metric(
-        np.abs(spatial_data[:-2]), np.abs(spatial_data[:-2])
+        np.abs(spatial_data[:-2]),
+        np.abs(spatial_data[:-2]),
     )
     test_matrix = np.array(
         [
@@ -173,7 +185,7 @@ def test_chunked_parallel_special_metric_implementation_hellinger(
                 for j in range(spatial_data.shape[0] - 2)
             ]
             for i in range(spatial_data.shape[0] - 2)
-        ]
+        ],
     ).astype(np.float32)
 
     assert_array_equal(
@@ -190,10 +202,11 @@ def test_chunked_parallel_special_metric_implementation_hellinger(
 
     # Test to compare chunked_parallel different implementations
     dist_x_stashed = stashed_previous_impl_for_regression_test(
-        np.abs(spatial_data[:-2])
+        np.abs(spatial_data[:-2]),
     )
     dist_xy_stashed = stashed_previous_impl_for_regression_test(
-        np.abs(spatial_data[:-2]), np.abs(spatial_data[:-2])
+        np.abs(spatial_data[:-2]),
+        np.abs(spatial_data[:-2]),
     )
 
     assert_array_equal(
@@ -211,10 +224,12 @@ def test_chunked_parallel_special_metric_implementation_hellinger(
     # test hellinger on different X and Y Pair
     spatial_data_two = np.random.randn(10, 20)
     dist_stashed_diff_pair = stashed_previous_impl_for_regression_test(
-        np.abs(spatial_data[:-2]), spatial_data_two
+        np.abs(spatial_data[:-2]),
+        spatial_data_two,
     )
     dist_chunked_diff_pair = dist.chunked_parallel_special_metric(
-        np.abs(spatial_data[:-2]), spatial_data_two
+        np.abs(spatial_data[:-2]),
+        spatial_data_two,
     )
 
     assert_array_equal(
@@ -242,8 +257,7 @@ def test_chunked_parallel_special_metric_implementation_hellinger(
 def test_benchmark_chunked_parallel_special_metric_x_only(
     benchmark,
     benchmark_data,
-):
-
+) -> None:
     # single argument
     benchmark.pedantic(
         dist.chunked_parallel_special_metric,
@@ -267,8 +281,7 @@ def test_benchmark_workaround_590_x_only(
     benchmark,
     benchmark_data,
     workaround_590_impl,
-):
-
+) -> None:
     # single argument
     benchmark.pedantic(
         workaround_590_impl,
@@ -296,8 +309,7 @@ def test_benchmark_workaround_590_x_only(
 def test_benchmark_chunked_parallel_special_metric_x_y(
     benchmark,
     benchmark_data,
-):
-
+) -> None:
     # single argument
     benchmark.pedantic(
         dist.chunked_parallel_special_metric,
@@ -321,8 +333,7 @@ def test_benchmark_workaround_590_x_y(
     benchmark,
     benchmark_data,
     workaround_590_impl,
-):
-
+) -> None:
     # single argument
     benchmark.pedantic(
         workaround_590_impl,

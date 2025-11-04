@@ -1,5 +1,4 @@
-"""
-UMAP on the Galaxy10SDSS dataset
+"""UMAP on the Galaxy10SDSS dataset.
 ---------------------------------------------------------
 
 This is an example of using UMAP on the Galaxy10SDSS
@@ -10,20 +9,19 @@ In addition, hdbscan is used to classify the processed
 data.
 """
 
-import numpy as np
-import h5py
-import matplotlib.pyplot as plt
-import umap
-import os
-
 # from sklearn.model_selection import train_test_split
 import math
-import requests
+import os
+
+import h5py
 
 # libraries for clustering
 import hdbscan
-import sklearn.cluster as cluster
-from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+
+import umap
 
 if not os.path.isfile("Galaxy10.h5"):
     url = "http://astro.utoronto.ca/~bovy/Galaxy10/Galaxy10.h5"
@@ -61,7 +59,11 @@ plt.savefig("galaxy10_subset.svg")
 # 2D Embedding
 ## UMAP
 reducer = umap.UMAP(
-    n_components=2, n_neighbors=20, random_state=42, transform_seed=42, verbose=False
+    n_components=2,
+    n_neighbors=20,
+    random_state=42,
+    transform_seed=42,
+    verbose=False,
 )
 reducer.fit(X_train)
 
@@ -80,7 +82,11 @@ plt.colorbar(boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
 plt.savefig("galaxy10_2D_umap.svg")
 ### UMAP - Supervised
 reducer = umap.UMAP(
-    n_components=2, n_neighbors=15, random_state=42, transform_seed=42, verbose=False
+    n_components=2,
+    n_neighbors=15,
+    random_state=42,
+    transform_seed=42,
+    verbose=False,
 )
 reducer.fit(X_train, y_train)
 
@@ -138,20 +144,16 @@ plt.colorbar(boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
 plt.savefig("galaxy10_2D_umap_supervised_prediction_clustered.svg")
 
 # Print out information on quality of clustering
-print("2D Supervised Embedding with Clustering")
-print(adjusted_rand_score(y_test, labels), adjusted_mutual_info_score(y_test, labels))
 
-print(
-    adjusted_rand_score(y_test[clustered], labels[clustered]),
-    adjusted_mutual_info_score(y_test[clustered], labels[clustered]),
-)
-
-print(np.sum(clustered) / y_test.shape[0])
 
 # 3D Embedding
 ## UMAP
 reducer = umap.UMAP(
-    n_components=3, n_neighbors=20, random_state=42, transform_seed=42, verbose=False
+    n_components=3,
+    n_neighbors=20,
+    random_state=42,
+    transform_seed=42,
+    verbose=False,
 )
 reducer.fit(X_train)
 galaxy10_umap = reducer.transform(X_train)
@@ -171,7 +173,11 @@ fig.colorbar(p, ax=ax, boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
 plt.savefig("galaxy10_3D_umap.svg")
 ## UMAP - Supervised
 reducer = umap.UMAP(
-    n_components=3, n_neighbors=20, random_state=42, transform_seed=42, verbose=False
+    n_components=3,
+    n_neighbors=20,
+    random_state=42,
+    transform_seed=42,
+    verbose=False,
 )
 reducer.fit(X_train, y_train)
 galaxy10_umap_supervised = reducer.transform(X_train)
@@ -235,15 +241,8 @@ fig.colorbar(p, ax=ax, boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
 plt.savefig("galaxy10_3D_umap_supervised_prediction_clustered.svg")
 
 # Print out information on quality of clustering
-print("3D Supervised Embedding with Clustering")
-print(adjusted_rand_score(y_test, labels), adjusted_mutual_info_score(y_test, labels))
 
-print(
-    adjusted_rand_score(y_test[clustered], labels[clustered]),
-    adjusted_mutual_info_score(y_test[clustered], labels[clustered]),
-)
 
-print(np.sum(clustered) / y_test.shape[0])
 # Dimensions 4 to 25
 for dimensions in range(4, 26):
     reducer = umap.UMAP(
@@ -264,12 +263,3 @@ for dimensions in range(4, 26):
     ).fit_predict(galaxy10_umap_supervised_prediction)
     clustered = labels >= 0
     # Print out information on quality of clustering
-    print(str(dimensions) + "D Supervised Embedding with Clustering")
-    print(
-        adjusted_rand_score(y_test, labels), adjusted_mutual_info_score(y_test, labels)
-    )
-    print(
-        adjusted_rand_score(y_test[clustered], labels[clustered]),
-        adjusted_mutual_info_score(y_test[clustered], labels[clustered]),
-    )
-    print(np.sum(clustered) / y_test.shape[0])

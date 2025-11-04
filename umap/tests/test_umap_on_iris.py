@@ -1,13 +1,13 @@
-from umap import UMAP
-from umap.umap_ import nearest_neighbors
-from scipy import sparse
 import numpy as np
+import pytest
+from scipy import sparse
+from scipy.spatial.distance import cdist, pdist, squareform
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from sklearn.neighbors import KDTree
-from scipy.spatial.distance import cdist, pdist, squareform
-import pytest
-import warnings
+
+from umap import UMAP
+from umap.umap_ import nearest_neighbors
 
 try:
     # works for sklearn>=0.22
@@ -26,15 +26,15 @@ except ImportError:
 
 # UMAP Trustworthiness on iris
 # ----------------------------
-def test_umap_trustworthiness_on_iris(iris, iris_model):
+def test_umap_trustworthiness_on_iris(iris, iris_model) -> None:
     embedding = iris_model.embedding_
     trust = trustworthiness(iris.data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.97
-    ), "Insufficiently trustworthy embedding for" "iris dataset: {}".format(trust)
+    assert trust >= 0.97, (
+        f"Insufficiently trustworthy embedding foriris dataset: {trust}"
+    )
 
 
-def test_initialized_umap_trustworthiness_on_iris(iris):
+def test_initialized_umap_trustworthiness_on_iris(iris) -> None:
     data = iris.data
     embedding = UMAP(
         n_neighbors=10,
@@ -44,14 +44,14 @@ def test_initialized_umap_trustworthiness_on_iris(iris):
         random_state=42,
     ).fit_transform(data)
     trust = trustworthiness(iris.data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.97
-    ), "Insufficiently trustworthy embedding for" "iris dataset: {}".format(trust)
+    assert trust >= 0.97, (
+        f"Insufficiently trustworthy embedding foriris dataset: {trust}"
+    )
 
 
 def test_umap_trustworthiness_on_sphere_iris(
     iris,
-):
+) -> None:
     data = iris.data
     embedding = UMAP(
         n_neighbors=10,
@@ -68,33 +68,34 @@ def test_umap_trustworthiness_on_sphere_iris(
             r * np.sin(embedding[:, 0]) * np.cos(embedding[:, 1]),
             r * np.sin(embedding[:, 0]) * np.sin(embedding[:, 1]),
             r * np.cos(embedding[:, 0]),
-        ]
+        ],
     ).T
     trust = trustworthiness(
-        iris.data, projected_embedding, n_neighbors=10, metric="cosine"
+        iris.data,
+        projected_embedding,
+        n_neighbors=10,
+        metric="cosine",
     )
-    assert (
-        trust >= 0.65
-    ), "Insufficiently trustworthy spherical embedding for iris dataset: {}".format(
-        trust
+    assert trust >= 0.65, (
+        f"Insufficiently trustworthy spherical embedding for iris dataset: {trust}"
     )
 
 
 # UMAP Transform on iris
 # ----------------------
-def test_umap_transform_on_iris(iris, iris_subset_model, iris_selection):
+def test_umap_transform_on_iris(iris, iris_subset_model, iris_selection) -> None:
     fitter = iris_subset_model
 
     new_data = iris.data[~iris_selection]
     embedding = fitter.transform(new_data)
 
     trust = trustworthiness(new_data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.80
-    ), "Insufficiently trustworthy transform for" "iris dataset: {}".format(trust)
+    assert trust >= 0.80, (
+        f"Insufficiently trustworthy transform foriris dataset: {trust}"
+    )
 
 
-def test_umap_transform_on_iris_w_pynndescent(iris, iris_selection):
+def test_umap_transform_on_iris_w_pynndescent(iris, iris_selection) -> None:
     data = iris.data[iris_selection]
     fitter = UMAP(
         n_neighbors=10,
@@ -108,12 +109,16 @@ def test_umap_transform_on_iris_w_pynndescent(iris, iris_selection):
     embedding = fitter.transform(new_data)
 
     trust = trustworthiness(new_data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.85
-    ), "Insufficiently trustworthy transform for" "iris dataset: {}".format(trust)
+    assert trust >= 0.85, (
+        f"Insufficiently trustworthy transform foriris dataset: {trust}"
+    )
 
 
-def test_umap_transform_on_iris_modified_dtype(iris, iris_subset_model, iris_selection):
+def test_umap_transform_on_iris_modified_dtype(
+    iris,
+    iris_subset_model,
+    iris_selection,
+) -> None:
     fitter = iris_subset_model
     fitter.embedding_ = fitter.embedding_.astype(np.float64)
 
@@ -121,12 +126,12 @@ def test_umap_transform_on_iris_modified_dtype(iris, iris_subset_model, iris_sel
     embedding = fitter.transform(new_data)
 
     trust = trustworthiness(new_data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.8
-    ), "Insufficiently trustworthy transform for iris dataset: {}".format(trust)
+    assert trust >= 0.8, (
+        f"Insufficiently trustworthy transform for iris dataset: {trust}"
+    )
 
 
-def test_umap_sparse_transform_on_iris(iris, iris_selection):
+def test_umap_sparse_transform_on_iris(iris, iris_selection) -> None:
     data = sparse.csr_matrix(iris.data[iris_selection])
     assert sparse.issparse(data)
     fitter = UMAP(
@@ -142,14 +147,14 @@ def test_umap_sparse_transform_on_iris(iris, iris_selection):
     embedding = fitter.transform(new_data)
 
     trust = trustworthiness(new_data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.80
-    ), "Insufficiently trustworthy transform for" "iris dataset: {}".format(trust)
+    assert trust >= 0.80, (
+        f"Insufficiently trustworthy transform foriris dataset: {trust}"
+    )
 
 
 # UMAP precomputed metric transform on iris
 # ----------------------
-def test_precomputed_transform_on_iris(iris, iris_selection):
+def test_precomputed_transform_on_iris(iris, iris_selection) -> None:
     data = iris.data[iris_selection]
     distance_matrix = squareform(pdist(data))
 
@@ -166,14 +171,14 @@ def test_precomputed_transform_on_iris(iris, iris_selection):
     embedding = fitter.transform(new_distance_matrix)
 
     trust = trustworthiness(new_data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.85
-    ), "Insufficiently trustworthy transform for" "iris dataset: {}".format(trust)
+    assert trust >= 0.85, (
+        f"Insufficiently trustworthy transform foriris dataset: {trust}"
+    )
 
 
 # UMAP precomputed metric transform on iris with sparse distances
 # ----------------------
-def test_precomputed_sparse_transform_on_iris(iris, iris_selection):
+def test_precomputed_sparse_transform_on_iris(iris, iris_selection) -> None:
     data = iris.data[iris_selection]
     distance_matrix = sparse.csr_matrix(squareform(pdist(data)))
 
@@ -190,14 +195,14 @@ def test_precomputed_sparse_transform_on_iris(iris, iris_selection):
     embedding = fitter.transform(new_distance_matrix)
 
     trust = trustworthiness(new_data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.85
-    ), "Insufficiently trustworthy transform for" "iris dataset: {}".format(trust)
+    assert trust >= 0.85, (
+        f"Insufficiently trustworthy transform foriris dataset: {trust}"
+    )
 
 
 # UMAP Clusterability on Iris
 # ---------------------------
-def test_umap_clusterability_on_supervised_iris(supervised_iris_model, iris):
+def test_umap_clusterability_on_supervised_iris(supervised_iris_model, iris) -> None:
     embedding = supervised_iris_model.embedding_
     clusters = KMeans(3).fit_predict(embedding)
     assert adjusted_rand_score(clusters, iris.target) >= 0.95
@@ -205,7 +210,7 @@ def test_umap_clusterability_on_supervised_iris(supervised_iris_model, iris):
 
 # UMAP Inverse transform on Iris
 # ------------------------------
-def test_umap_inverse_transform_on_iris(iris, iris_model):
+def test_umap_inverse_transform_on_iris(iris, iris_model) -> None:
     highd_tree = KDTree(iris.data)
     fitter = iris_model
     lowd_tree = KDTree(fitter.embedding_)
@@ -215,12 +220,14 @@ def test_umap_inverse_transform_on_iris(iris, iris_model):
         centroid = np.mean(np.squeeze(fitter.embedding_[near_points]), axis=0)
         highd_centroid = fitter.inverse_transform([centroid])
         highd_near_points = highd_tree.query(
-            highd_centroid, k=10, return_distance=False
+            highd_centroid,
+            k=10,
+            return_distance=False,
         )
         assert np.intersect1d(near_points, highd_near_points[0]).shape[0] >= 3
 
 
-def test_precomputed_knn_on_iris(iris, iris_selection, iris_subset_model):
+def test_precomputed_knn_on_iris(iris, iris_selection, iris_subset_model) -> None:
     # this to compare two similarity graphs which should be nearly the same
     def rms(a, b):
         return np.sqrt(np.mean(np.square(a - b)))
@@ -238,12 +245,12 @@ def test_precomputed_knn_on_iris(iris, iris_selection, iris_subset_model):
     )
 
     # repeated UMAP arguments we don't want to mis-specify
-    umap_args = dict(
-        n_neighbors=iris_subset_model.n_neighbors,
-        random_state=iris_subset_model.random_state,
-        n_jobs=1,
-        min_dist=iris_subset_model.min_dist,
-    )
+    umap_args = {
+        "n_neighbors": iris_subset_model.n_neighbors,
+        "random_state": iris_subset_model.random_state,
+        "n_jobs": 1,
+        "min_dist": iris_subset_model.min_dist,
+    }
 
     # force_approximation_algorithm parameter is ignored when a precomputed knn is used
     fitter_with_precomputed_knn = UMAP(
@@ -265,7 +272,8 @@ def test_precomputed_knn_on_iris(iris, iris_selection, iris_subset_model):
         ).fit(data)
         assert len(record) >= 1
     np.testing.assert_array_equal(
-        fitter_ignoring_force_approx.embedding_, fitter_with_precomputed_knn.embedding_
+        fitter_ignoring_force_approx.embedding_,
+        fitter_with_precomputed_knn.embedding_,
     )
 
     # #848 (continued): if you don't have a search index, attempting to transform

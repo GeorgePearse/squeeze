@@ -138,7 +138,7 @@ stages:
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'), eq(variables.triggeredByPullRequest, false))
     jobs:
       - job: BuildArtifacts
-        displayName: Build source dists and wheels    
+        displayName: Build source dists and wheels
         pool:
           vmImage: 'ubuntu-latest'
         steps:
@@ -152,7 +152,7 @@ stages:
             pip install wheel
             pip install -e .
           displayName: 'Install package locally'
-        
+
         - bash: |
             pip install build
             python -m build --wheel --sdist --outdir dist/ .
@@ -175,11 +175,10 @@ stages:
           name: PYPIRC_CONFIG
           displayName: 'Download pypirc'
           inputs:
-            secureFile: 'pypirc'  
+            secureFile: 'pypirc'
 
         - script: |
             pip install twine
             twine upload --repository pypi --config-file $(PYPIRC_CONFIG.secureFilePath) dist/*
           displayName: 'Upload to PyPI'
           condition: and(succeeded(), eq(variables['Build.SourceBranchName'], variables['packageVersionFormatted']))
-

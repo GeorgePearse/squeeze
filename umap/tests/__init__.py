@@ -1,5 +1,4 @@
-"""
-Test Suite for UMAP to ensure things are working as expected.
+"""Test Suite for UMAP to ensure things are working as expected.
 
 The test suite comprises multiple testing modules,
 including multiple test cases related to a specific

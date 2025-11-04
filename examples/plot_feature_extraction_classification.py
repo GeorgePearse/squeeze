@@ -1,5 +1,4 @@
-"""
-UMAP as a Feature Extraction Technique for Classification
+"""UMAP as a Feature Extraction Technique for Classification.
 ---------------------------------------------------------
 
 The following script shows how UMAP can be used as a feature extraction
@@ -22,7 +21,7 @@ accuracy metric.
 """
 
 from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
@@ -41,7 +40,10 @@ X, y = make_classification(
 
 # Split the dataset into a training set and a test set
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X,
+    y,
+    test_size=0.2,
+    random_state=42,
 )
 
 # Classification with a linear SVM
@@ -49,9 +51,6 @@ svc = LinearSVC(dual=False, random_state=123)
 params_grid = {"C": [10**k for k in range(-3, 4)]}
 clf = GridSearchCV(svc, params_grid)
 clf.fit(X_train, y_train)
-print(
-    "Accuracy on the test set with raw data: {:.3f}".format(clf.score(X_test, y_test))
-)
 
 # Transformation with UMAP followed by classification with a linear SVM
 umap = UMAP(random_state=456)
@@ -65,8 +64,3 @@ params_grid_pipeline = {
 
 clf_pipeline = GridSearchCV(pipeline, params_grid_pipeline)
 clf_pipeline.fit(X_train, y_train)
-print(
-    "Accuracy on the test set with UMAP transformation: {:.3f}".format(
-        clf_pipeline.score(X_test, y_test)
-    )
-)

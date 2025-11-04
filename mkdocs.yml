@@ -1,0 +1,114 @@
+docs_dir: docs
+site_dir: site
+
+site_name: UMAP
+site_description: Uniform Manifold Approximation and Projection
+site_author: Leland McInnes
+site_url: https://lmcinnes.github.io/umap/
+repo_url: https://github.com/lmcinnes/umap
+repo_name: lmcinnes/umap
+edit_uri: edit/master/doc/
+copyright: Copyright &copy; 2017-2024 Leland McInnes
+
+theme:
+  name: material
+  logo: doc/logo_large.png
+  favicon: doc/logo_large.png
+  features:
+    - navigation.instant
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.tooltips
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      primary: indigo
+      accent: indigo
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+      primary: indigo
+      accent: indigo
+
+plugins:
+  - search:
+      lang: en
+
+markdown_extensions:
+  - admonition
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: pymdownx.emoji.twemoji
+      emoji_generator: pymdownx.emoji.to_svg
+  - pymdownx.highlight:
+      use_pygments: true
+      auto_title: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: basic_usage.md
+      - How UMAP Works: how_umap_works.md
+      - Reproducibility: reproducibility.md
+  - User Guide:
+      - Basic Usage: basic_usage.md
+      - Parameters: parameters.md
+      - Supervised Dimensionality Reduction: supervised.md
+      - Clustering: clustering.md
+      - Inverse Transform: inverse_transform.md
+      - Sparse Data: sparse.md
+  - Advanced Topics:
+      - Composing Models: composing_models.md
+      - Aligned UMAP: aligned_umap_basic_usage.md
+      - Aligned UMAP - Politics Demo: aligned_umap_politics_demo.md
+      - Embedding Space: embedding_space.md
+      - Exploratory Analysis: exploratory_analysis.md
+  - Variants and Extensions:
+      - densMAP: densmap_demo.md
+      - Parametric UMAP: parametric_umap.md
+      - Mutual Nearest Neighbors UMAP: mutual_nn_umap.md
+      - Transform & Inference: transform.md
+      - Landmarked Parametric UMAP: transform_landmarked_pumap.md
+  - Visualization and Interactive:
+      - Plotting: plotting.md
+      - Interactive Visualization: interactive_viz.md
+      - Outlier Detection: outliers.md
+      - Document Embedding: document_embedding.md
+      - Nomic Atlas - Text Embeddings: nomic_atlas_umap_of_text_embeddings.md
+      - Nomic Atlas - MNIST Training: nomic_atlas_visualizing_mnist_training_dynamics.md
+  - Performance & Optimization:
+      - Performance: performance.md
+      - Benchmarking: benchmarking.md
+      - Precomputed k-NN: precomputed_k-nn.md
+  - Reference & Support:
+      - API Reference: api.md
+      - FAQ: faq.md
+      - Scientific Papers: scientific_papers.md
+      - Release Notes: release_notes.md
+      - Development Roadmap: development_roadmap.md

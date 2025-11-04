@@ -1,5 +1,4 @@
-"""
-Comparison of Dimension Reduction Techniques
+"""Comparison of Dimension Reduction Techniques.
 --------------------------------------------
 
 A comparison of several different dimension reduction
@@ -44,26 +43,31 @@ Things to note about the datasets:
           to north pole.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import time
-
-from sklearn import datasets, decomposition, manifold, preprocessing
 from colorsys import hsv_to_rgb
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from sklearn import datasets, decomposition, manifold, preprocessing
 
 import umap
 
 sns.set(context="paper", style="white")
 
 blobs, blob_labels = datasets.make_blobs(
-    n_samples=500, n_features=10, centers=5, random_state=42
+    n_samples=500,
+    n_features=10,
+    centers=5,
+    random_state=42,
 )
 iris = datasets.load_iris()
 digits = datasets.load_digits(n_class=10)
 wine = datasets.load_wine()
 swissroll, swissroll_labels = datasets.make_swiss_roll(
-    n_samples=1000, noise=0.1, random_state=42
+    n_samples=1000,
+    noise=0.1,
+    random_state=42,
 )
 sphere = np.random.normal(size=(600, 3))
 sphere = preprocessing.normalize(sphere)
@@ -75,7 +79,7 @@ sphere_hsv = np.array(
             min((c[2] + 1.1), 1.0),
         )
         for c in sphere
-    ]
+    ],
 )
 sphere_colors = np.array([hsv_to_rgb(*c) for c in sphere_hsv])
 
@@ -106,7 +110,12 @@ ax_list = []
 # plt.figure(figsize=(9 * 2 + 3, 12.5))
 plt.figure(figsize=(10, 8))
 plt.subplots_adjust(
-    left=0.02, right=0.98, bottom=0.001, top=0.96, wspace=0.05, hspace=0.01
+    left=0.02,
+    right=0.98,
+    bottom=0.001,
+    top=0.96,
+    wspace=0.05,
+    hspace=0.01,
 )
 for data, labels in test_data:
     for reducer, args in reducers:
@@ -121,7 +130,7 @@ for data, labels in test_data:
         ax.text(
             0.99,
             0.01,
-            "{:.2f} s".format(elapsed_time),
+            f"{elapsed_time:.2f} s",
             transform=ax.transAxes,
             size=14,
             horizontalalignment="right",

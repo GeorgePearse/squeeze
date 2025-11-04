@@ -1,5 +1,4 @@
-"""
-UMAP on the MNIST Digits dataset
+"""UMAP on the MNIST Digits dataset.
 --------------------------------
 
 A simple example demonstrating how to use UMAP on a larger
@@ -14,10 +13,11 @@ among the different digit classes -- keeping 1 far from
 blend into one another in some cases.
 """
 
-import umap
-from sklearn.datasets import fetch_openml
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.datasets import fetch_openml
+
+import umap
 
 sns.set(context="paper", style="white")
 

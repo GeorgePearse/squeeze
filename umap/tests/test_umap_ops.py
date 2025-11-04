@@ -3,20 +3,22 @@
 #  (not really fitting anywhere else)
 # ===================================================
 
-from sklearn.datasets import make_blobs
+import warnings
+
+import numpy as np
+import pytest
+import scipy.sparse
+from numpy.testing import assert_array_equal
+from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score, pairwise_distances
 from sklearn.preprocessing import normalize
-from numpy.testing import assert_array_equal
+
 from umap import UMAP
-from umap.spectral import component_layout
-import numpy as np
-import scipy.sparse
-import pytest
-import warnings
 from umap.distances import pairwise_special_metric
+from umap.spectral import component_layout
 from umap.utils import disconnected_vertices
-from scipy.sparse import csr_matrix
 
 # Transform isn't stable under batching; hard to opt out of this.
 # @SkipTest
@@ -38,16 +40,21 @@ from scipy.sparse import csr_matrix
 
 
 # Umap Clusterability
-def test_blobs_cluster():
+def test_blobs_cluster() -> None:
     data, labels = make_blobs(n_samples=500, n_features=10, centers=5)
     embedding = UMAP(n_epochs=100).fit_transform(data)
     assert adjusted_rand_score(labels, KMeans(5).fit_predict(embedding)) == 1.0
 
 
 # Multi-components Layout
-def test_multi_component_layout():
+def test_multi_component_layout() -> None:
     data, labels = make_blobs(
-        100, 2, centers=5, cluster_std=0.5, center_box=(-20, 20), random_state=42
+        100,
+        2,
+        centers=5,
+        cluster_std=0.5,
+        center_box=(-20, 20),
+        random_state=42,
     )
 
     true_centroids = np.empty((labels.max() + 1, data.shape[1]), dtype=np.float64)
@@ -72,9 +79,14 @@ def test_multi_component_layout():
 
 
 # Multi-components Layout
-def test_multi_component_layout_precomputed():
+def test_multi_component_layout_precomputed() -> None:
     data, labels = make_blobs(
-        100, 2, centers=5, cluster_std=0.5, center_box=(-20, 20), random_state=42
+        100,
+        2,
+        centers=5,
+        cluster_std=0.5,
+        center_box=(-20, 20),
+        random_state=42,
     )
     dmat = pairwise_distances(data)
 
@@ -86,7 +98,7 @@ def test_multi_component_layout_precomputed():
     true_centroids = normalize(true_centroids, norm="l2")
 
     embedding = UMAP(n_neighbors=4, metric="precomputed", n_epochs=100).fit_transform(
-        dmat
+        dmat,
     )
     embed_centroids = np.empty((labels.max() + 1, data.shape[1]), dtype=np.float64)
     embed_labels = KMeans(n_clusters=5).fit_predict(embedding)
@@ -104,12 +116,12 @@ def test_multi_component_layout_precomputed():
 @pytest.mark.parametrize("num_isolates", [1, 5])
 @pytest.mark.parametrize("metric", ["jaccard", "hellinger"])
 @pytest.mark.parametrize("force_approximation", [True, False])
-def test_disconnected_data(num_isolates, metric, force_approximation):
+def test_disconnected_data(num_isolates, metric, force_approximation) -> None:
     options = [False, True]
     disconnected_data = np.random.choice(a=options, size=(10, 30), p=[0.6, 1 - 0.6])
     # Add some disconnected data for the corner case test
     disconnected_data = np.vstack(
-        [disconnected_data, np.zeros((num_isolates, 30), dtype="bool")]
+        [disconnected_data, np.zeros((num_isolates, 30), dtype="bool")],
     )
     new_columns = np.zeros((num_isolates + 10, num_isolates), dtype="bool")
     for i in range(num_isolates):
@@ -135,20 +147,22 @@ def test_disconnected_data(num_isolates, metric, force_approximation):
         isolated_vertices = disconnected_vertices(model)
         assert flag == 1, str(([wn.message for wn in w], isolated_vertices))
         # Check that the first isolate has no edges in our umap.graph_
-        assert isolated_vertices[10] == True
+        assert isolated_vertices[10]
         number_of_nan = np.sum(np.isnan(model.embedding_[isolated_vertices]))
         assert number_of_nan >= num_isolates * model.n_components
 
 
 @pytest.mark.parametrize("num_isolates", [1])
 @pytest.mark.parametrize("sparse", [True, False])
-def test_disconnected_data_precomputed(num_isolates, sparse):
+def test_disconnected_data_precomputed(num_isolates, sparse) -> None:
     disconnected_data = np.random.choice(
-        a=[False, True], size=(10, 20), p=[0.66, 1 - 0.66]
+        a=[False, True],
+        size=(10, 20),
+        p=[0.66, 1 - 0.66],
     )
     # Add some disconnected data for the corner case test
     disconnected_data = np.vstack(
-        [disconnected_data, np.zeros((num_isolates, 20), dtype="bool")]
+        [disconnected_data, np.zeros((num_isolates, 20), dtype="bool")],
     )
     new_columns = np.zeros((num_isolates + 10, num_isolates), dtype="bool")
     for i in range(num_isolates):
@@ -158,12 +172,12 @@ def test_disconnected_data_precomputed(num_isolates, sparse):
     if sparse:
         dmat = csr_matrix(dmat)
     model = UMAP(n_neighbors=3, metric="precomputed", disconnection_distance=1).fit(
-        dmat
+        dmat,
     )
 
     # Check that the first isolate has no edges in our umap.graph_
     isolated_vertices = disconnected_vertices(model)
-    assert isolated_vertices[10] == True
+    assert isolated_vertices[10]
     number_of_nan = np.sum(np.isnan(model.embedding_[isolated_vertices]))
     assert number_of_nan >= num_isolates * model.n_components
 
@@ -173,7 +187,7 @@ def test_disconnected_data_precomputed(num_isolates, sparse):
 # --------------
 
 
-def test_bad_transform_data(nn_data):
+def test_bad_transform_data(nn_data) -> None:
     u = UMAP().fit([[1, 1, 1, 1]])
     with pytest.raises(ValueError):
         u.transform([[0, 0, 0, 0]])
@@ -181,15 +195,18 @@ def test_bad_transform_data(nn_data):
 
 # Transform Stability
 # -------------------
-def test_umap_transform_embedding_stability(iris, iris_subset_model, iris_selection):
-    """Test that transforming data does not alter the learned embeddings
+def test_umap_transform_embedding_stability(
+    iris,
+    iris_subset_model,
+    iris_selection,
+) -> None:
+    """Test that transforming data does not alter the learned embeddings.
 
     Issue #217 describes how using transform to embed new data using a
     trained UMAP transformer causes the fitting embedding matrix to change
     in cases when the new data has the same number of rows as the original
     training data.
     """
-
     data = iris.data[iris_selection]
     fitter = iris_subset_model
     original_embedding = fitter.embedding_.copy()
@@ -221,17 +238,16 @@ def test_umap_transform_embedding_stability(iris, iris_subset_model, iris_select
 # -----------
 # UMAP Update
 # -----------
-def test_umap_update(iris, iris_subset_model, iris_selection, iris_model):
-
+def test_umap_update(iris, iris_subset_model, iris_selection, iris_model) -> None:
     new_data = iris.data[~iris_selection]
     new_model = iris_subset_model
     new_model.update(new_data)
 
     comparison_graph = scipy.sparse.vstack(
-        [iris_model.graph_[iris_selection], iris_model.graph_[~iris_selection]]
+        [iris_model.graph_[iris_selection], iris_model.graph_[~iris_selection]],
     )
     comparison_graph = scipy.sparse.hstack(
-        [comparison_graph[:, iris_selection], comparison_graph[:, ~iris_selection]]
+        [comparison_graph[:, iris_selection], comparison_graph[:, ~iris_selection]],
     )
 
     error = np.sum(np.abs((new_model.graph_ - comparison_graph).data))
@@ -240,9 +256,11 @@ def test_umap_update(iris, iris_subset_model, iris_selection, iris_model):
 
 
 def test_umap_update_large(
-    iris, iris_subset_model_large, iris_selection, iris_model_large
-):
-
+    iris,
+    iris_subset_model_large,
+    iris_selection,
+    iris_model_large,
+) -> None:
     new_data = iris.data[~iris_selection]
     new_model = iris_subset_model_large
     new_model.update(new_data)
@@ -251,10 +269,10 @@ def test_umap_update_large(
         [
             iris_model_large.graph_[iris_selection],
             iris_model_large.graph_[~iris_selection],
-        ]
+        ],
     )
     comparison_graph = scipy.sparse.hstack(
-        [comparison_graph[:, iris_selection], comparison_graph[:, ~iris_selection]]
+        [comparison_graph[:, iris_selection], comparison_graph[:, ~iris_selection]],
     )
 
     error = np.sum(np.abs((new_model.graph_ - comparison_graph).data))
@@ -265,12 +283,12 @@ def test_umap_update_large(
 # -----------------
 # UMAP Graph output
 # -----------------
-def test_umap_graph_layout():
-    data, labels = make_blobs(n_samples=500, n_features=10, centers=5)
+def test_umap_graph_layout() -> None:
+    data, _labels = make_blobs(n_samples=500, n_features=10, centers=5)
     model = UMAP(n_epochs=100, transform_mode="graph")
     graph = model.fit_transform(data)
     assert scipy.sparse.issparse(graph)
-    nc, cl = scipy.sparse.csgraph.connected_components(graph)
+    nc, _cl = scipy.sparse.csgraph.connected_components(graph)
     assert nc == 5
 
     new_graph = model.transform(data[:10] + np.random.normal(0.0, 0.1, size=(10, 10)))
@@ -283,7 +301,7 @@ def test_umap_graph_layout():
 # ------------------------
 
 
-def test_component_layout_options(nn_data):
+def test_component_layout_options(nn_data) -> None:
     dmat = pairwise_distances(nn_data[:1000])
     n_components = 5
     component_labels = np.repeat(np.arange(5), dmat.shape[0] // 5)
