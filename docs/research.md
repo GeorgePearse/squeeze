@@ -366,6 +366,50 @@ This page compiles a comprehensive collection of research papers on dimensionali
 
 ---
 
+### Parametric t-SNE
+
+**Title:** Learning a Parametric Embedding by Preserving Local Structure
+**Authors:** Laurens van der Maaten
+**Year:** 2009
+**Publication:** Proceedings of the Twelfth International Conference on Artificial Intelligence & Statistics (AISTATS)
+**Link:** https://lvdmaaten.github.io/software/
+**Description:** Extends t-SNE with neural network-based parametric mapping. Enables generalization to new data points without recalculation. Uses multilayer neural network trained with t-SNE objective function.
+**Implementation:** Official Matlab implementation, various Python implementations available
+
+---
+
+### Perplexity-free Parametric t-SNE
+
+**Title:** Perplexity-free Parametric t-SNE
+**Year:** 2020
+**Link:** https://arxiv.org/abs/1906.00297
+**Description:** Improves parametric t-SNE by removing dependence on perplexity hyperparameter. Multiscale-aware variant for better global structure preservation.
+**Implementation:** Keras/Scikit-learn compatible (FrancescoCrecchi/Multiscale-Parametric-t-SNE)
+
+---
+
+### t-SNE-CUDA (GPU-Accelerated t-SNE)
+
+**Title:** t-SNE-CUDA: GPU-Accelerated t-SNE and its Applications to Modern Data
+**Authors:** CannyLab
+**Year:** 2018
+**ArXiv:** 1807.11824
+**Link:** https://github.com/CannyLab/tsne-cuda
+**Description:** GPU-accelerated t-SNE implementation using CUDA. Achieves 50-700x speedups on CIFAR-10 and MNIST. Up to 1200x faster than scikit-learn, 50x faster than Multicore-TSNE.
+**Implementation:** CUDA C++ with Python bindings
+
+---
+
+### NeuralTSNE
+
+**Title:** NeuralTSNE: A Python Package for the Dimensionality Reduction of Molecular Dynamics Data Using Neural Networks
+**Year:** 2025
+**ArXiv:** 2505.16476
+**Description:** Modern parametric t-SNE implementation for molecular dynamics and scientific computing. Neural network-based parametric mapping for fast inference.
+**Implementation:** Python package
+
+---
+
 ### Contrastive Learning SNE Variants
 
 **Title:** Supervised SNE with Contrastive Learning
