@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "umap"
 version = "0.5.9.post2"
 description = "Uniform Manifold Approximation and Projection"
-readme = "README.rst"
+readme = "README.md"
 license = {text = "BSD"}
 keywords = ["dimension reduction", "umap", "t-sne", "manifold"]
 classifiers = [
