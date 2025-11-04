@@ -1,0 +1,1953 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Uniform Manifold Approximation and Projection">
+      
+      
+        <meta name="author" content="Leland McInnes">
+      
+      
+        <link rel="canonical" href="https://lmcinnes.github.io/umap/composing_models/">
+      
+      
+        <link rel="prev" href="../sparse/">
+      
+      
+        <link rel="next" href="../aligned_umap_basic_usage/">
+      
+      
+      <link rel="icon" href="../doc/logo_large.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+    
+    
+      
+        <title>Composing Models - UMAP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#combining-multiple-umap-models" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="UMAP" class="md-header__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UMAP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Composing Models
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="UMAP" class="md-nav__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    UMAP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_umap_works/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How UMAP Works
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Reproducibility
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    User Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supervised/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Supervised Dimensionality Reduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clustering/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Clustering
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inverse_transform/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Inverse Transform
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparse/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sparse Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Composing Models
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Composing Models
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mnist-digits-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      MNIST digits example
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diamonds-dataset-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Diamonds dataset example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aligned UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_politics_demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aligned UMAP - Politics Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedding_space/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Embedding Space
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exploratory_analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exploratory Analysis
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Variants and Extensions
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Variants and Extensions
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../densmap_demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    densMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parametric_umap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parametric UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mutual_nn_umap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mutual Nearest Neighbors UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transform & Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform_landmarked_pumap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Landmarked Parametric UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Visualization and Interactive
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Visualization and Interactive
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Plotting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_viz/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interactive Visualization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outliers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Outlier Detection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../document_embedding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Document Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_umap_of_text_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nomic Atlas - Text Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_visualizing_mnist_training_dynamics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nomic Atlas - MNIST Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Performance & Optimization
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Performance & Optimization
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Performance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarking/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../precomputed_k-nn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Precomputed k-NN
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference & Support
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Reference & Support
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FAQ
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scientific_papers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scientific Papers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development_roadmap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Development Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mnist-digits-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      MNIST digits example
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diamonds-dataset-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Diamonds dataset example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="combining-multiple-umap-models">Combining multiple UMAP models<a class="headerlink" href="#combining-multiple-umap-models" title="Permanent link">&para;</a></h1>
+<p>It is possible to combine together multiple UMAP models, assuming that
+they are operating on the same underlying data. To get an idea of how
+this works recall that UMAP uses an intermediate fuzzy topological
+representation (see <code>how_umap_works</code>). Given different views of the
+same underlying data this will generate different fuzzy topological
+representations. We can apply intersections or unions to these
+representations to get a new composite fuzzy topological representation
+which we can then embed into low dimensional space in the standard UMAP
+way. The key is that, to be able to sensibly intersect or union these
+representations, there must be one-to-one correspondences between the
+data samples from the two different views.</p>
+<p>To get an idea of how this might work it is useful to see it in
+practice. Let’s load some libraries and get started.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">import</span> <span class="nn">sklearn.datasets</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">RobustScaler</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">umap</span>
+<span class="kn">import</span> <span class="nn">umap.plot</span>
+</code></pre></div>
+<h2 id="mnist-digits-example">MNIST digits example<a class="headerlink" href="#mnist-digits-example" title="Permanent link">&para;</a></h2>
+<p>To begin with let’s use a relatively familiar dataset – the MNIST digits
+dataset that we’ve used in other sections of this tutorial. The data is
+(grayscale) 28x28 pixel images of handwritten digits (0 through 9); in
+total there are 70,000 such images, and each image is unrolled into a
+784 element vector.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">mnist</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="s2">&quot;mnist_784&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>To ensure we have an idea of what this dataset looks like through the
+lens of UMAP we can run UMAP on the full dataset.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">mnist</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">mnist</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_6_1.png" /></p>
+<p>To make the problem more interesting let’s carve the dataset in two – not
+into two sets of 35,000 samples, but instead carve each image in half.
+That is, we’ll end up with 70,000 samples each of which is the top half
+of the image of the handwritten digit, and another 70,000 samples each
+of which is the bottom half of the image of the handwritten digit.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">top</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">28</span> <span class="o">*</span> <span class="mi">14</span><span class="p">]</span>
+<span class="n">bottom</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="mi">28</span> <span class="o">*</span> <span class="mi">14</span><span class="p">:]</span>
+</code></pre></div>
+<p>This is a little artificial, but it provides us with an example dataset
+where we have two distinct views of the data which we can still well
+understand. In practice this situation would be more likely to arise
+when there are two different data collection processes sampling from the
+same underlying population. In our case we could simply glue the data
+back together (hstack the numpy arrays for example), but potentially
+this isn’t feasible as the different data views may have different
+scales or modalities. So, despite the fact that we could glue things
+back together in this case, we will proceed as if we can’t – as may be
+the case for many real world problems.</p>
+<p>Let’s first look at what UMAP does individually on each dataset. We’ll
+start with the top halves of the digits:</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">top_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">top</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">top_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">mnist</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_11_1.png" /></p>
+<p>While UMAP still manages to mostly separate the different digit classes
+we can see the results are quite different from UMAP on the full
+standard MNIST dataset. The twos and threes are blurred together (as we
+would expect given that we don’t have the bottom half of the image wich
+would let us tell them apart); The twos and threes are also in a large
+grouping that pulls together all of the eights, sevens and nines (again,
+what we would expect given only the top half of the digit), while the
+fives and sixes are somewhat distinct, but clearly are similar to each
+other. It is only the ones, fours and zeros that are very clearly
+discernible.</p>
+<p>Now let’s see what sorts of results we get with the bottom halves of the
+digits:</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">bot_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">bottom</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">bot_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">mnist</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_14_1.png" /></p>
+<p>This is clearly a very different view of the data. Now it is the fours
+and nines that blur together (presumably many of the nines are drawn
+with straight rather than curved stems), with sevens nearby. The twos
+and the threes are very distinct from each other, but the threes and the
+fives are combined (as one might expect given that the bottom halves
+<em>should</em> look similar). Zeros and sixes are distinct, but close to each
+other. Ones, eights and twos are the most distinctive digits in this
+view.</p>
+<p>So, assuming we can’t just glue the raw data together and stick a
+reasonable metric on it, what can we do? We can perform intersections or
+unions on the fuzzy topological representations. There is also some work
+to be done re-asserting UMAP’s theoretical assumptions (local
+connectivity, approximately uniform distributions). Fortunately UMAP
+makes this relatively easy as long as you have a copy of fitted UMAP
+models on hand (which we do in this case). To intersect two models
+simply use the <code>*</code> operator; to union them use the <code>+</code> operator.
+Note that this will actually take some time since we need to compute the
+2D embedding of the combined model.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">intersection_mapper</span> <span class="o">=</span> <span class="n">top_mapper</span> <span class="o">*</span> <span class="n">bot_mapper</span>
+<span class="n">union_mapper</span> <span class="o">=</span> <span class="n">top_mapper</span> <span class="o">+</span> <span class="n">bot_mapper</span>
+</code></pre></div>
+<p>With that complete we can visualize the results. First let’s look at the
+intersection:</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">intersection_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">mnist</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_18_1.png" /></p>
+<p>As you can see, while this isn’t as good as a UMAP plot for the full
+MNIST dataset it has recovered the individual digits quite well. The
+worst of the remaining overlap is between the threes and fives in the
+center, which is it still struggling to fully distinguish. But note,
+also, that we have recovered more of the overall structure than either
+of the two different individual views, with the layout of different
+digit classes more closely resembling that of the UMAP run on the full
+dataset.</p>
+<p>Now let’s look at the union.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">union_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">mnist</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_20_1.png" /></p>
+<p>Given that UMAP is agnostic to rotation or reflection of the final
+layout, this is essentially the same result as the intersection since it
+is almost the reflection of it in the y-axis. This sort of result
+(intersection and union being similar) is not always the case (in fact
+it is not that common), but since the underlying structure of the digits
+dataset is so clear we find that either way of piecing it together from
+the two half datasets manage to find the same core underlying structure.</p>
+<p>If you are willing to try something a little more experimental there is
+also a third option using the <code>-</code> operator which effectively
+intersects with the fuzzy set complement (and is thus not commutative,
+just as <code>-</code> implies). The goal here is to try to provide a sense of
+what the data looks like when we contrast it against a second view.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">contrast_mapper</span> <span class="o">=</span> <span class="n">top_mapper</span> <span class="o">-</span> <span class="n">bot_mapper</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">contrast_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">mnist</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_23_1.png" /></p>
+<p>In this case the result is not overly dissimilar from the embedding of
+just the top half, so the contrast has perhaps not shown is as much as
+we might have hoped.</p>
+<h2 id="diamonds-dataset-example">Diamonds dataset example<a class="headerlink" href="#diamonds-dataset-example" title="Permanent link">&para;</a></h2>
+<p>Now let’s try the same approach on a different dataset where the option
+of just running UMAP on the full dataset is not available. For this
+we’ll use the diamonds dataset. In this dataset each row represents a
+different diamond and provides details on the weight (carat), cut,
+color, clarity, size (depth, table, x, y, z) and price of the given
+diamond. How these different factors interplay is somewhat complicated.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">diamonds</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span><span class="s1">&#39;diamonds&#39;</span><span class="p">)</span>
+<span class="n">diamonds</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>carat</th>
+      <th>cut</th>
+      <th>color</th>
+      <th>clarity</th>
+      <th>depth</th>
+      <th>table</th>
+      <th>price</th>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.23</td>
+      <td>Ideal</td>
+      <td>E</td>
+      <td>SI2</td>
+      <td>61.5</td>
+      <td>55.0</td>
+      <td>326</td>
+      <td>3.95</td>
+      <td>3.98</td>
+      <td>2.43</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.21</td>
+      <td>Premium</td>
+      <td>E</td>
+      <td>SI1</td>
+      <td>59.8</td>
+      <td>61.0</td>
+      <td>326</td>
+      <td>3.89</td>
+      <td>3.84</td>
+      <td>2.31</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.23</td>
+      <td>Good</td>
+      <td>E</td>
+      <td>VS1</td>
+      <td>56.9</td>
+      <td>65.0</td>
+      <td>327</td>
+      <td>4.05</td>
+      <td>4.07</td>
+      <td>2.31</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.29</td>
+      <td>Premium</td>
+      <td>I</td>
+      <td>VS2</td>
+      <td>62.4</td>
+      <td>58.0</td>
+      <td>334</td>
+      <td>4.20</td>
+      <td>4.23</td>
+      <td>2.63</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.31</td>
+      <td>Good</td>
+      <td>J</td>
+      <td>SI2</td>
+      <td>63.3</td>
+      <td>58.0</td>
+      <td>335</td>
+      <td>4.34</td>
+      <td>4.35</td>
+      <td>2.75</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>For our purposes let’s take “price” as a “target” variable (as is often
+the case when the dataset is used in machine learning contexts). What we
+would like to do is provide a UMAP embedding of the data using the
+remaining features. This is tricky since we can’t exactly use a
+euclidean metric over the whole thing. What we can do, however, is split
+the data into two distinct types: the purely numeric features relating
+to size and weight, and the categorical features of color, cut and
+clarity. Let’s pull each of those feature sets out so we can work with
+them independently.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">numeric</span> <span class="o">=</span> <span class="n">diamonds</span><span class="p">[[</span><span class="s2">&quot;carat&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">ordinal</span> <span class="o">=</span> <span class="n">diamonds</span><span class="p">[[</span><span class="s2">&quot;cut&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;clarity&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</code></pre></div>
+<p>Now we have a new problem: the numeric features are not at all on the
+same scales, so any sort of standard distance metric across them will be
+dominated by those features with the largest ranges. We can correct for
+that by performing feature scaling. To do that we’ll make use of
+sklearn’s <code>RobustScaler</code> which uses robust statistics (such as the
+median and interquartile range) to center and rescale the data feature
+by feature. If we look at the results on the first five rows we see that
+the different features are all now reasonably comparable, and it is
+reasonable to apply something like euclidean distance across them.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">scaled_numeric</span> <span class="o">=</span> <span class="n">RobustScaler</span><span class="p">()</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">numeric</span><span class="p">)</span>
+<span class="n">scaled_numeric</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>array([[-0.734375  , -0.66666667, -0.95628415, -0.95054945, -0.97345133],
+       [-0.765625  ,  1.33333333, -0.98907104, -1.02747253, -1.07964602],
+       [-0.734375  ,  2.66666667, -0.90163934, -0.9010989 , -1.07964602],
+       [-0.640625  ,  0.33333333, -0.81967213, -0.81318681, -0.79646018],
+       [-0.609375  ,  0.33333333, -0.7431694 , -0.74725275, -0.69026549]])
+</code></pre></div>
+<p>What is the best way to handle the categorical features? If they are
+purely categorical it would make sense to one-hot encode the categories
+and use “dice” distance between them. A downside of that is that, with
+so few categories, it is a very coarse metric which will fail to provide
+much differentiation. For the diamonds dataset, however, the categories
+come with a strict order: Ideal cut is better than Premium cut, which is
+better than Very Good cut and so on. Color grades work similarly, and
+there is a distinct grading scheme for clarity as well. We can use an
+ordinal encoding on these categories. Now, while the <em>ranges</em> of values
+may vary, the differences between them are all comparable – a difference
+of 1 for each grade level. That means we don’t need to rescale this data
+after the ordinal coding.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">ordinal</span><span class="p">[</span><span class="s2">&quot;cut&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ordinal</span><span class="o">.</span><span class="n">cut</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s2">&quot;Fair&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Good&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Very Good&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Premium&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Ideal&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">})</span>
+<span class="n">ordinal</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ordinal</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s2">&quot;D&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;J&quot;</span><span class="p">:</span><span class="mi">6</span><span class="p">})</span>
+<span class="n">ordinal</span><span class="p">[</span><span class="s2">&quot;clarity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ordinal</span><span class="o">.</span><span class="n">clarity</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s2">&quot;I1&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;SI2&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;SI1&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;VS2&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;VS1&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;VVS2&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;VVS1&quot;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;IF&quot;</span><span class="p">:</span><span class="mi">7</span><span class="p">})</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">ordinal</span>
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>cut</th>
+      <th>color</th>
+      <th>clarity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>4</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>3</td>
+      <td>1</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1</td>
+      <td>1</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>5</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>53935</th>
+      <td>4</td>
+      <td>0</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>53936</th>
+      <td>1</td>
+      <td>0</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>53937</th>
+      <td>2</td>
+      <td>0</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>53938</th>
+      <td>3</td>
+      <td>4</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>53939</th>
+      <td>4</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+<p>53940 rows × 3 columns</p>
+</div>
+
+<p>As noted we can use euclidean as a sensible distance on the rescaled
+numeric data. On the other hand since the different ordinal categories
+are entirelty independent of each other, and we have a strict ordinal
+codin, the socalled “manhattan” metric makes more sense here – it is
+simply the sum of the absolute differences in each category. As before
+we can now train UMAP models on each dataset – this time, however, since
+the datasets are different we need different metrics and even different
+values of <code>n_neighbors</code>.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">numeric_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">scaled_numeric</span><span class="p">)</span>
+<span class="n">ordinal_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s2">&quot;manhattan&quot;</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ordinal</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div>
+<p>We can look at the results of each of these independent views of the
+dataset reduced to 2D using UMAP. Let’s first look at the numeric data
+on size and weight of the diamonds. We can colour by the price to get
+some idea of how the dataset fits together.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">numeric_mapper</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_36_1.png" /></p>
+<p>We see that while the data generally correlates somewhat with the price
+of the diamonds there are distinctly different threads in the data,
+presumably corresponding to different styles of cut, and how that
+results in different sizing of diamonds in the various dimensions,
+depending on the weight.</p>
+<p>In contrast we ca look at the ordinal data. In this case we’ll colour it
+by the different categories as well as by price.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">12</span><span class="p">))</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">ordinal_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">ordinal_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;clarity&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">ordinal_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;cut&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">ordinal_mapper</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_38_1.png" /></p>
+<p>As you can see this is a markedly different result! The ordinal data has
+a relatively coarse metric, since the different categories can only take
+on a small range of discrete values. This means that, with respect to
+the trio of color, cut, and clarity, diamonds are largely either almost
+identical, or quite distinct. The result is very tight groupings which
+have very high density. You can see a gradient of color from left to
+right in the plot; colouring by cut or clarity show different
+stratifications. The combination of these very distinct statifications
+results in this highly clustered embedding. It is exactly for this
+reason that we need such a high <code>n_neighbors</code> value: the very local
+structure of the data is merely clusters of identical categories; we
+need to see wider to learn more structure.</p>
+<p>Given these radically different views of the data, what do we get if we
+try to integrate them together? As before we can use the intersection
+and union operators to simply combine the models. As noted before this
+is a somewhat time-consuming operation as a new 2D representation for
+the combined models needs to be optimized.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">intersection_mapper</span> <span class="o">=</span> <span class="n">numeric_mapper</span> <span class="o">*</span> <span class="n">ordinal_mapper</span>
+<span class="n">union_mapper</span> <span class="o">=</span> <span class="n">numeric_mapper</span> <span class="o">+</span> <span class="n">ordinal_mapper</span>
+</code></pre></div>
+<p>Let’s start by looking at the intersection; here we are only really
+decreasing connectivity since edges are assigned the probability of
+existing in <em>both</em> data views (before re-asserting local connectivity
+and uniform distribution assumptions).</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">intersection_mapper</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_42_1.png" /></p>
+<p>What we get most closely represents the numeric data view. Why is this?
+Because the categorical data view has points either connected with
+certainty (because they are, or are nearly, identical) or very loosely.
+The points connected with near certainty are very dense clusters –
+almost points in the plot – and mostly what we are doing with the
+intersection is breaking up those clusters with the more fine-grained
+and variable connectivity provided by the numerical data. At th esame
+time we have shifted the result significantly from the numerical data
+view on its own; the categorical information has made each cluster more
+uniform (rather than being a gradient) in its price.</p>
+<p>Given this result, what would you expect of the union?</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">union_mapper</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_44_1.png" /></p>
+<p>What we get in practice looks a lot more like the categorical view of
+the data. This time we are only <em>increasing</em> the connectivity (prior to
+re-asserting local connectivity and uniform distribution assumptions);
+thus we retain most of the structure of the high-connectivity
+categorical view. Note, however, that we have created more connected and
+coherent clusters in the center of the plot, showing a range of diamond
+colors, and the introduction of the numerical size and weight
+information has induced a rearrangement of the individual clusters
+around the fringes.</p>
+<p>We can go a step further and experiment with the contrast composition
+method.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">contrast_mapper</span> <span class="o">=</span> <span class="n">numeric_mapper</span> <span class="o">-</span> <span class="n">ordinal_mapper</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">contrast_mapper</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_47_1.png" /></p>
+<p>Here we see that we’ve retained a lot of the structure of the numeric
+data view, but have refined and broken it down further into clear
+clusters with price gradients running through each of them.</p>
+<p>To further demonstrate the power of this approach we can go a step
+further and intersect a higher <code>n_neighbors</code> based embedding of the
+numeric data view with our existing union of numeric and categorical
+data – providing a model that is a composition of three simpler models.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">intersect_union_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">numeric</span><span class="p">)</span> <span class="o">*</span> <span class="n">union_mapper</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">points</span><span class="p">(</span><span class="n">intersect_union_mapper</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">diamonds</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/composing_models_50_1.png" /></p>
+<p>Here the greater global structure from the larger <code>n_neighbors</code> value
+glues together longer strands and we get an interesting result out. In
+this case it is not necessarily particularly informative, but it is
+included as a demonstration that even composed models can be composed
+with each other, stacking together potentially many different views.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2017-2024 Leland McInnes
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.expand", "navigation.top", "content.code.copy", "content.tooltips", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>

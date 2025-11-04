@@ -1,0 +1,1829 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Uniform Manifold Approximation and Projection">
+      
+      
+        <meta name="author" content="Leland McInnes">
+      
+      
+        <link rel="canonical" href="https://lmcinnes.github.io/umap/parameters/">
+      
+      
+        <link rel="prev" href="../basic_usage/">
+      
+      
+        <link rel="next" href="../supervised/">
+      
+      
+      <link rel="icon" href="../doc/logo_large.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+    
+    
+      
+        <title>Parameters - UMAP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#basic-umap-parameters" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="UMAP" class="md-header__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UMAP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Parameters
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="UMAP" class="md-nav__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    UMAP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_umap_works/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How UMAP Works
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Reproducibility
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    User Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#n_neighbors" class="md-nav__link">
+    <span class="md-ellipsis">
+      n_neighbors
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#min_dist" class="md-nav__link">
+    <span class="md-ellipsis">
+      min_dist
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#n_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      n_components
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      metric
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supervised/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Supervised Dimensionality Reduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clustering/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Clustering
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inverse_transform/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Inverse Transform
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparse/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sparse Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../composing_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Composing Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aligned UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_politics_demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aligned UMAP - Politics Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedding_space/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Embedding Space
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exploratory_analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exploratory Analysis
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Variants and Extensions
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Variants and Extensions
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../densmap_demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    densMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parametric_umap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parametric UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mutual_nn_umap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mutual Nearest Neighbors UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transform & Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform_landmarked_pumap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Landmarked Parametric UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Visualization and Interactive
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Visualization and Interactive
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Plotting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_viz/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interactive Visualization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outliers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Outlier Detection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../document_embedding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Document Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_umap_of_text_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nomic Atlas - Text Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_visualizing_mnist_training_dynamics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nomic Atlas - MNIST Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Performance & Optimization
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Performance & Optimization
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Performance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarking/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../precomputed_k-nn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Precomputed k-NN
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference & Support
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Reference & Support
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FAQ
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scientific_papers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scientific Papers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development_roadmap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Development Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#n_neighbors" class="md-nav__link">
+    <span class="md-ellipsis">
+      n_neighbors
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#min_dist" class="md-nav__link">
+    <span class="md-ellipsis">
+      min_dist
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#n_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      n_components
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      metric
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="basic-umap-parameters">Basic UMAP Parameters<a class="headerlink" href="#basic-umap-parameters" title="Permanent link">&para;</a></h1>
+<p>UMAP is a fairly flexible non-linear dimension reduction algorithm. It
+seeks to learn the manifold structure of your data and find a low
+dimensional embedding that preserves the essential topological structure
+of that manifold. In this notebook we will generate some visualisable
+4-dimensional data, demonstrate how to use UMAP to provide a
+2-dimensional representation of it, and then look at how various UMAP
+parameters can impact the resulting embedding. This documentation is
+based on the work of Philippe Rivière for visionscarto.net.</p>
+<p>To start we'll need some basic libraries. First <code>numpy</code> will be needed
+for basic array manipulation. Since we will be visualising the results
+we will need <code>matplotlib</code> and <code>seaborn</code>. Finally we will need
+<code>umap</code> for doing the dimension reduction itself.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">umap</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="s1">&#39;poster&#39;</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">:(</span><span class="mi">14</span><span class="p">,</span><span class="mi">10</span><span class="p">)})</span>
+</code></pre></div>
+<p>Next we will need some data to embed into a lower dimensional
+representation. To make the 4-dimensional data "visualisable" we will
+generate data uniformly at random from a 4-dimensional cube such that we
+can interpret a sample as a tuple of (R,G,B,a) values specifying a color
+(and translucency). Thus when we plot low dimensional representations
+each point can be colored according to its 4-dimensional value. For this we
+can use <code>numpy</code>. We will fix a random seed for the sake of
+consistency.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+<p>Now we need to find a low dimensional representation of the data. As in
+the Basic Usage documentation, we can do this by using the
+<code>umap.umap_.UMAP.fit_transform</code> method on a <code>umap.umap_.UMAP</code> object.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fit</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">()</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">u</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>CPU times: user 7.73 s, sys: 211 ms, total: 7.94 s
+Wall time: 6.8 s
+</code></pre></div>
+<p>The resulting value <code>u</code> is a 2-dimensional representation of the data.
+We can visualise the result by using <code>matplotlib</code> to draw a scatter
+plot of <code>u</code>. We can color each point of the scatter plot by the
+associated 4-dimensional color from the source data.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">u</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;UMAP embedding of random colours&#39;</span><span class="p">);</span>
+</code></pre></div>
+<p><img alt="Image" src="images/parameters_8_1.png" /></p>
+<p>As you can see the result is that the data is placed in 2-dimensional
+space such that points that were nearby in 4-dimensional space (i.e.
+are similar colors) are kept close together. Since we drew a random
+selection of points in the color cube there is a certain amount of
+induced structure from where the random points happened to clump up in
+color space.</p>
+<p>UMAP has several hyperparameters that can have a significant impact on
+the resulting embedding. In this notebook we will be covering the four
+major ones:</p>
+<ul>
+<li><code>n_neighbors</code></li>
+<li><code>min_dist</code></li>
+<li><code>n_components</code></li>
+<li><code>metric</code></li>
+</ul>
+<p>Each of these parameters has a distinct effect, and we will look at each
+in turn. To make exploration simpler we will first write a short utility
+function that can fit the data with UMAP given a set of parameter
+choices, and plot the result.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">def</span> <span class="nf">draw_umap</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">min_dist</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span>
+        <span class="n">n_neighbors</span><span class="o">=</span><span class="n">n_neighbors</span><span class="p">,</span>
+        <span class="n">min_dist</span><span class="o">=</span><span class="n">min_dist</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span>
+        <span class="n">metric</span><span class="o">=</span><span class="n">metric</span>
+    <span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">n_components</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="p">)),</span> <span class="n">c</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_components</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">u</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_components</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">u</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">u</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="n_neighbors"><code>n_neighbors</code><a class="headerlink" href="#n_neighbors" title="Permanent link">&para;</a></h3>
+<p>This parameter controls how UMAP balances local versus global structure
+in the data. It does this by constraining the size of the local
+neighborhood UMAP will look at when attempting to learn the manifold
+structure of the data. This means that low values of <code>n_neighbors</code>
+will force UMAP to concentrate on very local structure (potentially to
+the detriment of the big picture), while large values will push UMAP to
+look at larger neighborhoods of each point when estimating the manifold
+structure of the data, losing fine detail structure for the sake of
+getting the broader of the data.</p>
+<p>We can see that in practice by fitting our dataset with UMAP using a
+range of <code>n_neighbors</code> values. The default value of <code>n_neighbors</code>
+for UMAP (as used above) is 15, but we will look at values ranging from
+2 (a very local view of the manifold) up to 200 (a quarter of the data).</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">):</span>
+    <span class="n">draw_umap</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;n_neighbors = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+</code></pre></div>
+<p><img alt="Image" src="images/parameters_13_1.png" /></p>
+<p><img alt="Image" src="images/parameters_13_2.png" /></p>
+<p><img alt="Image" src="images/parameters_13_3.png" /></p>
+<p><img alt="Image" src="images/parameters_13_4.png" /></p>
+<p><img alt="Image" src="images/parameters_13_5.png" /></p>
+<p><img alt="Image" src="images/parameters_13_6.png" /></p>
+<p><img alt="Image" src="images/parameters_13_7.png" /></p>
+<p>With a value of <code>n_neighbors=2</code> we see that UMAP merely glues together
+small chains, but due to the narrow/local view, fails to see how those
+connect together. It also leaves many different components (and even
+singleton points). This represents the fact that from a fine detail
+point of view the data is very disconnected and scattered throughout the
+space.</p>
+<p>As <code>n_neighbors</code> is increased UMAP manages to see more of the overall
+structure of the data, gluing more components together, and better
+coverying the broader structure of the data. By the stage of
+<code>n_neighbors=20</code> we have a fairly good overall view of the data
+showing how the various colors interelate to each other over the whole
+dataset.</p>
+<p>As <code>n_neighbors</code> increases further more and more focus in placed on
+the overall structure of the data. This results in, with
+<code>n_neighbors=200</code> a plot where the overall structure (blues, greens,
+and reds; high luminance versus low) is well captured, but at the loss
+of some of the finer local structure (individual colors are no longer
+necessarily immediately near their closest color match).</p>
+<p>This effect well exemplifies the local/global tradeoff provided by
+<code>n_neighbors</code>.</p>
+<h3 id="min_dist"><code>min_dist</code><a class="headerlink" href="#min_dist" title="Permanent link">&para;</a></h3>
+<p>The <code>min_dist</code> parameter controls how tightly UMAP is allowed to pack
+points together. It, quite literally, provides the minimum distance
+apart that points are allowed to be in the low dimensional
+representation. This means that low values of <code>min_dist</code> will result
+in clumpier embeddings. This can be useful if you are interested in
+clustering, or in finer topological structure. Larger values of
+<code>min_dist</code> will prevent UMAP from packing points together and will
+focus on the preservation of the broad topological structure
+instead.</p>
+<p>The default value for <code>min_dist</code> (as used above) is 0.1. We will look
+at a range of values from 0.0 through to 0.99.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">):</span>
+    <span class="n">draw_umap</span><span class="p">(</span><span class="n">min_dist</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;min_dist = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+</code></pre></div>
+<p><img alt="Image" src="images/parameters_16_1.png" /></p>
+<p><img alt="Image" src="images/parameters_16_2.png" /></p>
+<p><img alt="Image" src="images/parameters_16_3.png" /></p>
+<p><img alt="Image" src="images/parameters_16_4.png" /></p>
+<p><img alt="Image" src="images/parameters_16_5.png" /></p>
+<p><img alt="Image" src="images/parameters_16_6.png" /></p>
+<p>Here we see that with <code>min_dist=0.0</code> UMAP manages to find small
+connected components, clumps and strings in the data, and emphasises
+these features in the resulting embedding. As <code>min_dist</code> is increased
+these structures are pushed apart into softer more general features,
+providing a better overarching view of the data at the loss of the more
+detailed topological structure.</p>
+<h3 id="n_components"><code>n_components</code><a class="headerlink" href="#n_components" title="Permanent link">&para;</a></h3>
+<p>As is standard for many <code>scikit-learn</code> dimension reduction algorithms
+UMAP provides a <code>n_components</code> parameter option that allows the user
+to determine the dimensionality of the reduced dimension space we will
+be embedding the data into. Unlike some other visualisation algorithms
+such as t-SNE, UMAP scales well in the embedding dimension, so you can use it
+for more than just visualisation in 2- or 3-dimensions.</p>
+<p>For the purposes of this demonstration (so that we can see the effects
+of the parameter) we will only be looking at 1-dimensional and
+3-dimensional embeddings, which we have some hope of visualizing.</p>
+<p>First of all we will set <code>n_components</code> to 1, forcing UMAP to embed
+the data in a line. For visualisation purposes we will randomly
+distribute the data on the y-axis to provide some separation between
+points.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">draw_umap</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;n_components = 1&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="Image" src="images/parameters_19_1.png" /></p>
+<p>Now we will try <code>n_components=3</code>. For visualisation we will make use
+of <code>matplotlib</code>'s basic 3-dimensional plotting.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">draw_umap</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;n_components = 3&#39;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>/opt/anaconda3/envs/umap_dev/lib/python3.6/site-packages/sklearn/metrics/pairwise.py:257: RuntimeWarning: invalid value encountered in sqrt
+  return distances if squared else np.sqrt(distances, out=distances)
+</code></pre></div>
+<p><img alt="Image" src="images/parameters_21_1.png" /></p>
+<p>Here we can see that with more dimensions in which to work UMAP has an
+easier time separating out the colors in a way that respects the
+topological structure of the data.</p>
+<p>As mentioned, there is really no requirement to stop at <code>n_components=3</code>. If you are interested in (density based) clustering, or other
+machine learning techniques, it can be beneficial to pick a larger
+embedding dimension (say 10, or 50) closer to the the dimension of the
+underlying manifold on which your data lies.</p>
+<h3 id="metric"><code>metric</code><a class="headerlink" href="#metric" title="Permanent link">&para;</a></h3>
+<p>The final UMAP parameter we will be considering in this notebook is the
+<code>metric</code> parameter. This controls how distance is computed in the
+ambient space of the input data. By default UMAP supports a wide variety
+of metrics, including:</p>
+<p><strong>Minkowski style metrics</strong></p>
+<ul>
+<li>euclidean</li>
+<li>manhattan</li>
+<li>chebyshev</li>
+<li>minkowski</li>
+</ul>
+<p><strong>Miscellaneous spatial metrics</strong></p>
+<ul>
+<li>canberra</li>
+<li>braycurtis</li>
+<li>haversine</li>
+</ul>
+<p><strong>Normalized spatial metrics</strong></p>
+<ul>
+<li>mahalanobis</li>
+<li>wminkowski</li>
+<li>seuclidean</li>
+</ul>
+<p><strong>Angular and correlation metrics</strong></p>
+<ul>
+<li>cosine</li>
+<li>correlation</li>
+</ul>
+<p><strong>Metrics for binary data</strong></p>
+<ul>
+<li>hamming</li>
+<li>jaccard</li>
+<li>dice</li>
+<li>russellrao</li>
+<li>kulsinski</li>
+<li>rogerstanimoto</li>
+<li>sokalmichener</li>
+<li>sokalsneath</li>
+<li>yule</li>
+</ul>
+<p><strong>Precomputed</strong></p>
+<p>All of the above metrics assume your input data is "raw" in some N-dimensional space.
+Sometimes, you have already calculated the pairwise distances between points,
+and your input data is a distance/similarity matrix.
+In this case, you can do something like <code>UMAP(metric='precomputed').fit_transform(&lt;distance matrix&gt;)</code>.</p>
+<p>Any of which can be specified by setting <code>metric='&lt;metric name&gt;'</code>; for
+example to use cosine distance as the metric you would use
+<code>metric='cosine'</code>.</p>
+<p>UMAP offers more than this however -- it supports custom user defined
+metrics as long as those metrics can be compiled in <code>nopython</code> mode by
+numba. For this notebook we will be looking at such custom metrics. To
+define such metrics we'll need numba ...</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">import</span> <span class="nn">numba</span>
+</code></pre></div>
+<p>For our first custom metric we'll define the distance to be the absolute
+value of difference in the red channel.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">red_channel_dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div>
+<p>To get more adventurous it will be useful to have some colorspace
+conversion -- to keep things simple we'll just use HSL formulas to
+extract the hue, saturation, and lightness from an (R,G,B) tuple.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">hue</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">cmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">cmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">cmax</span> <span class="o">-</span> <span class="n">cmin</span>
+    <span class="k">if</span> <span class="n">cmax</span> <span class="o">==</span> <span class="n">r</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">g</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">cmax</span> <span class="o">==</span> <span class="n">g</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">b</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">r</span> <span class="o">-</span> <span class="n">g</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span>
+
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">lightness</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">cmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">cmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">cmax</span> <span class="o">+</span> <span class="n">cmin</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">saturation</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">cmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">cmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">chroma</span> <span class="o">=</span> <span class="n">cmax</span> <span class="o">-</span> <span class="n">cmin</span>
+    <span class="n">light</span> <span class="o">=</span> <span class="n">lightness</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">light</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">chroma</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">light</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+<p>With that in hand we can define three extra distances. The first simply
+measures the difference in hue, the second measures the euclidean
+distance in a combined saturation and lightness space, while the third
+measures distance in the full HSL space.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">hue_dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">hue</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="n">hue</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span> <span class="o">%</span> <span class="mi">6</span>
+    <span class="k">if</span> <span class="n">diff</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">diff</span> <span class="o">+</span> <span class="mi">6</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">diff</span>
+
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">sl_dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">a_sat</span> <span class="o">=</span> <span class="n">saturation</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">b_sat</span> <span class="o">=</span> <span class="n">saturation</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">a_light</span> <span class="o">=</span> <span class="n">lightness</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">b_light</span> <span class="o">=</span> <span class="n">lightness</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">a_sat</span> <span class="o">-</span> <span class="n">b_sat</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">a_light</span> <span class="o">-</span> <span class="n">b_light</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">hsl_dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">a_sat</span> <span class="o">=</span> <span class="n">saturation</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">b_sat</span> <span class="o">=</span> <span class="n">saturation</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">a_light</span> <span class="o">=</span> <span class="n">lightness</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">b_light</span> <span class="o">=</span> <span class="n">lightness</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">a_hue</span> <span class="o">=</span> <span class="n">hue</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">b_hue</span> <span class="o">=</span> <span class="n">hue</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">a_sat</span> <span class="o">-</span> <span class="n">b_sat</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">a_light</span> <span class="o">-</span> <span class="n">b_light</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(((</span><span class="n">a_hue</span> <span class="o">-</span> <span class="n">b_hue</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">)</span>
+</code></pre></div>
+<p>With such custom metrics in hand we can get UMAP to embed the data using
+those metrics to measure the distance between our input data points. Note
+that <code>numba</code> provides significant flexibility in what we can do in
+defining distance functions. Despite this we retain the high performance
+we expect from UMAP even using such custom functions.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;euclidean&quot;</span><span class="p">,</span> <span class="n">red_channel_dist</span><span class="p">,</span> <span class="n">sl_dist</span><span class="p">,</span> <span class="n">hue_dist</span><span class="p">,</span> <span class="n">hsl_dist</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">m</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span> <span class="k">else</span> <span class="n">m</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="n">draw_umap</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;metric = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+</code></pre></div>
+<p><img alt="Image" src="images/parameters_32_1.png" /></p>
+<p><img alt="Image" src="images/parameters_32_2.png" /></p>
+<p><img alt="Image" src="images/parameters_32_3.png" /></p>
+<p><img alt="Image" src="images/parameters_32_4.png" /></p>
+<p><img alt="Image" src="images/parameters_32_5.png" /></p>
+<p>And here we can see the effects of the metrics quite clearly. The pure
+red channel correctly sees the data as living on a one dimensional
+manifold, the hue metric interprets the data as living in a circle, and
+the HSL metric fattens out the circle according to the saturation and
+lightness. This provides a reasonable demonstration of the power and
+flexibility of UMAP in understanding the underlying topology of data,
+and finding a suitable low dimensional representation of that topology.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2017-2024 Leland McInnes
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.expand", "navigation.top", "content.code.copy", "content.tooltips", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>

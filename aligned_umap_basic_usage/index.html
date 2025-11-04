@@ -1,0 +1,1831 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Uniform Manifold Approximation and Projection">
+      
+      
+        <meta name="author" content="Leland McInnes">
+      
+      
+        <link rel="canonical" href="https://lmcinnes.github.io/umap/aligned_umap_basic_usage/">
+      
+      
+        <link rel="prev" href="../composing_models/">
+      
+      
+        <link rel="next" href="../aligned_umap_politics_demo/">
+      
+      
+      <link rel="icon" href="../doc/logo_large.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+    
+    
+      
+        <title>Aligned UMAP - UMAP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#how-to-use-alignedumap" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="UMAP" class="md-header__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UMAP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Aligned UMAP
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="UMAP" class="md-nav__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    UMAP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_umap_works/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How UMAP Works
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Reproducibility
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    User Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supervised/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Supervised Dimensionality Reduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clustering/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Clustering
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inverse_transform/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Inverse Transform
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparse/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sparse Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../composing_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Composing Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Aligned UMAP
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Aligned UMAP
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#online-updating-of-aligned-embeddings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Online updating of aligned embeddings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aligning-varying-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Aligning varying parameters
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_politics_demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aligned UMAP - Politics Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedding_space/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Embedding Space
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exploratory_analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exploratory Analysis
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Variants and Extensions
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Variants and Extensions
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../densmap_demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    densMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parametric_umap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parametric UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mutual_nn_umap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mutual Nearest Neighbors UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transform & Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform_landmarked_pumap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Landmarked Parametric UMAP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Visualization and Interactive
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Visualization and Interactive
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Plotting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_viz/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interactive Visualization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outliers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Outlier Detection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../document_embedding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Document Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_umap_of_text_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nomic Atlas - Text Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_visualizing_mnist_training_dynamics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nomic Atlas - MNIST Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Performance & Optimization
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Performance & Optimization
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Performance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarking/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../precomputed_k-nn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Precomputed k-NN
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference & Support
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Reference & Support
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FAQ
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scientific_papers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scientific Papers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development_roadmap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Development Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#online-updating-of-aligned-embeddings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Online updating of aligned embeddings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aligning-varying-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Aligning varying parameters
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="how-to-use-alignedumap">How to use AlignedUMAP<a class="headerlink" href="#how-to-use-alignedumap" title="Permanent link">&para;</a></h1>
+<p>It may happen that it would be beneficial to have different UMAP
+embeddings aligned with each other. There are several ways to go about
+doing this. One simple approach is to simply embed each dataset with
+UMAP independently and then solve for a <code>Procrustes
+transformation &lt;https://en.wikipedia.org/wiki/Procrustes_transformation&gt;</code>__
+on shared points. An alternative approach is to embed the first dataset
+and then construct an initial embedding for the second dataset based on
+locations of shared points in the first embedding and then go from
+there. A third approach, which will provide better alignments in
+general, is to optimize both embeddings at the same time with some form
+of constraint as to how far shared points can take different locations
+in different embeddings <em>during</em> the optimization. This last option is
+possible, but is not easily tractable to implement yourself (unlike the
+first two options). To remedy this issue it has been implemented as a
+separate model class in <code>umap</code> called <code>AlignedUMAP</code>. The
+resulting class is quite flexible, but here we will walk through simple
+usage on some basic (and somewhat contrived) data just to demonstrate
+how to get it running on data.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sklearn.datasets</span>
+<span class="kn">import</span> <span class="nn">umap</span>
+<span class="kn">import</span> <span class="nn">umap.plot</span>
+<span class="kn">import</span> <span class="nn">umap.utils</span> <span class="k">as</span> <span class="nn">utils</span>
+<span class="kn">import</span> <span class="nn">umap.aligned_umap</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</code></pre></div>
+<p>For our demonstration we’ll just use the pendigits dataset from sklearn.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">digits</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+</code></pre></div>
+<p>To make a sequence of datasets with some shared points between each
+different dataset we’ll first sort the data so we have some vaguely
+sensible progression. In this case we’ll sort by the total amount of
+“ink” in the handwritten digit. This isn’t meant to be meaningful, it is
+merely meant to provide something useful to slicing into overlapping
+chunks that we will want to embed separately and yet keep aligned.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">ordered_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))]</span>
+<span class="n">ordered_target</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">matshow</span><span class="p">(</span><span class="n">ordered_digits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">)))</span>
+</code></pre></div>
+<p><img alt="Image" src="images/aligned_umap_basic_usage_5_1.png" /></p>
+<p>We can then divide up the dataset into slices of 400 samples, moving
+along in chunks of 150 to ensure that there are overlaps between
+consecutive slices. This will give us a list of ten different datasets
+that we can embed, with the goal being to ensure that the positions of
+points in the embeddings are relatively consistent.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="n">ordered_digits</span><span class="p">[</span><span class="mi">150</span> <span class="o">*</span> <span class="n">i</span><span class="p">:</span><span class="nb">min</span><span class="p">(</span><span class="n">ordered_digits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">150</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">400</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+</code></pre></div>
+<p>To ensure that consistency <code>AlignedUMAP</code> will need more information
+than <em>just</em> the datasets – we also need some information about how the
+datasets relate to one another. These take the form of dictionaries that
+relate the indices of one dataset to the indices of another. Currently
+<code>AlignedUMAP</code> only supports sequences of datasets with relations
+between each consecutive pair in the sequence. To construct the
+relations for this dataset we note that the last 250 samples of one
+dataset are going to be the same samples as the first 250 samples of the
+next dataset – this makes it easy to construct the dictionary: it is
+mapping</p>
+<p>::</p>
+<p>150 &rarr; 0
+   151 &rarr; 1
+   ...
+   398 &rarr; 248
+   399 &rarr; 249</p>
+<p>which we can construct easily using a dictionary comprehension. We will
+have the same relation between each consecutive pair, so to make the
+list of relations between pairs we can just duplicate the constructed
+relation the requisite number of times.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">relation_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="o">+</span><span class="mi">150</span><span class="p">:</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">400</span><span class="o">-</span><span class="mi">150</span><span class="p">)}</span>
+<span class="n">relation_dicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">relation_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">slices</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+</code></pre></div>
+<p>Note that while in this case the relation defines a map between
+identical samples in different datasets it can be much more general –
+see the politics example later for a case where the relation is
+constructed from external information (representatives names and
+states).</p>
+<p>Now that we have both a list of data slices and a list of relations
+between the consecutive pairs we can use the <code>AlignedUMAP</code> class to
+generate a list of embeddings. The <code>AlignedUMAP</code> class takes most of
+the parameters that UMAP accepts. The major difference is that the fit
+method requires a <em>list</em> of datasets, and a keyword argument
+<code>relations</code> that specifies the relation dictionaries between
+consecutive pairs of datasets. Other than that things are essentially
+push-button.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">aligned_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">AlignedUMAP</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">slices</span><span class="p">,</span> <span class="n">relations</span><span class="o">=</span><span class="n">relation_dicts</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>CPU times: user 57.4 s, sys: 8.43 s, total: 1min 5s
+Wall time: 57.4 s
+</code></pre></div>
+<p>You will note that this took a non-trivial amount of time to run,
+despite being on the relatively small pendigits dataset. This is because
+we are completing 10 different UMAP embeddings at once, so on average we
+are taking about five seconds per embedding, which is more reasonable –
+the alignment does have overhead cost however.</p>
+<p>The next step is to look at the results. To ensure that the plots we
+produce have a consistent x and y axis we’ll use a small function to
+compute a set of axis bounds for plotting.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">def</span> <span class="nf">axis_bounds</span><span class="p">(</span><span class="n">embedding</span><span class="p">):</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">embedding</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">bottom</span><span class="p">,</span> <span class="n">top</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">embedding</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">adj_h</span><span class="p">,</span> <span class="n">adj_v</span> <span class="o">=</span> <span class="p">(</span><span class="n">right</span> <span class="o">-</span> <span class="n">left</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span> <span class="p">(</span><span class="n">top</span> <span class="o">-</span> <span class="n">bottom</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">left</span> <span class="o">-</span> <span class="n">adj_h</span><span class="p">,</span> <span class="n">right</span> <span class="o">+</span> <span class="n">adj_h</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">-</span> <span class="n">adj_v</span><span class="p">,</span> <span class="n">top</span> <span class="o">+</span> <span class="n">adj_v</span><span class="p">]</span>
+</code></pre></div>
+<p>Now it is just a matter of plotting the results in ten different scatter
+plots. We can do this most easily with matplotlib directly, setting up a
+grid of plots. Note that the progression proceeds by row then column, so
+read the progression as if you were reading a page of text (across, then
+down).</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+<span class="n">ax_bound</span> <span class="o">=</span> <span class="n">axis_bounds</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">aligned_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()):</span>
+    <span class="n">current_target</span> <span class="o">=</span> <span class="n">ordered_target</span><span class="p">[</span><span class="mi">150</span> <span class="o">*</span> <span class="n">i</span><span class="p">:</span><span class="nb">min</span><span class="p">(</span><span class="n">ordered_target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">150</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">400</span><span class="p">)]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">aligned_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">current_target</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Spectral&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="n">ax_bound</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="Image" src="images/aligned_umap_basic_usage_15_0.png" /></p>
+<p>So despite being different embeddings on different datasets, the
+clusters keep their general alignment – the top left plot and bottom
+right plot have the same rough positions for specific digit clusters. We
+can also, to a degree, see how the structure changes over the course of
+the different slices. Thus we are keeping the various embeddings
+aligned, but allowing the changes dictated by the differing structures
+of each different slice of data.</p>
+<h2 id="online-updating-of-aligned-embeddings">Online updating of aligned embeddings<a class="headerlink" href="#online-updating-of-aligned-embeddings" title="Permanent link">&para;</a></h2>
+<p>It may be the case that we have incoming temporal data and would like to
+have embeddings of time-windows that, ideally, align with the embeddings
+of prior time-windows. As long as we overlap the time-windows we use to
+allow for relations between time windows then this is possible – except
+that the previous code required all the time-windows to be input <em>at
+once</em> for fitting. We would instead like to train an initial model and
+then update it as we go. This is possible via the <code>update</code> method
+which we’ll demonstrate below.</p>
+<p>First we need to fit a base <code>AlignedUMAP</code> model; we’ll use the first
+two slices and the first relation dict to do so.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">updating_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">AlignedUMAP</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">slices</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">relations</span><span class="o">=</span><span class="n">relation_dicts</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>CPU times: user 9.32 s, sys: 1.47 s, total: 10.8 s
+Wall time: 9.17 s
+</code></pre></div>
+<p>Note that this is fairly quick, since we are only fitting two slices.
+Given the trained model the update method requires a new slice of data
+to add, along with a relation dictionary (passed in with the
+<code>relations</code> keyword argument as with <code>fit</code>). This will append a new
+embedding to the <code>embeddings_</code> attribute of the model for the new
+data, aligned with what has been seen so far.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">slices</span><span class="p">)):</span>
+    <span class="o">%</span><span class="n">time</span> <span class="n">updating_mapper</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">slices</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">relations</span><span class="o">=</span><span class="p">{</span><span class="n">v</span><span class="p">:</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">relation_dicts</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>CPU times: user 7.78 s, sys: 1.15 s, total: 8.93 s
+Wall time: 7.92 s
+CPU times: user 6.64 s, sys: 1.17 s, total: 7.81 s
+Wall time: 6.6 s
+CPU times: user 6.94 s, sys: 1.17 s, total: 8.11 s
+Wall time: 6.81 s
+CPU times: user 6.45 s, sys: 1.51 s, total: 7.96 s
+Wall time: 6.45 s
+CPU times: user 7.44 s, sys: 1.32 s, total: 8.76 s
+Wall time: 7.16 s
+CPU times: user 7.68 s, sys: 1.73 s, total: 9.41 s
+Wall time: 7.59 s
+CPU times: user 7.88 s, sys: 1.65 s, total: 9.54 s
+Wall time: 7.39 s
+CPU times: user 7.82 s, sys: 1.98 s, total: 9.8 s
+Wall time: 7.7 s
+</code></pre></div>
+<p>Note that each new slice takes a relatively short period of time, as we
+might hope. The downside of this, as you can imagine, is that we have no
+“forward” relations – the windows over slices only look backward. This
+means the results are less good, but we are trading that for the ability
+to quickly and easily update as we go.</p>
+<p>We can look at how we did using essentially the same code as before.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+<span class="n">ax_bound</span> <span class="o">=</span> <span class="n">axis_bounds</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">updating_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()):</span>
+    <span class="n">current_target</span> <span class="o">=</span> <span class="n">ordered_target</span><span class="p">[</span><span class="mi">150</span> <span class="o">*</span> <span class="n">i</span><span class="p">:</span><span class="nb">min</span><span class="p">(</span><span class="n">ordered_target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">150</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">400</span><span class="p">)]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">updating_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">current_target</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Spectral&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="n">ax_bound</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="Image" src="images/aligned_umap_basic_usage_22_0.png" /></p>
+<p>We see that the alignment is indeed working, so new slices remain
+comparable with previously trained slices. As noted the overall
+alignments and progression is not as nice as the previous version, but
+it does have the significant benefit of allowing an update as you go
+approach.</p>
+<p>Note that right now this model keeps all the previous data, so it will
+only really work in a batch streaming approach where occasionally a
+fresh model is trained, dropping some of the historical data before
+continuing with updates.</p>
+<h2 id="aligning-varying-parameters">Aligning varying parameters<a class="headerlink" href="#aligning-varying-parameters" title="Permanent link">&para;</a></h2>
+<p>It is possible to align UMAP embedding that vary in the parameters used
+instead of the data. To demonstrate how this can work we’ll continue to
+use the pendigits dataset, but instead of slicing the data as we did
+before, we’ll use the full dataset. That means that our relations
+between datasets are simply constant relations. We can construct those
+ahead of time:</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">constant_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])}</span>
+<span class="n">constant_relations</span> <span class="o">=</span> <span class="p">[</span><span class="n">constant_dict</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)]</span>
+</code></pre></div>
+<p>To run AlignedUMAP over a range of parameters you simply need to pass in
+a <em>list</em> of the sequence of parameters you wish to use. You can do this
+for several different parameters – just ensure that all the lists are
+the same length! In this case we’ll try looking at how the embeddings
+change if we change <code>n_neighbors</code> and <code>min_dist</code>. This means that
+when we create the AlignedUMAP object we pass a list, instead of a
+single value, to each of those parameters. To make the visualization a
+little more interesting we’ll also vary some of the alignment parameters
+(there are only two of major consequence). Specifically we’ll adjust the
+<code>alignment_window_size</code>, which controls how far forward and backward
+across the datasets we look when doing alignment, and the
+<code>alignment_regularisation</code> which controls how heavily we weight the
+alignment aspect versus the UMAP layout. Larger values of
+<code>alignment_regularisation</code> will work harder to keep points aligned
+across embeddings (at the cost of the embedding quality at each slice),
+while smaller values will allow the optimisation to focus more on the
+individual embeddings and put less emphasis on aligning the embeddings
+with each other.</p>
+<p>Given a model we can then fit it. As before we need to hand it a list of
+datasets, and a list of relations. Since we are using the same data each
+time (and varying the parameters) we can just repeat the full pendigits
+dataset. Note that the number of datasets needs to match the number of
+parameter values being used. The same goes for the number of relations
+(one less than the number of parameter values).</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">neighbors_mapper</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">AlignedUMAP</span><span class="p">(</span>
+    <span class="n">n_neighbors</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">22</span><span class="p">,</span><span class="mi">29</span><span class="p">,</span><span class="mi">37</span><span class="p">,</span><span class="mi">45</span><span class="p">,</span><span class="mi">54</span><span class="p">],</span>
+    <span class="n">min_dist</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">,</span><span class="mf">0.05</span><span class="p">,</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.15</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.25</span><span class="p">,</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.35</span><span class="p">,</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.45</span><span class="p">],</span>
+    <span class="n">alignment_window_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">alignment_regularisation</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">digits</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)],</span> <span class="n">relations</span><span class="o">=</span><span class="n">constant_relations</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>As before we can look at the results by plotting each of the embeddings.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+<span class="n">ax_bound</span> <span class="o">=</span> <span class="n">axis_bounds</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">neighbors_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">neighbors_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">digits</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Spectral&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="n">ax_bound</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="Image" src="images/aligned_umap_basic_usage_29_1.png" /></p>
+<p>To get a better feel for the evolution of the embedding over the change
+in parameter values we can plot the data in three dimensions, with the
+third dimension being the parameter value chosen. To better show how
+data points in the embedding <em>move</em> with respect to the changing
+parameters we can plot them not as points, but as <em>curves</em> connecting
+the same point in each sequential embedding. For three dimensional plots
+like this we’ll make use of the <a href="https://plotly.com">plotly</a> plotting
+library.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+</code></pre></div>
+<p>The first thing we’ll have to do is wrangle the data into a suitable
+format for plotly. That’s the reason we loaded up pandas as well –
+plotly likes dataframes. This involves stacking all the embeddings
+together, and then assigning an extra <code>z</code> value according to which
+embedding we are in. For the purposes of visualization we’ll just have a
+linear scale from 0 to 1 of the appropriate length for the z
+coordinates.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">n_embeddings</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neighbors_mapper</span><span class="o">.</span><span class="n">embeddings_</span><span class="p">)</span>
+<span class="n">es</span> <span class="o">=</span> <span class="n">neighbors_mapper</span><span class="o">.</span><span class="n">embeddings_</span>
+<span class="n">embedding_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">es</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">))</span>
+<span class="n">embedding_df</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_embeddings</span><span class="p">),</span> <span class="n">es</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">embedding_df</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">es</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">n_embeddings</span><span class="p">)</span>
+<span class="n">embedding_df</span><span class="p">[</span><span class="s1">&#39;digit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">digits</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">n_embeddings</span><span class="p">)</span>
+</code></pre></div>
+<p>The next thing we can do to improve the visualization is to smooth out
+the curves rather than leaving them as piecewise linear lines. To to
+this we can use the <code>scipy.interpolate</code> functionality to create smooth
+cubic splines that pass through all the points of the curve we wish to
+create.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">import</span> <span class="nn">scipy.interpolate</span>
+</code></pre></div>
+<p>The interpolate module has a function <code>interp1d</code> that generates a
+(vector of) smooth function given a one dimensional set of datapoints
+that it needs to pass through. We can generate separate functions for
+the x and y coordinates for each pendigit sample, allowing us to
+generate smooth curves in three dimensions.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fx</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
+    <span class="n">embedding_df</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">embedding_df</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">],</span> <span class="n">embedding_df</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_embeddings</span><span class="p">,</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;cubic&quot;</span>
+<span class="p">)</span>
+<span class="n">fy</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
+    <span class="n">embedding_df</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">embedding_df</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">],</span> <span class="n">embedding_df</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_embeddings</span><span class="p">,</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;cubic&quot;</span>
+<span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+<p>With that in hand it is just a matter of plotting all the curves. In
+plotly parlance each curve is a “trace” and we generate each one
+separately (along with a suitable colour given by the digit the sample
+represents). We then add all the traces to a figure, and display the
+figure.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">palette</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">diverging</span><span class="o">.</span><span class="n">Spectral</span>
+<span class="n">interpolated_traces</span> <span class="o">=</span> <span class="p">[</span><span class="n">fx</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">fy</span><span class="p">(</span><span class="n">z</span><span class="p">)]</span>
+<span class="n">traces</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">interpolated_traces</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">interpolated_traces</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="o">*</span><span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="n">digits</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span>
+            <span class="n">width</span><span class="o">=</span><span class="mf">3.0</span>
+        <span class="p">),</span>
+        <span class="n">opacity</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">digits</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="p">]</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">traces</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+    <span class="n">width</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span>
+    <span class="n">height</span><span class="o">=</span><span class="mi">700</span><span class="p">,</span>
+    <span class="n">autosize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="Image" src="images/aligned_umap_pendigits_3d_1.png" /></p>
+<p>Since it is tricky to get the interactive plotly figure embedded in
+documentation we have a static image here, but if you run this yourself
+you will have a fully interactive view of the data.</p>
+<p>Alternatively, we can visualize the third dimension as an evolution of the
+embeddings through time by rendering each z-slice as a frame in an animated
+GIF. To do this, we'll first need to import some notebook display tools and
+matplotlib's <a href="https://matplotlib.org/stable/api/animation_api.html">animation</a>
+module.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">HTML</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">animation</span>
+</code></pre></div>
+<p>Next, we'll create a new figure, initialize a blank scatter plot, then use
+<code>FuncAnimation</code> to update the point positions (called "offsets") one frame at
+a time.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">scat</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">scat</span><span class="o">.</span><span class="n">set_array</span><span class="p">(</span><span class="n">digits</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+<span class="n">scat</span><span class="o">.</span><span class="n">set_cmap</span><span class="p">(</span><span class="s1">&#39;Spectral&#39;</span><span class="p">)</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">ax_bound</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">ax_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="n">ax_bound</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+<span class="n">offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">interpolated_traces</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+<span class="n">num_frames</span> <span class="o">=</span> <span class="n">offsets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">animate</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">scat</span><span class="o">.</span><span class="n">set_offsets</span><span class="p">(</span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">text</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Frame </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scat</span>
+
+<span class="n">anim</span> <span class="o">=</span> <span class="n">animation</span><span class="o">.</span><span class="n">FuncAnimation</span><span class="p">(</span>
+    <span class="n">fig</span><span class="p">,</span>
+    <span class="n">init_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">animate</span><span class="p">,</span>
+    <span class="n">frames</span><span class="o">=</span><span class="n">num_frames</span><span class="p">,</span>
+    <span class="n">interval</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+</code></pre></div>
+<p>Then we can save the animation as a GIF and close our animation. Depending on
+your machine, you may need to change which writer the save method uses.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="n">anim</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;aligned_umap_pendigits_anim.gif&quot;</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="s2">&quot;pillow&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">anim</span><span class="o">.</span><span class="n">_fig</span><span class="p">)</span>
+</code></pre></div>
+<p>Finally, we can read in our rendered GIF and display it in the notebook.</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;aligned_umap_pendigits_anim.gif&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()))</span>
+</code></pre></div>
+<p><img alt="Image" src="images/aligned_umap_pendigits_anim.gif" /></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2017-2024 Leland McInnes
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.expand", "navigation.top", "content.code.copy", "content.tooltips", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>
