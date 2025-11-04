@@ -1,66 +1,72 @@
-import numpy as np
-import numba
 from warnings import warn
 
-try:
-    import pandas as pd
-    import datashader as ds
-    import datashader.transfer_functions as tf
-    import datashader.bundling as bd
-    import matplotlib.pyplot as plt
-    import colorcet
-    import matplotlib.colors
-    import matplotlib.cm
+import numba
+import numpy as np
 
+try:
     import bokeh.plotting as bpl
     import bokeh.transform as btr
+    import colorcet
+    import datashader as ds
+    import datashader.bundling as bd
+    import datashader.transfer_functions as tf
     import holoviews as hv
     import holoviews.operation.datashader as hd
+    import matplotlib.cm
+    import matplotlib.colors
+    import matplotlib.pyplot as plt
+    import pandas as pd
 except ImportError:
     warn(
         """The umap.plot package requires extra plotting libraries to be installed.
     You can install these via pip using
 
-    pip install umap-learn[plot]
+    pip install umap[plot]
 
     or via conda using
 
      conda install pandas matplotlib datashader bokeh holoviews colorcet scikit-image
-    """
+    """,
+        stacklevel=2,
     )
-    raise ImportError(
+    msg = (
         "umap.plot requires pandas matplotlib datashader bokeh holoviews scikit-image and colorcet to be "
         "installed"
+    )
+    raise ImportError(
+        msg,
     ) from None
-
-import sklearn.decomposition
-import sklearn.cluster
-import sklearn.neighbors
-
-from matplotlib.patches import Patch
-
-from umap.utils import submatrix, average_nn_distance
-
-from bokeh.plotting import show as show_interactive
-from bokeh.plotting import output_file, output_notebook
-from bokeh.layouts import column
-from bokeh.models import CustomJS, TextInput
-from matplotlib.pyplot import show as show_static
 
 from warnings import warn
 
+import sklearn.cluster
+import sklearn.decomposition
+import sklearn.neighbors
+from bokeh.layouts import column
+from bokeh.models import CustomJS, TextInput
+from bokeh.plotting import show as show_interactive
+from matplotlib.patches import Patch
+from matplotlib.pyplot import show as show_static
+
+from umap.utils import average_nn_distance, submatrix
+
 fire_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("fire", colorcet.fire)
 darkblue_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-    "darkblue", colorcet.kbc
+    "darkblue",
+    colorcet.kbc,
 )
 darkgreen_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-    "darkgreen", colorcet.kgy
+    "darkgreen",
+    colorcet.kgy,
 )
 darkred_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-    "darkred", colors=colorcet.linear_kry_5_95_c72[:192], N=256
+    "darkred",
+    colors=colorcet.linear_kry_5_95_c72[:192],
+    N=256,
 )
 darkpurple_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-    "darkpurple", colorcet.linear_bmw_5_95_c89
+    "darkpurple",
+    colorcet.linear_bmw_5_95_c89,
 )
 
 plt.colormaps.register(fire_cmap, name="fire")
@@ -152,26 +158,24 @@ _diagnostic_types = np.array(["pca", "ica", "vq", "local_dim", "neighborhood"])
 def _get_embedding(umap_object):
     if hasattr(umap_object, "embedding_"):
         return umap_object.embedding_
-    elif hasattr(umap_object, "embedding"):
+    if hasattr(umap_object, "embedding"):
         return umap_object.embedding
-    else:
-        raise ValueError("Could not find embedding attribute of umap_object")
+    msg = "Could not find embedding attribute of umap_object"
+    raise ValueError(msg)
 
 
 def _get_metric(umap_object):
     if hasattr(umap_object, "metric"):
         return umap_object.metric
-    else:
-        # Assume euclidean if no attribute per cuML.UMAP
-        return "euclidean"
+    # Assume euclidean if no attribute per cuML.UMAP
+    return "euclidean"
 
 
 def _get_metric_kwds(umap_object):
     if hasattr(umap_object, "_metric_kwds"):
         return umap_object._metric_kwds
-    else:
-        # Assume no keywords exist
-        return {}
+    # Assume no keywords exist
+    return {}
 
 
 def _embed_datashader_in_an_axis(datashader_image, ax):
@@ -190,7 +194,7 @@ def _nhood_search(umap_object, nhood_size):
         indices = submatrix(indices, indices_sorted, nhood_size)
         dists = submatrix(dmat_shortened, indices_sorted, nhood_size)
     else:
-        rng_state = np.empty(3, dtype=np.int64)
+        np.empty(3, dtype=np.int64)
 
         indices, dists = umap_object._knn_search_index.query(
             umap_object._raw_data,
@@ -202,13 +206,15 @@ def _nhood_search(umap_object, nhood_size):
 
 @numba.njit()
 def _nhood_compare(indices_left, indices_right):
-    """Compute Jaccard index of two neighborhoods"""
+    """Compute Jaccard index of two neighborhoods."""
     result = np.empty(indices_left.shape[0])
 
     for i in range(indices_left.shape[0]):
         with numba.objmode(intersection_size="intp"):
             intersection_size = np.intersect1d(
-                indices_left[i], indices_right[i], assume_unique=True
+                indices_left[i],
+                indices_right[i],
+                assume_unique=True,
             ).shape[0]
         union_size = np.unique(np.hstack((indices_left[i], indices_right[i]))).shape[0]
         result[i] = float(intersection_size) / float(union_size)
@@ -217,20 +223,18 @@ def _nhood_compare(indices_left, indices_right):
 
 
 def _get_extent(points):
-    """Compute bounds on a space with appropriate padding"""
+    """Compute bounds on a space with appropriate padding."""
     min_x = np.nanmin(points[:, 0])
     max_x = np.nanmax(points[:, 0])
     min_y = np.nanmin(points[:, 1])
     max_y = np.nanmax(points[:, 1])
 
-    extent = (
+    return (
         np.round(min_x - 0.05 * (max_x - min_x)),
         np.round(max_x + 0.05 * (max_x - min_x)),
         np.round(min_y - 0.05 * (max_y - min_y)),
         np.round(max_y + 0.05 * (max_y - min_y)),
     )
-
-    return extent
 
 
 def _select_font_color(background):
@@ -238,12 +242,12 @@ def _select_font_color(background):
         font_color = "white"
     elif background.startswith("#"):
         mean_val = np.mean(
-            [int("0x" + c) for c in (background[1:3], background[3:5], background[5:7])]
+            [
+                int("0x" + c)
+                for c in (background[1:3], background[3:5], background[5:7])
+            ],
         )
-        if mean_val > 126:
-            font_color = "black"
-        else:
-            font_color = "white"
+        font_color = "black" if mean_val > 126 else "white"
 
     else:
         font_color = "black"
@@ -265,7 +269,7 @@ def _datashade_points(
     show_legend=True,
     alpha=255,
 ):
-    """Use datashader to plot points"""
+    """Use datashader to plot points."""
     extent = _get_extent(points)
     canvas = ds.Canvas(
         plot_width=width,
@@ -280,11 +284,12 @@ def _datashade_points(
     # Color by labels
     if labels is not None:
         if labels.shape[0] != points.shape[0]:
-            raise ValueError(
+            msg = (
                 "Labels must have a label for "
-                "each sample (size mismatch: {} {})".format(
-                    labels.shape[0], points.shape[0]
-                )
+                f"each sample (size mismatch: {labels.shape[0]} {points.shape[0]})"
+            )
+            raise ValueError(
+                msg,
             )
 
         data["label"] = pd.Categorical(labels)
@@ -295,53 +300,66 @@ def _datashade_points(
             unique_labels = np.unique(labels)
             num_labels = unique_labels.shape[0]
             color_key = _to_hex(
-                plt.get_cmap(color_key_cmap)(np.linspace(0, 1, num_labels))
+                plt.get_cmap(color_key_cmap)(np.linspace(0, 1, num_labels)),
             )
             legend_elements = [
                 Patch(facecolor=color_key[i], label=k)
                 for i, k in enumerate(unique_labels)
             ]
             result = tf.shade(
-                aggregation, color_key=color_key, how="eq_hist", alpha=alpha
+                aggregation,
+                color_key=color_key,
+                how="eq_hist",
+                alpha=alpha,
             )
         else:
             legend_elements = [
-                Patch(facecolor=color_key[k], label=k) for k in color_key.keys()
+                Patch(facecolor=color_key[k], label=k) for k in color_key
             ]
             result = tf.shade(
-                aggregation, color_key=color_key, how="eq_hist", alpha=alpha
+                aggregation,
+                color_key=color_key,
+                how="eq_hist",
+                alpha=alpha,
             )
 
     # Color by values
     elif values is not None:
         if values.shape[0] != points.shape[0]:
-            raise ValueError(
+            msg = (
                 "Values must have a value for "
-                "each sample (size mismatch: {} {})".format(
-                    values.shape[0], points.shape[0]
-                )
+                f"each sample (size mismatch: {values.shape[0]} {points.shape[0]})"
+            )
+            raise ValueError(
+                msg,
             )
         unique_values = np.unique(values)
         if unique_values.shape[0] >= 256:
             min_val, max_val = np.min(values), np.max(values)
             bin_size = (max_val - min_val) / 255.0
             data["val_cat"] = pd.Categorical(
-                np.round((values - min_val) / bin_size).astype(np.int16)
+                np.round((values - min_val) / bin_size).astype(np.int16),
             )
             aggregation = canvas.points(data, "x", "y", agg=ds.count_cat("val_cat"))
             color_key = _to_hex(plt.get_cmap(cmap)(np.linspace(0, 1, 256)))
             result = tf.shade(
-                aggregation, color_key=color_key, how="eq_hist", alpha=alpha
+                aggregation,
+                color_key=color_key,
+                how="eq_hist",
+                alpha=alpha,
             )
         else:
             data["val_cat"] = pd.Categorical(values)
             aggregation = canvas.points(data, "x", "y", agg=ds.count_cat("val_cat"))
             color_key_cols = _to_hex(
-                plt.get_cmap(cmap)(np.linspace(0, 1, unique_values.shape[0]))
+                plt.get_cmap(cmap)(np.linspace(0, 1, unique_values.shape[0])),
             )
             color_key = dict(zip(unique_values, color_key_cols))
             result = tf.shade(
-                aggregation, color_key=color_key, how="eq_hist", alpha=alpha
+                aggregation,
+                color_key=color_key,
+                how="eq_hist",
+                alpha=alpha,
             )
 
     # Color by density (default datashader option)
@@ -357,8 +375,7 @@ def _datashade_points(
         if show_legend and legend_elements is not None:
             ax.legend(handles=legend_elements)
         return ax
-    else:
-        return result
+    return result
 
 
 def _matplotlib_points(
@@ -375,7 +392,7 @@ def _matplotlib_points(
     show_legend=True,
     alpha=None,
 ):
-    """Use matplotlib to plot points"""
+    """Use matplotlib to plot points."""
     point_size = 100.0 / np.sqrt(points.shape[0])
 
     legend_elements = None
@@ -390,18 +407,19 @@ def _matplotlib_points(
     # Color by labels
     if labels is not None:
         if labels.shape[0] != points.shape[0]:
-            raise ValueError(
+            msg = (
                 "Labels must have a label for "
-                "each sample (size mismatch: {} {})".format(
-                    labels.shape[0], points.shape[0]
-                )
+                f"each sample (size mismatch: {labels.shape[0]} {points.shape[0]})"
+            )
+            raise ValueError(
+                msg,
             )
         if color_key is None:
             unique_labels = np.unique(labels)
             num_labels = unique_labels.shape[0]
             color_key = plt.get_cmap(color_key_cmap)(np.linspace(0, 1, num_labels))
             legend_elements = [
-                Patch(facecolor=color_key[i], label=unique_labels[i])
+                Patch(facecolor=color_key[i], label=k)
                 for i, k in enumerate(unique_labels)
             ]
 
@@ -414,8 +432,9 @@ def _matplotlib_points(
         else:
             unique_labels = np.unique(labels)
             if len(color_key) < unique_labels.shape[0]:
+                msg = "Color key must have enough colors for the number of labels"
                 raise ValueError(
-                    "Color key must have enough colors for the number of labels"
+                    msg,
                 )
 
             new_color_key = {
@@ -433,19 +452,24 @@ def _matplotlib_points(
     # Color by values
     elif values is not None:
         if values.shape[0] != points.shape[0]:
-            raise ValueError(
+            msg = (
                 "Values must have a value for "
-                "each sample (size mismatch: {} {})".format(
-                    values.shape[0], points.shape[0]
-                )
+                f"each sample (size mismatch: {values.shape[0]} {points.shape[0]})"
+            )
+            raise ValueError(
+                msg,
             )
         ax.scatter(
-            points[:, 0], points[:, 1], s=point_size, c=values, cmap=cmap, alpha=alpha
+            points[:, 0],
+            points[:, 1],
+            s=point_size,
+            c=values,
+            cmap=cmap,
+            alpha=alpha,
         )
 
     # No color (just pick the midpoint of the cmap)
     else:
-
         color = plt.get_cmap(cmap)(0.5)
         ax.scatter(points[:, 0], points[:, 1], s=point_size, c=color)
 
@@ -455,7 +479,7 @@ def _matplotlib_points(
     return ax
 
 
-def show(plot_to_show):
+def show(plot_to_show) -> None:
     """Display a plot, either interactive or static.
 
     Parameters
@@ -466,6 +490,7 @@ def show(plot_to_show):
     Returns
     -------
     None
+
     """
     if isinstance(plot_to_show, plt.Axes):
         show_static()
@@ -474,8 +499,9 @@ def show(plot_to_show):
     elif isinstance(plot_to_show, hv.core.spaces.DynamicMap):
         show_interactive(hv.render(plot_to_show), backend="bokeh")
     else:
+        msg = "The type of ``plot_to_show`` was not valid, or not understood."
         raise ValueError(
-            "The type of ``plot_to_show`` was not valid, or not understood."
+            msg,
         )
 
 
@@ -613,6 +639,7 @@ def points(
         The result is a matplotlib axis with the relevant plot displayed.
         If you are using a notebooks and have ``%matplotlib inline`` set
         then this will simply display inline.
+
     """
     # if not hasattr(umap_object, "embedding_"):
     #     raise ValueError(
@@ -625,23 +652,23 @@ def points(
         background = _themes[theme]["background"]
 
     if labels is not None and values is not None:
+        msg = "Conflicting options; only one of labels or values should be set"
         raise ValueError(
-            "Conflicting options; only one of labels or values should be set"
+            msg,
         )
 
-    if alpha is not None:
-        if not 0.0 <= alpha <= 1.0:
-            raise ValueError("Alpha must be between 0 and 1 inclusive")
+    if alpha is not None and not 0.0 <= alpha <= 1.0:
+        msg = "Alpha must be between 0 and 1 inclusive"
+        raise ValueError(msg)
 
     if points is None:
         points = _get_embedding(umap_object)
 
     if subset_points is not None:
         if len(subset_points) != points.shape[0]:
+            msg = f"Size of subset points ({len(subset_points)}) does not match number of input points ({points.shape[0]})"
             raise ValueError(
-                "Size of subset points ({}) does not match number of input points ({})".format(
-                    len(subset_points), points.shape[0]
-                )
+                msg,
             )
         points = points[subset_points]
 
@@ -651,7 +678,8 @@ def points(
             values = values[subset_points]
 
     if points.shape[1] != 2:
-        raise ValueError("Plotting is currently only implemented for 2D embeddings")
+        msg = "Plotting is currently only implemented for 2D embeddings"
+        raise ValueError(msg)
 
     font_color = _select_font_color(background)
 
@@ -677,10 +705,7 @@ def points(
         )
     else:
         # Datashader uses 0-255 as the range for alpha, with 255 as the default
-        if alpha is not None:
-            alpha = alpha * 255
-        else:
-            alpha = 255
+        alpha = alpha * 255 if alpha is not None else 255
 
         ax = _datashade_points(
             points,
@@ -702,9 +727,7 @@ def points(
         ax.text(
             0.99,
             0.01,
-            "UMAP: metric={}, n_neighbors={}, min_dist={}".format(
-                _get_metric(umap_object), umap_object.n_neighbors, umap_object.min_dist
-            ),
+            f"UMAP: metric={_get_metric(umap_object)}, n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
             transform=ax.transAxes,
             horizontalalignment="right",
             color=font_color,
@@ -713,9 +736,7 @@ def points(
         ax.text(
             0.99,
             0.01,
-            "UMAP: n_neighbors={}, min_dist={}".format(
-                umap_object.n_neighbors, umap_object.min_dist
-            ),
+            f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
             transform=ax.transAxes,
             horizontalalignment="right",
             color=font_color,
@@ -852,6 +873,7 @@ def connectivity(
         The result is a matplotlib axis with the relevant plot displayed.
         If you are using a notebook and have ``%matplotlib inline`` set
         then this will simply display inline.
+
     """
     if theme is not None:
         cmap = _themes[theme]["cmap"]
@@ -863,15 +885,9 @@ def connectivity(
     point_df = pd.DataFrame(points, columns=("x", "y"))
 
     point_size = 100.0 / np.sqrt(points.shape[0])
-    if point_size > 1:
-        px_size = int(np.round(point_size))
-    else:
-        px_size = 1
+    px_size = int(np.round(point_size)) if point_size > 1 else 1
 
-    if show_points:
-        edge_how = "log"
-    else:
-        edge_how = "eq_hist"
+    edge_how = "log" if show_points else "eq_hist"
 
     coo_graph = umap_object.graph_.tocoo()
     edge_df = pd.DataFrame(
@@ -894,11 +910,13 @@ def connectivity(
     elif edge_bundling == "hammer":
         warn(
             "Hammer edge bundling is expensive for large graphs!\n"
-            "This may take a long time to compute!"
+            "This may take a long time to compute!",
+            stacklevel=2,
         )
         edges = bd.hammer_bundle(point_df, edge_df, weight="weight")
     else:
-        raise ValueError("{} is not a recognised bundling method".format(edge_bundling))
+        msg = f"{edge_bundling} is not a recognised bundling method"
+        raise ValueError(msg)
 
     edge_img = tf.shade(
         canvas.line(edges, "x", "y", agg=ds.sum("weight")),
@@ -939,15 +957,14 @@ def connectivity(
     ax.text(
         0.99,
         0.01,
-        "UMAP: n_neighbors={}, min_dist={}".format(
-            umap_object.n_neighbors, umap_object.min_dist
-        ),
+        f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
         transform=ax.transAxes,
         horizontalalignment="right",
         color=font_color,
     )
 
     return ax
+
 
 def diagnostic(
     umap_object,
@@ -961,7 +978,7 @@ def diagnostic(
     width=800,
     height=800,
     return_diagnostics=False,
-    plot_result=True
+    plot_result=True,
 ):
     """Provide a diagnostic plot or plots for a UMAP embedding, with options to return diagnostics and control plotting.
     There are a number of plots that can be helpful for diagnostic
@@ -1052,12 +1069,13 @@ def diagnostic(
         If return_diagnostics=True and plot_result=False, returns the diagnostic data.
         If return_diagnostics=False and plot_result=False, returns None.
         If using a notebook with ``%matplotlib inline``, plots may display inline.
-    """
 
+    """
     points = _get_embedding(umap_object)
 
     if points.shape[1] != 2:
-        raise ValueError("Plotting is currently only implemented for 2D embeddings")
+        msg = "Plotting is currently only implemented for 2D embeddings"
+        raise ValueError(msg)
 
     if point_size is None:
         point_size = 100.0 / np.sqrt(points.shape[0])
@@ -1066,7 +1084,7 @@ def diagnostic(
         dpi = plt.rcParams["figure.dpi"]
         if diagnostic_type in ("local_dim", "neighborhood"):
             width *= 1.1
-        fig = plt.figure(figsize=(width/dpi, height/dpi))
+        fig = plt.figure(figsize=(width / dpi, height / dpi))
         ax = fig.add_subplot(111)
 
     font_color = _select_font_color(background) if plot_result else None
@@ -1075,21 +1093,25 @@ def diagnostic(
 
     if diagnostic_type == "pca":
         color_proj = sklearn.decomposition.PCA(n_components=3).fit_transform(
-            umap_object._raw_data
+            umap_object._raw_data,
         )
         color_proj -= np.min(color_proj)
         color_proj /= np.max(color_proj, axis=0)
         diagnostic_data = color_proj
 
         if plot_result:
-            ax.scatter(points[:, 0], points[:, 1], s=point_size, c=color_proj, alpha=0.66)
+            ax.scatter(
+                points[:, 0],
+                points[:, 1],
+                s=point_size,
+                c=color_proj,
+                alpha=0.66,
+            )
             ax.set_title("Colored by RGB coords of PCA embedding")
             ax.text(
                 0.99,
                 0.01,
-                "UMAP: n_neighbors={}, min_dist={}".format(
-                    umap_object.n_neighbors, umap_object.min_dist
-                ),
+                f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
                 transform=ax.transAxes,
                 horizontalalignment="right",
                 color=font_color,
@@ -1098,21 +1120,25 @@ def diagnostic(
 
     elif diagnostic_type == "ica":
         color_proj = sklearn.decomposition.FastICA(n_components=3).fit_transform(
-            umap_object._raw_data
+            umap_object._raw_data,
         )
         color_proj -= np.min(color_proj)
         color_proj /= np.max(color_proj, axis=0)
         diagnostic_data = color_proj
 
         if plot_result:
-            ax.scatter(points[:, 0], points[:, 1], s=point_size, c=color_proj, alpha=0.66)
+            ax.scatter(
+                points[:, 0],
+                points[:, 1],
+                s=point_size,
+                c=color_proj,
+                alpha=0.66,
+            )
             ax.set_title("Colored by RGB coords of FastICA embedding")
             ax.text(
                 0.99,
                 0.01,
-                "UMAP: n_neighbors={}, min_dist={}".format(
-                    umap_object.n_neighbors, umap_object.min_dist
-                ),
+                f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
                 transform=ax.transAxes,
                 horizontalalignment="right",
                 color=font_color,
@@ -1121,24 +1147,29 @@ def diagnostic(
 
     elif diagnostic_type == "vq":
         color_projector = sklearn.cluster.KMeans(n_clusters=3).fit(
-            umap_object._raw_data
+            umap_object._raw_data,
         )
         color_proj = sklearn.metrics.pairwise_distances(
-            umap_object._raw_data, color_projector.cluster_centers_
+            umap_object._raw_data,
+            color_projector.cluster_centers_,
         )
         color_proj -= np.min(color_proj)
         color_proj /= np.max(color_proj, axis=0)
         diagnostic_data = color_proj
 
         if plot_result:
-            ax.scatter(points[:, 0], points[:, 1], s=point_size, c=color_proj, alpha=0.66)
+            ax.scatter(
+                points[:, 0],
+                points[:, 1],
+                s=point_size,
+                c=color_proj,
+                alpha=0.66,
+            )
             ax.set_title("Colored by RGB coords of Vector Quantization")
             ax.text(
                 0.99,
                 0.01,
-                "UMAP: n_neighbors={}, min_dist={}".format(
-                    umap_object.n_neighbors, umap_object.min_dist
-                ),
+                f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
                 transform=ax.transAxes,
                 horizontalalignment="right",
                 color=font_color,
@@ -1148,9 +1179,10 @@ def diagnostic(
     elif diagnostic_type == "neighborhood":
         highd_indices, highd_dists = _nhood_search(umap_object, nhood_size)
         tree = sklearn.neighbors.KDTree(points)
-        lowd_dists, lowd_indices = tree.query(points, k=nhood_size)
+        _lowd_dists, lowd_indices = tree.query(points, k=nhood_size)
         accuracy = _nhood_compare(
-            highd_indices.astype(np.int32), lowd_indices.astype(np.int32)
+            highd_indices.astype(np.int32),
+            lowd_indices.astype(np.int32),
         )
         diagnostic_data = accuracy
 
@@ -1170,9 +1202,7 @@ def diagnostic(
             ax.text(
                 0.99,
                 0.01,
-                "UMAP: n_neighbors={}, min_dist={}".format(
-                    umap_object.n_neighbors, umap_object.min_dist
-                ),
+                f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
                 transform=ax.transAxes,
                 horizontalalignment="right",
                 color=font_color,
@@ -1184,14 +1214,17 @@ def diagnostic(
             plt.colorbar(mappable, ax=ax)
 
     elif diagnostic_type == "local_dim":
-        highd_indices, highd_dists = _nhood_search(umap_object, umap_object.n_neighbors)
+        highd_indices, _highd_dists = _nhood_search(
+            umap_object,
+            umap_object.n_neighbors,
+        )
         data = umap_object._raw_data
         local_dim = np.empty(data.shape[0], dtype=np.int64)
         for i in range(data.shape[0]):
             pca = sklearn.decomposition.PCA().fit(data[highd_indices[i]])
             try:
                 local_dim[i] = np.where(
-                    np.cumsum(pca.explained_variance_ratio_) > local_variance_threshold
+                    np.cumsum(pca.explained_variance_ratio_) > local_variance_threshold,
                 )[0][0]
             except IndexError:
                 local_dim[i] = -1
@@ -1213,9 +1246,7 @@ def diagnostic(
             ax.text(
                 0.99,
                 0.01,
-                "UMAP: n_neighbors={}, min_dist={}".format(
-                    umap_object.n_neighbors, umap_object.min_dist
-                ),
+                f"UMAP: n_neighbors={umap_object.n_neighbors}, min_dist={umap_object.min_dist}",
                 transform=ax.transAxes,
                 horizontalalignment="right",
                 color=font_color,
@@ -1230,9 +1261,14 @@ def diagnostic(
         if plot_result:
             cols = int(len(_diagnostic_types) ** 0.5 // 1)
             rows = len(_diagnostic_types) // cols + 1
-            fig, axs = plt.subplots(rows, cols, figsize=(10, 10), constrained_layout=True)
+            fig, axs = plt.subplots(
+                rows,
+                cols,
+                figsize=(10, 10),
+                constrained_layout=True,
+            )
             axs = axs.flat
-            for ax in axs[len(_diagnostic_types):]:
+            for ax in axs[len(_diagnostic_types) :]:
                 ax.remove()
             diagnostic_data = {}
             for ax, plt_type in zip(axs, _diagnostic_types):
@@ -1242,7 +1278,7 @@ def diagnostic(
                     ax=ax,
                     point_size=point_size / 4.0,
                     return_diagnostics=True,
-                    plot_result=True
+                    plot_result=True,
                 )
                 diagnostic_data[plt_type] = sub_diagnostic
         else:
@@ -1253,7 +1289,7 @@ def diagnostic(
                     diagnostic_type=plt_type,
                     point_size=point_size / 4.0,
                     return_diagnostics=True,
-                    plot_result=False
+                    plot_result=False,
                 )
                 diagnostic_data[plt_type] = sub_diagnostic
 
@@ -1261,15 +1297,15 @@ def diagnostic(
         raise ValueError(
             "Unknown diagnostic; should be one of "
             + ", ".join(list(_diagnostic_types))
-            + ' or "all"'
+            + ' or "all"',
         )
 
     if return_diagnostics and plot_result:
         return ax, diagnostic_data
-    elif return_diagnostics:
+    if return_diagnostics:
         return diagnostic_data
-    else:
-        return ax
+    return ax
+
 
 def interactive(
     umap_object,
@@ -1427,26 +1463,27 @@ def interactive(
         background = _themes[theme]["background"]
 
     if labels is not None and values is not None:
+        msg = "Conflicting options; only one of labels or values should be set"
         raise ValueError(
-            "Conflicting options; only one of labels or values should be set"
+            msg,
         )
 
-    if alpha is not None:
-        if not 0.0 <= alpha <= 1.0:
-            raise ValueError("Alpha must be between 0 and 1 inclusive")
+    if alpha is not None and not 0.0 <= alpha <= 1.0:
+        msg = "Alpha must be between 0 and 1 inclusive"
+        raise ValueError(msg)
 
     points = _get_embedding(umap_object)
     if subset_points is not None:
         if len(subset_points) != points.shape[0]:
+            msg = f"Size of subset points ({len(subset_points)}) does not match number of input points ({points.shape[0]})"
             raise ValueError(
-                "Size of subset points ({}) does not match number of input points ({})".format(
-                    len(subset_points), points.shape[0]
-                )
+                msg,
             )
         points = points[subset_points]
 
     if points.shape[1] != 2:
-        raise ValueError("Plotting is currently only implemented for 2D embeddings")
+        msg = "Plotting is currently only implemented for 2D embeddings"
+        raise ValueError(msg)
 
     if point_size is None:
         point_size = 100.0 / np.sqrt(points.shape[0])
@@ -1460,7 +1497,7 @@ def interactive(
             unique_labels = np.unique(labels)
             num_labels = unique_labels.shape[0]
             color_key = _to_hex(
-                plt.get_cmap(color_key_cmap)(np.linspace(0, 1, num_labels))
+                plt.get_cmap(color_key_cmap)(np.linspace(0, 1, num_labels)),
             )
 
         if isinstance(color_key, dict):
@@ -1468,8 +1505,9 @@ def interactive(
         else:
             unique_labels = np.unique(labels)
             if len(color_key) < unique_labels.shape[0]:
+                msg = "Color key must have enough colors for the number of labels"
                 raise ValueError(
-                    "Color key must have enough colors for the number of labels"
+                    msg,
                 )
 
             new_color_key = {k: color_key[i] for i, k in enumerate(unique_labels)}
@@ -1481,7 +1519,10 @@ def interactive(
         data["value"] = np.asarray(values)
         palette = _to_hex(plt.get_cmap(cmap)(np.linspace(0, 1, 256)))
         colors = btr.linear_cmap(
-            "value", palette, low=np.min(values), high=np.max(values)
+            "value",
+            palette,
+            low=np.min(values),
+            high=np.max(values),
         )
 
     else:
@@ -1552,26 +1593,28 @@ def interactive(
             if len(interactive_text_search_columns) == 0:
                 warn(
                     "interactive_text_search_columns set to True, but no hover_data or labels provided."
-                    "Please provide hover_data or labels to use interactive text search."
+                    "Please provide hover_data or labels to use interactive text search.",
+                    stacklevel=2,
                 )
 
             else:
                 callback = CustomJS(
-                    args=dict(
-                        source=data_source,
-                        matching_alpha=interactive_text_search_alpha_contrast,
-                        non_matching_alpha=1 - interactive_text_search_alpha_contrast,
-                        search_columns=interactive_text_search_columns,
-                    ),
+                    args={
+                        "source": data_source,
+                        "matching_alpha": interactive_text_search_alpha_contrast,
+                        "non_matching_alpha": 1
+                        - interactive_text_search_alpha_contrast,
+                        "search_columns": interactive_text_search_columns,
+                    },
                     code="""
                     var data = source.data;
                     var text_search = cb_obj.value;
-                    
+
                     var search_columns_dict = {}
                     for (var col in search_columns){
                         search_columns_dict[col] = search_columns[col]
                     }
-                    
+
                     // Loop over columns and values
                     // If there is no match for any column for a given row, change the alpha value
                     var string_match = false;
@@ -1601,12 +1644,16 @@ def interactive(
         if hover_data is not None:
             warn(
                 "Too many points for hover data -- tooltips will not"
-                "be displayed. Sorry; try subsampling your data."
+                "be displayed. Sorry; try subsampling your data.",
+                stacklevel=2,
             )
         if interactive_text_search:
-            warn("Too many points for text search." "Sorry; try subsampling your data.")
+            warn(
+                "Too many points for text search.Sorry; try subsampling your data.",
+                stacklevel=2,
+            )
         if alpha is not None:
-            warn("Alpha parameter will not be applied on holoviews plots")
+            warn("Alpha parameter will not be applied on holoviews plots", stacklevel=2)
         hv.extension("bokeh")
         hv.output(size=300)
         hv.opts.defaults(hv.opts.RGB(bgcolor=background, xaxis=None, yaxis=None))
@@ -1625,7 +1672,7 @@ def interactive(
             min_val = data.values.min()
             val_range = data.values.max() - min_val
             data["val_cat"] = pd.Categorical(
-                (data.values - min_val) // (val_range // 256)
+                (data.values - min_val) // (val_range // 256),
             )
             point_plot = hv.Points(data, kdims=["x", "y"], vdims=["val_cat"])
             plot = hd.datashade(
@@ -1674,7 +1721,7 @@ def nearest_neighbour_distribution(umap_object, bins=25, ax=None):
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-    ax.set_xlabel(f"Average distance to nearest neighbors")
+    ax.set_xlabel("Average distance to nearest neighbors")
     ax.set_ylabel("Frequency")
 
     ax.hist(nn_distances, bins=bins)

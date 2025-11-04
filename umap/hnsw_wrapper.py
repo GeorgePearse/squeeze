@@ -81,7 +81,7 @@ class HnswIndexWrapper:
         if _HnswIndex is None:
             msg = (
                 "HNSW backend not available. "
-                "Please install umap-learn with: pip install --upgrade umap-learn"
+                "Please install umap with: pip install --upgrade umap"
             )
             raise ImportError(
                 msg,
@@ -103,7 +103,9 @@ class HnswIndexWrapper:
         # Compute HNSW parameters from PyNNDescent-style parameters
         self._m = self._compute_m(n_trees, data.shape[0])
         self._ef_construction = self._compute_ef_construction(
-            n_iters, max_candidates, data.shape[0]
+            n_iters,
+            max_candidates,
+            data.shape[0],
         )
 
         # Create the Rust-based index

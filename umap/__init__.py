@@ -48,7 +48,7 @@ except ImportError:
                 "to be installed. You can install Tensorflow at "
                 "https://www.tensorflow.org/install or you can install "
                 "the CPU version of Tensorflow using "
-                "pip install umap-learn[parametric_umap]",
+                "pip install umap[parametric_umap]",
                 stacklevel=2,
             )
             msg = "umap.parametric_umap requires Tensorflow >= 2.0"
@@ -62,7 +62,7 @@ from importlib.metadata import PackageNotFoundError, version
 from .aligned_umap import AlignedUMAP
 
 try:
-    __version__ = version("umap-learn")
+    __version__ = version("umap")
 except PackageNotFoundError:
     __version__ = "0.5-dev"
 

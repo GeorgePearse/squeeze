@@ -21,7 +21,7 @@ except ImportError:
 
     or you can install the CPU version of Tensorflow using
 
-    pip install umap-learn[parametric_umap]
+    pip install umap[parametric_umap]
 
     """,
         stacklevel=2,
@@ -70,7 +70,7 @@ class ParametricUMAP(UMAP):
         landmark_loss_weight=1.0,
         keras_fit_kwargs=None,
         **kwargs,
-    ):
+    ) -> None:
         """Parametric UMAP subclassing UMAP-learn, based on keras/tensorflow.
         There is also a non-parametric implementation contained within to compare
         with the base non-parametric implementation.
@@ -353,7 +353,7 @@ class ParametricUMAP(UMAP):
             )
         return super().inverse_transform(X)
 
-    def _define_model(self):
+    def _define_model(self) -> None:
         """Define the model in keras."""
         prlw = self.parametric_reconstruction_loss_weight
         self.parametric_model = UMAPModel(
@@ -489,7 +489,7 @@ class ParametricUMAP(UMAP):
             and k not in ("optimizer", "encoder", "decoder", "parametric_model")
         }
 
-    def save(self, save_location, verbose=True, exclude_raw_data=False):
+    def save(self, save_location, verbose=True, exclude_raw_data=False) -> None:
         # save encoder
         if self.encoder is not None:
             encoder_output = os.path.join(save_location, "encoder.keras")
@@ -551,7 +551,7 @@ class ParametricUMAP(UMAP):
         sample_mode="uniform",
         landmark_loss_weight=0.01,
         idx=None,
-    ):
+    ) -> None:
         """Add some points from a dataset X as "landmarks.".
 
         Parameters
@@ -594,7 +594,7 @@ class ParametricUMAP(UMAP):
                 msg,
             )
 
-    def remove_landmarks(self):
+    def remove_landmarks(self) -> None:
         self.prev_epoch_X = None
 
     def to_ONNX(self, save_location):
@@ -978,7 +978,7 @@ def construct_edge_dataset(
     return edge_dataset, batch_size, len(edges_to_exp), head, tail, weight
 
 
-def should_pickle(key, val):
+def should_pickle(key, val) -> bool:
     """Checks if a dictionary item can be pickled.
 
     Parameters
@@ -1019,7 +1019,7 @@ def should_pickle(key, val):
 
 
 def load_ParametricUMAP(save_location, verbose=True):
-    """Load a parametric UMAP model consisting of a umap-learn UMAP object
+    """Load a parametric UMAP model consisting of a umap UMAP object
     and corresponding keras models.
 
     Parameters
@@ -1245,7 +1245,7 @@ class UMAPModel(keras.Model):
         landmark_loss_fn=None,
         landmark_loss_weight=1.0,
         name="umap_model",
-    ):
+    ) -> None:
         super().__init__(name=name)
 
         self.encoder = encoder
@@ -1437,7 +1437,7 @@ class UMAPModel(keras.Model):
 if torch_imported:
 
     class PumapNet(nn.Module):
-        def __init__(self, indim, outdim):
+        def __init__(self, indim, outdim) -> None:
             super().__init__()
             self.dense1 = nn.Linear(indim, 100)
             self.dense2 = nn.Linear(100, 100)

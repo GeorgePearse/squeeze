@@ -47,6 +47,7 @@ from umap.utils import (
 # Try to import HNSW backend
 try:
     from umap.hnsw_wrapper import HnswIndexWrapper
+
     HNSW_AVAILABLE = True
 except ImportError:
     HNSW_AVAILABLE = False
@@ -280,22 +281,38 @@ def _get_nn_backend(metric, sparse_data, use_hnsw=None):
         if use_hnsw is True:
             warn(
                 "HNSW backend requested but not available. "
-                "Please install umap-learn with: pip install --upgrade umap-learn", stacklevel=2,
+                "Please install umap with: pip install --upgrade umap",
+                stacklevel=2,
             )
         return NNDescent
 
     # Check if metric is supported by HNSW
-    hnsw_metrics = {"euclidean", "l2", "manhattan", "l1", "taxicab", "cosine",
-                    "chebyshev", "linfinity", "hamming"}
+    hnsw_metrics = {
+        "euclidean",
+        "l2",
+        "manhattan",
+        "l1",
+        "taxicab",
+        "cosine",
+        "chebyshev",
+        "linfinity",
+        "hamming",
+    }
     if metric not in hnsw_metrics:
         if use_hnsw is True:
-            warn(f"Metric '{metric}' not supported by HNSW backend, falling back to PyNNDescent", stacklevel=2)
+            warn(
+                f"Metric '{metric}' not supported by HNSW backend, falling back to PyNNDescent",
+                stacklevel=2,
+            )
         return NNDescent
 
     # Check if sparse data (not supported yet)
     if sparse_data:
         if use_hnsw is True:
-            warn("HNSW backend doesn't support sparse data yet, falling back to PyNNDescent", stacklevel=2)
+            warn(
+                "HNSW backend doesn't support sparse data yet, falling back to PyNNDescent",
+                stacklevel=2,
+            )
         return NNDescent
 
     # Use HNSW by default if available and compatible
