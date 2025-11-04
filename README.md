@@ -10,10 +10,11 @@
 [![Docs](https://readthedocs.org/projects/umap/badge/?version=latest)](https://umap.readthedocs.io/en/latest/?badge=latest)
 [![JOSS Paper](http://joss.theoj.org/papers/10.21105/joss.00861/status.svg)](https://doi.org/10.21105/joss.00861)
 
-> **This is a fork of the original UMAP repository** ([lmcinnes/umap](https://github.com/lmcinnes/umap)).
-> For the official UMAP project, please visit the original repository.
+> **Squeeze** (aka **Reductio**) is a research platform for dimensionality reduction built on UMAP.
+> It provides composition, evaluation, and benchmarking capabilities for combining and comparing dimension reduction techniques.
+> For the official UMAP project, visit [lmcinnes/umap](https://github.com/lmcinnes/umap).
 
-Uniform Manifold Approximation and Projection (UMAP) is a dimension reduction technique that can be used for visualisation similarly to t-SNE, but also for general non-linear dimension reduction. The algorithm is founded on three assumptions about the data:
+Squeeze is a comprehensive research platform for dimensionality reduction and manifold learning. It's built on top of UMAP (Uniform Manifold Approximation and Projection), a dimension reduction technique that can be used for visualisation similarly to t-SNE, but also for general non-linear dimension reduction. The algorithm is founded on three assumptions about the data:
 
 1. The data is uniformly distributed on a Riemannian manifold;
 2. The Riemannian metric is locally constant (or can be approximated as such);
@@ -226,24 +227,29 @@ Eighth, UMAP now includes **research platform capabilities** (Phase 1) for compo
 
 Finally, UMAP has solid theoretical foundations in manifold learning (see [our paper on ArXiv](https://arxiv.org/abs/1802.03426)). This both justifies the approach and allows for further extensions that will soon be added to the library.
 
-## UMAP Research Platform (Phase 1 Complete)
+## Squeeze Research Platform (Phase 1 Complete)
 
-This fork of UMAP includes an extended research platform for dimension reduction with composition, evaluation, and benchmarking capabilities:
+Squeeze includes an extended research platform for dimension reduction with composition, evaluation, and benchmarking capabilities:
 
 ### Sequential Composition (DRPipeline)
 
 Chain multiple dimension reduction techniques for coarse-to-fine reduction (e.g., 2048D → 100D → 2D):
 
 ```python
+# Import pattern: squeeze as sq (when package is renamed)
+# Currently: from umap.composition import DRPipeline
+
 from umap.composition import DRPipeline
 from sklearn.decomposition import PCA
 from umap import UMAP
 
+# Create a pipeline: 2048D -> 100D -> 2D
 pipeline = DRPipeline([
     ('pca_coarse', PCA(n_components=100)),
     ('umap_fine', UMAP(n_components=2, n_epochs=100))
 ])
 
+# Fit and transform
 embedding = pipeline.fit_transform(high_dim_data)
 ```
 
@@ -263,6 +269,7 @@ from umap.composition import EnsembleDR
 from sklearn.decomposition import PCA
 from umap import UMAP
 
+# Blend PCA (30% weight) and UMAP (70% weight) with Procrustes alignment
 ensemble = EnsembleDR([
     ('pca', PCA(n_components=2), 0.3),
     ('umap', UMAP(n_components=2), 0.7)

@@ -1,4 +1,6 @@
-# UMAP Research Platform - Feature Overview
+# Squeeze Research Platform - Feature Overview
+
+Squeeze (also known as Reductio) is a comprehensive platform for dimensionality reduction, composition, evaluation, and benchmarking built on UMAP.
 
 ## Phase 1: Core Research Platform ✓ COMPLETE
 
