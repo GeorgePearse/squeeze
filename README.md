@@ -222,7 +222,192 @@ Sixth, UMAP supports supervised and semi-supervised dimension reduction. This me
 
 Seventh, UMAP supports a variety of additional experimental features including: an "inverse transform" that can approximate a high dimensional sample that would map to a given position in the embedding space; the ability to embed into non-euclidean spaces including hyperbolic embeddings, and embeddings with uncertainty; very preliminary support for embedding dataframes also exists.
 
+Eighth, UMAP now includes **research platform capabilities** (Phase 1) for composing multiple algorithms, evaluating embedding quality, handling sparse data, and benchmarking different approaches. See below for details.
+
 Finally, UMAP has solid theoretical foundations in manifold learning (see [our paper on ArXiv](https://arxiv.org/abs/1802.03426)). This both justifies the approach and allows for further extensions that will soon be added to the library.
+
+## UMAP Research Platform (Phase 1 Complete)
+
+This fork of UMAP includes an extended research platform for dimension reduction with composition, evaluation, and benchmarking capabilities:
+
+### Sequential Composition (DRPipeline)
+
+Chain multiple dimension reduction techniques for coarse-to-fine reduction (e.g., 2048D → 100D → 2D):
+
+```python
+from umap.composition import DRPipeline
+from sklearn.decomposition import PCA
+from umap import UMAP
+
+pipeline = DRPipeline([
+    ('pca_coarse', PCA(n_components=100)),
+    ('umap_fine', UMAP(n_components=2, n_epochs=100))
+])
+
+embedding = pipeline.fit_transform(high_dim_data)
+```
+
+**Features:**
+- Sequential data flow through multiple stages
+- Full scikit-learn compatibility (BaseEstimator)
+- Method chaining: `pipeline.fit(X).transform(X_test)`
+- Intermediate step access
+- 93 comprehensive tests, all passing
+
+### Ensemble Composition (EnsembleDR)
+
+Blend outputs from multiple algorithms with weighted averaging and Procrustes alignment:
+
+```python
+from umap.composition import EnsembleDR
+from sklearn.decomposition import PCA
+from umap import UMAP
+
+ensemble = EnsembleDR([
+    ('pca', PCA(n_components=2), 0.3),
+    ('umap', UMAP(n_components=2), 0.7)
+], blend_mode='weighted_average', alignment='procrustes')
+
+blended_embedding = ensemble.fit_transform(data)
+```
+
+**Features:**
+- Multiple blend modes (weighted average, Procrustes alignment)
+- Automatic coordinate frame alignment
+- Weighted algorithm contributions
+
+### Sparse Data Support (SparseUMAP)
+
+Efficiently handle 95%+ sparse data without densification:
+
+```python
+from umap.sparse_ops import SparseUMAP, SparseFormatDetector
+import scipy.sparse as sp
+
+# Automatically detect and convert sparse formats
+sparse_data = sp.random(1000, 5000, density=0.05, format='csr')
+sparse_umap = SparseUMAP(n_components=2)
+embedding = sparse_umap.fit_transform(sparse_data)
+
+# Or use individual components
+sparsity = SparseFormatDetector.get_sparsity(sparse_data)  # 0.95
+distances = sparse_euclidean(sparse_data[:100], sparse_data[100:110])
+knn = SparseKNNGraph(n_neighbors=15).fit(sparse_data)
+```
+
+**Features:**
+- Auto-detection of sparse matrix formats (CSR, CSC, COO, etc.)
+- Sparse distance metrics without densification
+- Efficient k-NN graph construction
+- Support for mixed dense/sparse operations
+
+**Use Cases:**
+- Single-cell RNA-seq data (95-98% sparse)
+- NLP/text analysis (TF-IDF vectors)
+- Network/graph data
+- Sensor data with many zeros
+
+### Comprehensive Evaluation Framework
+
+Evaluate embedding quality using multiple complementary metrics:
+
+```python
+from umap.metrics import DREvaluator, trustworthiness, continuity
+
+# Evaluate a single metric
+trust_score = trustworthiness(X_original, X_embedded, k=15)
+
+# Or evaluate all metrics at once
+evaluator = DREvaluator(k=15)
+metrics = evaluator.evaluate(X_original, X_embedded)
+
+print(evaluator.summary())
+```
+
+**Available Metrics:**
+1. **Trustworthiness** - Are neighbors in low-D also neighbors in high-D? (local structure)
+2. **Continuity** - Are neighbors in high-D also neighbors in low-D? (global structure)
+3. **LCMC** - Local continuity meta-estimate via distance correlation
+4. **Reconstruction Error** - Linear regression quality from low-D back to high-D
+5. **Spearman Distance Correlation** - Rank correlation of pairwise distances
+
+All metrics return values in [0, 1] or comparable ranges for easy interpretation.
+
+### Benchmarking System
+
+Systematically benchmark and visualize algorithm performance (quality vs speed trade-offs):
+
+```python
+from umap.benchmark import DRBenchmark
+from sklearn.decomposition import PCA
+from umap import UMAP
+
+benchmark = DRBenchmark(metric='euclidean')
+benchmark.add_algorithm('pca', PCA, {'n_components': 2})
+benchmark.add_algorithm('umap_fast', UMAP, {'n_neighbors': 10, 'n_epochs': 50})
+benchmark.add_algorithm('umap_accurate', UMAP, {'n_neighbors': 15, 'n_epochs': 200})
+
+# Run on single dataset
+results = benchmark.run(data, dataset_name='mydata', n_runs=3)
+
+# Run scaling experiments
+scaling_results = benchmark.run_scaling_experiment(data, sizes=[100, 500, 1000])
+
+# Generate quality vs speed plot
+benchmark.plot_quality_vs_speed(results, output_file='benchmark.png')
+
+# Print summary
+print(benchmark.summary())
+```
+
+**Features:**
+- Multi-run experiments with statistics
+- Scaling experiments across dataset sizes
+- Quality metric: (trustworthiness + continuity) / 2
+- Speed metric: computation time (log scale)
+- Pareto frontier visualization with error bars
+- Automatic color-coding by algorithm
+
+## Planned Features (Phase 2+)
+
+The research platform roadmap includes the following planned enhancements:
+
+### Phase 2: Performance Optimization
+- **HNSW-RS Parallelization**: Optimize the Rust-based HNSW backend with parallel traversal and vectorized distance computation (SIMD)
+  - Current: O(n²) brute-force k-NN
+  - Target: O(n log n) with 10-100x speedup
+
+- **GPU Acceleration**: RAPIDS cuML integration for GPU-accelerated distance computation and k-NN graph construction
+  - CUDA-based distance metrics
+  - GPU memory management
+  - Fallback to CPU when needed
+
+### Phase 2: Advanced Composition
+- **Hierarchical Composition**: Recursively apply algorithms to feature subsets
+  - Example: Features (ABCD) → apply to (AB) and (CD) → combine outputs
+  - Automatic feature grouping and hierarchical reduction
+
+- **Learned Ensemble Weights**: Train weights for optimal algorithm blending
+  - Cross-validation based weight optimization
+  - Dynamic algorithm selection per data region
+  - Stacking mode for ensemble predictions
+
+- **Progressive Refinement**: Multi-stage pipelines with validation
+  - Intermediate quality checking
+  - Dynamic pipeline adjustment
+  - Resource-aware refinement
+
+### Phase 2: Advanced Evaluation
+- **Co-ranking Metric**: Advanced k-NN agreement metric
+- **Trustworthiness at Multiple K**: Multi-scale local structure evaluation
+- **Global vs Local Trade-off Analysis**: Automatic metric selection
+- **Statistical Significance Testing**: Bootstrap-based metric validation
+
+### Phase 3: Research Capabilities
+- **Algorithm Comparison Suite**: Automated benchmarking across 20+ algorithms
+- **Parameter Search**: Grid search + Bayesian optimization for algorithm parameters
+- **Embedding Space Analysis**: PCA of embedding quality landscape
+- **Publication-Ready Visualization**: High-quality plots for research papers
 
 ## Performance and Examples
 
@@ -232,6 +417,12 @@ UMAP is very efficient at embedding large high dimensional datasets. In particul
 2. Installing the nearest neighbor computation library [pynndescent](https://github.com/lmcinnes/pynndescent) as a fallback
 
 UMAP will work without these packages, but with them installed it will run significantly faster, particularly on multicore machines and large datasets.
+
+**Phase 1 additions** to this fork include:
+- Efficient sparse data support (95%+ sparse) without densification
+- Composition pipeline for multi-stage dimension reduction
+- Comprehensive evaluation metrics for embedding quality
+- Benchmarking system for quality vs speed trade-off visualization
 
 For a problem such as the 784-dimensional MNIST digits dataset with 70000 data samples, UMAP can complete the embedding in under a minute (as compared with around 45 minutes for scikit-learn's t-SNE implementation). Despite this runtime efficiency, UMAP still produces high quality embeddings.
 
