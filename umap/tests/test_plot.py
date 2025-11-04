@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 import umap
 
 # Globals, used for all the tests
@@ -25,7 +26,7 @@ def mapper(iris):
 # needed as there is no assertion nor
 # property verification.
 @plot_only
-def test_plot_runs_at_all(mapper, iris, iris_selection):
+def test_plot_runs_at_all(mapper, iris, iris_selection) -> None:
     from umap import plot as umap_plot
 
     umap_plot.points(mapper)

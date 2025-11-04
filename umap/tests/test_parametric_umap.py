@@ -1,10 +1,11 @@
-import numpy as np
+import platform
 import tempfile
+
+import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal
 from sklearn.datasets import make_moons
 from sklearn.model_selection import train_test_split
-from numpy.testing import assert_array_almost_equal
-import platform
 
 try:
     import tensorflow as tf
@@ -17,7 +18,8 @@ else:
 
 tf_only = pytest.mark.skipif(not IMPORT_TF, reason="TensorFlow >= 2.0 is not installed")
 not_windows = pytest.mark.skipif(
-    platform.system() == "Windows", reason="Windows file access issues"
+    platform.system() == "Windows",
+    reason="Windows file access issues",
 )
 
 
@@ -28,8 +30,8 @@ def moon_dataset():
 
 
 @tf_only
-def test_create_model(moon_dataset):
-    """test a simple parametric UMAP network"""
+def test_create_model(moon_dataset) -> None:
+    """Test a simple parametric UMAP network."""
     embedder = ParametricUMAP()
     embedding = embedder.fit_transform(moon_dataset)
     # completes successfully
@@ -38,8 +40,8 @@ def test_create_model(moon_dataset):
 
 
 @tf_only
-def test_global_loss(moon_dataset):
-    """test a simple parametric UMAP network"""
+def test_global_loss(moon_dataset) -> None:
+    """Test a simple parametric UMAP network."""
     embedder = ParametricUMAP(global_correlation_loss_weight=1.0)
     embedding = embedder.fit_transform(moon_dataset)
     # completes successfully
@@ -48,8 +50,8 @@ def test_global_loss(moon_dataset):
 
 
 @tf_only
-def test_inverse_transform(moon_dataset):
-    """tests inverse_transform"""
+def test_inverse_transform(moon_dataset) -> None:
+    """Tests inverse_transform."""
 
     def norm(x):
         return (x - np.min(x)) / (np.max(x) - np.min(x))
@@ -64,8 +66,8 @@ def test_inverse_transform(moon_dataset):
 
 
 @tf_only
-def test_custom_encoder_decoder(moon_dataset):
-    """test using a custom encoder / decoder"""
+def test_custom_encoder_decoder(moon_dataset) -> None:
+    """Test using a custom encoder / decoder."""
     dims = (2,)
     n_components = 2
     encoder = tf.keras.Sequential(
@@ -76,7 +78,7 @@ def test_custom_encoder_decoder(moon_dataset):
             tf.keras.layers.Dense(units=100, activation="relu"),
             tf.keras.layers.Dense(units=100, activation="relu"),
             tf.keras.layers.Dense(units=n_components, name="z"),
-        ]
+        ],
     )
 
     decoder = tf.keras.Sequential(
@@ -86,10 +88,12 @@ def test_custom_encoder_decoder(moon_dataset):
             tf.keras.layers.Dense(units=100, activation="relu"),
             tf.keras.layers.Dense(units=100, activation="relu"),
             tf.keras.layers.Dense(
-                units=np.prod(dims), name="recon", activation=None
+                units=np.prod(dims),
+                name="recon",
+                activation=None,
             ),
             tf.keras.layers.Reshape(dims),
-        ]
+        ],
     )
 
     embedder = ParametricUMAP(
@@ -106,11 +110,13 @@ def test_custom_encoder_decoder(moon_dataset):
 
 
 @tf_only
-def test_validation(moon_dataset):
-    """tests adding a validation dataset"""
+def test_validation(moon_dataset) -> None:
+    """Tests adding a validation dataset."""
     X_train, X_valid = train_test_split(moon_dataset, train_size=0.5)
     embedder = ParametricUMAP(
-        parametric_reconstruction=True, reconstruction_validation=X_valid, verbose=True
+        parametric_reconstruction=True,
+        reconstruction_validation=X_valid,
+        verbose=True,
     )
     embedding = embedder.fit_transform(X_train)
     # completes successfully
@@ -120,9 +126,8 @@ def test_validation(moon_dataset):
 
 @not_windows
 @tf_only
-def test_save_load(moon_dataset):
-    """tests saving and loading"""
-
+def test_save_load(moon_dataset) -> None:
+    """Tests saving and loading."""
     embedder = ParametricUMAP()
     embedding = embedder.fit_transform(moon_dataset)
     # completes successfully

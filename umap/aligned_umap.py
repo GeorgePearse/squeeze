@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Tuple, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import numba
 import numpy as np
-import scipy.sparse
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 
@@ -11,6 +12,9 @@ from umap.sparse import arr_intersect as intersect1d
 from umap.sparse import arr_union as union1d
 from umap.spectral import spectral_layout
 from umap.umap_ import UMAP, make_epochs_per_sample
+
+if TYPE_CHECKING:
+    import scipy.sparse
 
 INT32_MIN = np.iinfo(np.int32).min + 1
 INT32_MAX = np.iinfo(np.int32).max - 1
@@ -44,7 +48,7 @@ def in1d(arr: np.ndarray, test_set: np.ndarray) -> np.ndarray:
     return result
 
 
-def invert_dict(d: Dict[Any, Any]) -> Dict[Any, Any]:
+def invert_dict(d: dict[Any, Any]) -> dict[Any, Any]:
     """Invert a dictionary by swapping keys and values.
 
     Parameters
@@ -93,7 +97,7 @@ def procrustes_align(
 
 
 def expand_relations(
-    relation_dicts: List[Dict[int, int]],
+    relation_dicts: list[dict[int, int]],
     window_size: int = 3,
 ) -> np.ndarray:
     """Expand relation dictionaries to include nearby timepoints within a window.
@@ -276,11 +280,11 @@ PARAM_NAMES = (
 
 
 def set_aligned_params(
-    new_params: Dict[str, Any],
-    existing_params: Dict[str, Any],
+    new_params: dict[str, Any],
+    existing_params: dict[str, Any],
     n_models: int,
-    param_names: Tuple[str, ...] = PARAM_NAMES,
-) -> Dict[str, Any]:
+    param_names: tuple[str, ...] = PARAM_NAMES,
+) -> dict[str, Any]:
     """Update existing parameters with new parameters for aligned UMAP.
 
     Parameters
@@ -380,7 +384,7 @@ def init_from_existing_internal(
 def init_from_existing(
     previous_embedding: np.ndarray,
     graph: scipy.sparse.spmatrix,
-    relations: Dict[int, int],
+    relations: dict[int, int],
 ) -> np.ndarray:
     """Initialize new embedding from existing embedding.
 
@@ -484,35 +488,35 @@ class AlignedUMAP(BaseEstimator):
 
     def __init__(
         self,
-        n_neighbors: Union[int, List[int], Tuple[int, ...]] = 15,
+        n_neighbors: int | list[int] | tuple[int, ...] = 15,
         n_components: int = 2,
-        metric: Union[str, Any, List[Any], Tuple[Any, ...]] = "euclidean",
-        metric_kwds: Union[Dict[str, Any], List[Dict[str, Any]], None] = None,
-        n_epochs: Union[int, List[int], Tuple[int, ...], None] = None,
-        learning_rate: Union[float, List[float], Tuple[float, ...]] = 1.0,
+        metric: str | Any | list[Any] | tuple[Any, ...] = "euclidean",
+        metric_kwds: dict[str, Any] | list[dict[str, Any]] | None = None,
+        n_epochs: int | list[int] | tuple[int, ...] | None = None,
+        learning_rate: float | list[float] | tuple[float, ...] = 1.0,
         init: str = "spectral",
         alignment_regularisation: float = 1.0e-2,
         alignment_window_size: int = 3,
-        min_dist: Union[float, List[float], Tuple[float, ...]] = 0.1,
-        spread: Union[float, List[float], Tuple[float, ...]] = 1.0,
+        min_dist: float | list[float] | tuple[float, ...] = 0.1,
+        spread: float | list[float] | tuple[float, ...] = 1.0,
         low_memory: bool = False,
-        set_op_mix_ratio: Union[float, List[float], Tuple[float, ...]] = 1.0,
-        local_connectivity: Union[float, List[float], Tuple[float, ...]] = 1.0,
-        repulsion_strength: Union[float, List[float], Tuple[float, ...]] = 1.0,
-        negative_sample_rate: Union[int, List[int], Tuple[int, ...]] = 5,
+        set_op_mix_ratio: float | list[float] | tuple[float, ...] = 1.0,
+        local_connectivity: float | list[float] | tuple[float, ...] = 1.0,
+        repulsion_strength: float | list[float] | tuple[float, ...] = 1.0,
+        negative_sample_rate: int | list[int] | tuple[int, ...] = 5,
         transform_queue_size: float = 4.0,
-        a: Union[float, None] = None,
-        b: Union[float, None] = None,
-        random_state: Union[int, np.random.RandomState, None] = None,
-        angular_rp_forest: Union[bool, List[bool], Tuple[bool, ...]] = False,
+        a: float | None = None,
+        b: float | None = None,
+        random_state: int | np.random.RandomState | None = None,
+        angular_rp_forest: bool | list[bool] | tuple[bool, ...] = False,
         target_n_neighbors: int = -1,
         target_metric: str = "categorical",
-        target_metric_kwds: Union[Dict[str, Any], None] = None,
+        target_metric_kwds: dict[str, Any] | None = None,
         target_weight: float = 0.5,
         transform_seed: int = 42,
         force_approximation_algorithm: bool = False,
         verbose: bool = False,
-        unique: Union[bool, List[bool], Tuple[bool, ...]] = False,
+        unique: bool | list[bool] | tuple[bool, ...] = False,
     ) -> None:
         self.n_neighbors = n_neighbors
         self.metric = metric
@@ -549,10 +553,10 @@ class AlignedUMAP(BaseEstimator):
 
     def fit(
         self,
-        X: Union[List[np.ndarray], Tuple[np.ndarray, ...], np.ndarray],
-        y: Union[List[np.ndarray], Tuple[np.ndarray, ...], np.ndarray, None] = None,
+        X: list[np.ndarray] | tuple[np.ndarray, ...] | np.ndarray,
+        y: list[np.ndarray] | tuple[np.ndarray, ...] | np.ndarray | None = None,
         **fit_params: Any,
-    ) -> "AlignedUMAP":
+    ) -> AlignedUMAP:
         """Fit aligned UMAP on multiple related datasets.
 
         Parameters
@@ -732,10 +736,10 @@ class AlignedUMAP(BaseEstimator):
 
     def fit_transform(
         self,
-        X: Union[List[np.ndarray], Tuple[np.ndarray, ...], np.ndarray],
-        y: Union[List[np.ndarray], Tuple[np.ndarray, ...], np.ndarray, None] = None,
+        X: list[np.ndarray] | tuple[np.ndarray, ...] | np.ndarray,
+        y: list[np.ndarray] | tuple[np.ndarray, ...] | np.ndarray | None = None,
         **fit_params: Any,
-    ) -> List[np.ndarray]:
+    ) -> list[np.ndarray]:
         """Fit aligned UMAP and return the embeddings.
 
         Parameters
@@ -760,7 +764,7 @@ class AlignedUMAP(BaseEstimator):
     def update(
         self,
         X: np.ndarray,
-        y: Union[np.ndarray, None] = None,
+        y: np.ndarray | None = None,
         **fit_params: Any,
     ) -> None:
         """Add a new dataset to an existing aligned UMAP embedding.

@@ -1,6 +1,6 @@
 import numpy as np
-from umap import UMAP
 
+from umap import UMAP
 
 # ===================================================
 #  Spatial Data Test cases
@@ -10,7 +10,7 @@ from umap import UMAP
 # ---------------------------------------------------
 
 
-def test_repeated_points_large_sparse_spatial(sparse_spatial_data_repeats):
+def test_repeated_points_large_sparse_spatial(sparse_spatial_data_repeats) -> None:
     model = UMAP(
         n_neighbors=3,
         unique=True,
@@ -21,23 +21,26 @@ def test_repeated_points_large_sparse_spatial(sparse_spatial_data_repeats):
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
 
-def test_repeated_points_small_sparse_spatial(sparse_spatial_data_repeats):
+def test_repeated_points_small_sparse_spatial(sparse_spatial_data_repeats) -> None:
     model = UMAP(n_neighbors=3, unique=True, n_epochs=20).fit(
-        sparse_spatial_data_repeats
+        sparse_spatial_data_repeats,
     )
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
 
 # Use force_approximation_algorithm in order to test the region
 # of the code that is called for n>4096
-def test_repeated_points_large_dense_spatial(spatial_repeats):
+def test_repeated_points_large_dense_spatial(spatial_repeats) -> None:
     model = UMAP(
-        n_neighbors=3, unique=True, force_approximation_algorithm=True, n_epochs=50
+        n_neighbors=3,
+        unique=True,
+        force_approximation_algorithm=True,
+        n_epochs=50,
     ).fit(spatial_repeats)
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
 
-def test_repeated_points_small_dense_spatial(spatial_repeats):
+def test_repeated_points_small_dense_spatial(spatial_repeats) -> None:
     model = UMAP(n_neighbors=3, unique=True, n_epochs=20).fit(spatial_repeats)
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
@@ -50,30 +53,36 @@ def test_repeated_points_small_dense_spatial(spatial_repeats):
 # ---------------------------------------------------
 
 
-def test_repeated_points_large_sparse_binary(sparse_binary_data_repeats):
+def test_repeated_points_large_sparse_binary(sparse_binary_data_repeats) -> None:
     model = UMAP(
-        n_neighbors=3, unique=True, force_approximation_algorithm=True, n_epochs=50
+        n_neighbors=3,
+        unique=True,
+        force_approximation_algorithm=True,
+        n_epochs=50,
     ).fit(sparse_binary_data_repeats)
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
 
-def test_repeated_points_small_sparse_binary(sparse_binary_data_repeats):
+def test_repeated_points_small_sparse_binary(sparse_binary_data_repeats) -> None:
     model = UMAP(n_neighbors=3, unique=True, n_epochs=20).fit(
-        sparse_binary_data_repeats
+        sparse_binary_data_repeats,
     )
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
 
 # Use force_approximation_algorithm in order to test
 # the region of the code that is called for n>4096
-def test_repeated_points_large_dense_binary(binary_repeats):
+def test_repeated_points_large_dense_binary(binary_repeats) -> None:
     model = UMAP(
-        n_neighbors=3, unique=True, force_approximation_algorithm=True, n_epochs=20
+        n_neighbors=3,
+        unique=True,
+        force_approximation_algorithm=True,
+        n_epochs=20,
     ).fit(binary_repeats)
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
 
 
-def test_repeated_points_small_dense_binary(binary_repeats):
+def test_repeated_points_small_dense_binary(binary_repeats) -> None:
     model = UMAP(n_neighbors=3, unique=True, n_epochs=20).fit(binary_repeats)
     assert np.unique(binary_repeats[0:2], axis=0).shape[0] == 1
     assert np.unique(model.embedding_[0:2], axis=0).shape[0] == 1
@@ -89,6 +98,6 @@ def test_repeated_points_small_dense_binary(binary_repeats):
 # reduced properly when your n_neighbours is larger
 # than the unique data set size
 # ----------------------------------------------------
-def test_repeated_points_large_n(repetition_dense):
+def test_repeated_points_large_n(repetition_dense) -> None:
     model = UMAP(n_neighbors=5, unique=True, n_epochs=20).fit(repetition_dense)
     assert model._n_neighbors == 3

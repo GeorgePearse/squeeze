@@ -2,10 +2,11 @@
 #  Testing (session) Fixture
 # ==========================
 
-import pytest
 import numpy as np
+import pytest
 from scipy import sparse
 from sklearn.datasets import load_iris
+
 from umap import UMAP, AlignedUMAP
 
 # Globals, used for all the tests
@@ -27,8 +28,7 @@ def spatial_data():
 def binary_data():
     binary_data = np.random.choice(a=[False, True], size=(10, 20), p=[0.66, 1 - 0.66])
     # Add some all zero data for corner case test
-    binary_data = np.vstack([binary_data, np.zeros((2, 20), dtype="bool")])
-    return binary_data
+    return np.vstack([binary_data, np.zeros((2, 20), dtype="bool")])
 
 
 # Sparse Spatial and Binary Data
@@ -48,21 +48,21 @@ def sparse_binary_data(binary_data):
 @pytest.fixture(scope="session")
 def nn_data():
     nn_data = np.random.uniform(0, 1, size=(1000, 5))
-    nn_data = np.vstack(
-        [nn_data, np.zeros((2, 5))]
+    return np.vstack(
+        [nn_data, np.zeros((2, 5))],
     )  # Add some all zero data for corner case test
-    return nn_data
 
 
 @pytest.fixture(scope="session")
 def binary_nn_data():
     binary_nn_data = np.random.choice(
-        a=[False, True], size=(1000, 5), p=[0.66, 1 - 0.66]
+        a=[False, True],
+        size=(1000, 5),
+        p=[0.66, 1 - 0.66],
     )
-    binary_nn_data = np.vstack(
-        [binary_nn_data, np.zeros((2, 5), dtype="bool")]
+    return np.vstack(
+        [binary_nn_data, np.zeros((2, 5), dtype="bool")],
     )  # Add some all zero data for corner case test
-    return binary_nn_data
 
 
 @pytest.fixture(scope="session")
@@ -88,32 +88,30 @@ def repetition_dense():
             [1, 1, 1, 1],
             [1, 2, 3, 4],
             [1, 1, 2, 1],
-        ]
+        ],
     )
 
 
 @pytest.fixture(scope="session")
 def spatial_repeats(spatial_data):
     # spatial data repeats
-    spatial_repeats = np.vstack(
-        [np.repeat(spatial_data[0:2], [2, 0], axis=0), spatial_data, np.zeros((2, 20))]
+    return np.vstack(
+        [np.repeat(spatial_data[0:2], [2, 0], axis=0), spatial_data, np.zeros((2, 20))],
     )
     # Add some all zero data for corner case test.  Make the first three rows identical
     # binary Data Repeat
-    return spatial_repeats
 
 
 @pytest.fixture(scope="session")
 def binary_repeats(binary_data):
-    binary_repeats = np.vstack(
+    return np.vstack(
         [
             np.repeat(binary_data[0:2], [2, 0], axis=0),
             binary_data,
             np.zeros((2, 20), dtype="bool"),
-        ]
+        ],
     )
     # Add some all zero data for corner case test.  Make the first three rows identical
-    return binary_repeats
 
 
 @pytest.fixture(scope="session")
@@ -171,7 +169,7 @@ def iris_model_large(iris):
 @pytest.fixture(scope="session")
 def iris_subset_model(iris, iris_selection):
     return UMAP(n_neighbors=10, min_dist=0.01, random_state=42).fit(
-        iris.data[iris_selection]
+        iris.data[iris_selection],
     )
 
 
@@ -188,13 +186,14 @@ def iris_subset_model_large(iris, iris_selection):
 @pytest.fixture(scope="session")
 def supervised_iris_model(iris):
     return UMAP(n_neighbors=10, min_dist=0.01, n_epochs=200, random_state=42).fit(
-        iris.data, iris.target
+        iris.data,
+        iris.target,
     )
 
 
 @pytest.fixture(scope="session")
 def aligned_iris_model(aligned_iris, aligned_iris_relations):
-    data, target = aligned_iris
+    data, _target = aligned_iris
     model = AlignedUMAP()
     model.fit(data, relations=aligned_iris_relations)
     return model

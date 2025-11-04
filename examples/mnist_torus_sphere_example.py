@@ -11,7 +11,10 @@ import umap
 
 digits = load_digits()
 X_train, X_test, y_train, y_test = train_test_split(
-    digits.data, digits.target, stratify=digits.target, random_state=42
+    digits.data,
+    digits.target,
+    stratify=digits.target,
+    random_state=42,
 )
 
 target_spaces = ["plane", "torus", "sphere"]
@@ -29,7 +32,10 @@ if "plane" in target_spaces:
     ).fit(X_train)
 
     plt.scatter(
-        trans.embedding_[:, 0], trans.embedding_[:, 1], c=y_train, cmap="Spectral"
+        trans.embedding_[:, 0],
+        trans.embedding_[:, 1],
+        c=y_train,
+        cmap="Spectral",
     )
     plt.show()
 
@@ -40,7 +46,7 @@ if "torus" in target_spaces:
 
     @numba.njit(fastmath=True)
     def torus_euclidean_grad(x, y, torus_dimensions=(2 * np.pi, 2 * np.pi)):
-        """Standard euclidean distance.
+        r"""Standard euclidean distance.
 
         ..math::
             D(x, y) = \sqrt{\sum_i (x_i - y_i)^2}
@@ -83,7 +89,13 @@ if "torus" in target_spaces:
     z = r * np.sin(trans.embedding_[:, 0])
 
     pts = mlab.points3d(
-        x, y, z, y_train, colormap="spectral", scale_mode="none", scale_factor=0.1
+        x,
+        y,
+        z,
+        y_train,
+        colormap="spectral",
+        scale_mode="none",
+        scale_factor=0.1,
     )
 
     mlab.show()
@@ -114,7 +126,13 @@ if "sphere" in target_spaces:
     z = r * np.cos(trans.embedding_[:, 0])
 
     pts = mlab.points3d(
-        x, y, z, y_train, colormap="spectral", scale_mode="none", scale_factor=0.2
+        x,
+        y,
+        z,
+        y_train,
+        colormap="spectral",
+        scale_mode="none",
+        scale_factor=0.2,
     )
 
     mlab.show()

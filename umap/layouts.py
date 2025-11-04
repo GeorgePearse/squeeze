@@ -89,7 +89,7 @@ def _optimize_layout_euclidean_single_epoch(
     dens_R,
     dens_mu,
     dens_mu_tot,
-):
+) -> None:
     for i in numba.prange(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= n:
             j = head[i]
@@ -196,7 +196,7 @@ def _optimize_layout_euclidean_densmap_epoch_init(
     b,
     re_sum,
     phi_sum,
-):
+) -> None:
     """Initialize density-based variables for a densMAP epoch.
 
     Parameters
@@ -727,7 +727,7 @@ def _optimize_layout_inverse_single_epoch(
     n_vertices,
     rhos,
     gamma,
-):
+) -> None:
     for i in range(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= n:
             j = head[i]
@@ -944,7 +944,7 @@ def _optimize_layout_aligned_euclidean_single_epoch(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     n,
-):
+) -> None:
     n_embeddings = len(heads)
     window_size = (relations.shape[1] - 1) // 2
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 #
 # License: BSD 3 clause
 import time
-from typing import TYPE_CHECKING, Any, Tuple, Union
+from typing import TYPE_CHECKING
 from warnings import warn
 
 import numba
@@ -160,7 +160,7 @@ def csr_unique(
     return_index: bool = True,
     return_inverse: bool = True,
     return_counts: bool = True,
-) -> Union[np.ndarray, Tuple[np.ndarray, ...]]:
+) -> np.ndarray | tuple[np.ndarray, ...]:
     """Find the unique rows of a sparse CSR matrix.
 
     Find the unique elements of a sparse csr matrix.

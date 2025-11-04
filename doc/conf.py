@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # umap documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  8 10:09:40 2018.
@@ -131,7 +130,7 @@ html_sidebars = {
         "globaltoc.html",
         "relations.html",  # needs 'show_related': True theme option to display
         "searchbox.html",
-    ]
+    ],
 }
 
 
@@ -192,7 +191,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "python": (f"https://docs.python.org/{sys.version_info.major}", None),
     "numpy": ("https://docs.scipy.org/doc/numpy/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
     "matplotlib": ("https://matplotlib.org/", None),
@@ -227,9 +226,9 @@ sphinx_gallery_conf = {
 }
 
 
-def setup(app):
+def setup(app) -> None:
     app.add_js_file(
-        "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"
+        "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js",
     )
     app.add_js_file("https://cdn.plot.ly/plotly-latest.min.js")
 

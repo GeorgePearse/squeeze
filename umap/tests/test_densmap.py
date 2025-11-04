@@ -1,5 +1,6 @@
-from umap import UMAP
 import pytest
+
+from umap import UMAP
 
 try:
     # works for sklearn>=0.22
@@ -12,9 +13,9 @@ except ImportError:
     from sklearn.manifold.t_sne import trustworthiness
 
 
-def test_densmap_trustworthiness(nn_data):
+def test_densmap_trustworthiness(nn_data) -> None:
     data = nn_data[:50]
-    embedding, rad_h, rad_l = UMAP(
+    embedding, _rad_h, _rad_l = UMAP(
         n_neighbors=10,
         min_dist=0.01,
         random_state=42,
@@ -23,13 +24,11 @@ def test_densmap_trustworthiness(nn_data):
         output_dens=True,
     ).fit_transform(data)
     trust = trustworthiness(data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.72
-    ), "Insufficiently trustworthy embedding for" "nn dataset: {}".format(trust)
+    assert trust >= 0.72, f"Insufficiently trustworthy embedding fornn dataset: {trust}"
 
 
-@pytest.mark.skip()
-def test_densmap_trustworthiness_random_init(nn_data):  # pragma: no cover
+@pytest.mark.skip
+def test_densmap_trustworthiness_random_init(nn_data) -> None:  # pragma: no cover
     data = nn_data[:50]
     embedding = UMAP(
         n_neighbors=10,
@@ -39,12 +38,10 @@ def test_densmap_trustworthiness_random_init(nn_data):  # pragma: no cover
         densmap=True,
     ).fit_transform(data)
     trust = trustworthiness(data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.75
-    ), "Insufficiently trustworthy embedding for" "nn dataset: {}".format(trust)
+    assert trust >= 0.75, f"Insufficiently trustworthy embedding fornn dataset: {trust}"
 
 
-def test_densmap_trustworthiness_on_iris(iris):
+def test_densmap_trustworthiness_on_iris(iris) -> None:
     densmap_iris_model = UMAP(
         n_neighbors=10,
         min_dist=0.01,
@@ -54,9 +51,9 @@ def test_densmap_trustworthiness_on_iris(iris):
     ).fit(iris.data)
     embedding = densmap_iris_model.embedding_
     trust = trustworthiness(iris.data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.97
-    ), "Insufficiently trustworthy embedding for" "iris dataset: {}".format(trust)
+    assert trust >= 0.97, (
+        f"Insufficiently trustworthy embedding foriris dataset: {trust}"
+    )
 
     with pytest.raises(NotImplementedError):
         densmap_iris_model.transform(iris.data[:10])
@@ -65,7 +62,7 @@ def test_densmap_trustworthiness_on_iris(iris):
         densmap_iris_model.inverse_transform(embedding[:10])
 
 
-def test_densmap_trustworthiness_on_iris_supervised(iris):
+def test_densmap_trustworthiness_on_iris_supervised(iris) -> None:
     densmap_iris_model = UMAP(
         n_neighbors=10,
         min_dist=0.01,
@@ -75,6 +72,6 @@ def test_densmap_trustworthiness_on_iris_supervised(iris):
     ).fit(iris.data, y=iris.target)
     embedding = densmap_iris_model.embedding_
     trust = trustworthiness(iris.data, embedding, n_neighbors=10)
-    assert (
-        trust >= 0.97
-    ), "Insufficiently trustworthy embedding for" "iris dataset: {}".format(trust)
+    assert trust >= 0.97, (
+        f"Insufficiently trustworthy embedding foriris dataset: {trust}"
+    )

@@ -1,11 +1,11 @@
 import numpy as np
 from sklearn.datasets import make_classification
-from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.pipeline import FeatureUnion, Pipeline
 
-from ..umap_ import UMAP
+from umap.umap_ import UMAP
 
 
-def test_get_feature_names_out():
+def test_get_feature_names_out() -> None:
     X, _ = make_classification(n_samples=30, n_features=10, random_state=42)
     umap = UMAP(
         n_neighbors=10,
@@ -21,7 +21,7 @@ def test_get_feature_names_out():
     np.testing.assert_array_equal(feature_names_out, expected)
 
 
-def test_get_feature_names_out_default():
+def test_get_feature_names_out_default() -> None:
     X, _ = make_classification(n_samples=30, n_features=10, random_state=42)
     umap = UMAP(
         n_neighbors=10,
@@ -36,7 +36,7 @@ def test_get_feature_names_out_default():
     np.testing.assert_array_equal(default_result, expected_default_result)
 
 
-def test_get_feature_names_out_multicomponent():
+def test_get_feature_names_out_multicomponent() -> None:
     # The output length should be equal to the number of components UMAP generates.
     X, _ = make_classification(n_samples=30, n_features=10, random_state=42)
     umap = UMAP(
@@ -52,8 +52,7 @@ def test_get_feature_names_out_multicomponent():
     np.testing.assert_array_equal(result_umap, expected_umap_result)
 
 
-
-def test_get_feature_names_out_featureunion():
+def test_get_feature_names_out_featureunion() -> None:
     X, _ = make_classification(n_samples=30, n_features=10, random_state=42)
     pipeline = Pipeline(
         [
@@ -63,10 +62,10 @@ def test_get_feature_names_out_featureunion():
                     [
                         ("umap1", UMAP(n_components=2)),
                         ("umap2", UMAP(n_components=3)),
-                    ]
+                    ],
                 ),
-            )
-        ]
+            ),
+        ],
     )
 
     pipeline.fit(X)
@@ -78,6 +77,6 @@ def test_get_feature_names_out_featureunion():
             "umap2__umap0",
             "umap2__umap1",
             "umap2__umap2",
-        ]
+        ],
     )
     np.testing.assert_array_equal(feature_names, expected_feature_names)
