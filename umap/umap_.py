@@ -44,6 +44,13 @@ from umap.utils import (
     submatrix,
 )
 
+# Try to import HNSW backend
+try:
+    from umap.hnsw_wrapper import HnswIndexWrapper
+    HNSW_AVAILABLE = True
+except ImportError:
+    HNSW_AVAILABLE = False
+
 locale.setlocale(locale.LC_NUMERIC, "C")
 
 INT32_MIN = np.iinfo(np.int32).min + 1
@@ -108,7 +115,7 @@ def raise_disconnected_warning(
     total_rows,
     threshold=0.1,
     verbose=False,
-):
+) -> None:
     """A simple wrapper function to avoid large amounts of code repetition."""
     if verbose & (vertices_disconnected == 0) & (edges_removed > 0):
         pass
@@ -244,6 +251,62 @@ def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1
     return result, rho
 
 
+def _get_nn_backend(metric, sparse_data, use_hnsw=None):
+    """Determine which nearest neighbor backend to use.
+
+    Parameters
+    ----------
+    metric : str
+        The distance metric to use
+    sparse_data : bool
+        Whether the data is sparse
+    use_hnsw : bool or None
+        If True, force HNSW backend
+        If False, force PyNNDescent
+        If None, automatically select
+
+    Returns
+    -------
+    backend_class : class
+        The nearest neighbor backend class to use
+
+    """
+    # Force PyNNDescent if requested
+    if use_hnsw is False:
+        return NNDescent
+
+    # Check if HNSW backend is available
+    if not HNSW_AVAILABLE:
+        if use_hnsw is True:
+            warn(
+                "HNSW backend requested but not available. "
+                "Please install umap-learn with: pip install --upgrade umap-learn", stacklevel=2,
+            )
+        return NNDescent
+
+    # Check if metric is supported by HNSW
+    hnsw_metrics = {"euclidean", "l2", "manhattan", "l1", "taxicab", "cosine",
+                    "chebyshev", "linfinity", "hamming"}
+    if metric not in hnsw_metrics:
+        if use_hnsw is True:
+            warn(f"Metric '{metric}' not supported by HNSW backend, falling back to PyNNDescent", stacklevel=2)
+        return NNDescent
+
+    # Check if sparse data (not supported yet)
+    if sparse_data:
+        if use_hnsw is True:
+            warn("HNSW backend doesn't support sparse data yet, falling back to PyNNDescent", stacklevel=2)
+        return NNDescent
+
+    # Use HNSW by default if available and compatible
+    if use_hnsw is None:
+        use_hnsw = True  # Default to HNSW for new code
+
+    if use_hnsw:
+        return HnswIndexWrapper
+    return NNDescent
+
+
 def nearest_neighbors(
     X,
     n_neighbors,
@@ -319,7 +382,13 @@ def nearest_neighbors(
         n_trees = min(64, 5 + round((X.shape[0]) ** 0.5 / 20.0))
         n_iters = max(5, round(np.log2(X.shape[0])))
 
-        knn_search_index = NNDescent(
+        # Determine which NN backend to use (HNSW or PyNNDescent)
+        sparse_data = scipy.sparse.issparse(X)
+        # If use_pynndescent=False, prefer HNSW; otherwise use PyNNDescent
+        use_hnsw_backend = not use_pynndescent if use_pynndescent is not None else None
+        NNBackend = _get_nn_backend(metric, sparse_data, use_hnsw=use_hnsw_backend)
+
+        knn_search_index = NNBackend(
             X,
             n_neighbors=n_neighbors,
             metric=metric,
@@ -616,7 +685,14 @@ def fuzzy_simplicial_set(
 
 
 @numba.njit()
-def fast_intersection(rows, cols, values, target, unknown_dist=1.0, far_dist=5.0):
+def fast_intersection(
+    rows,
+    cols,
+    values,
+    target,
+    unknown_dist=1.0,
+    far_dist=5.0,
+) -> None:
     """Under the assumption of categorical distance for the intersecting
     simplicial set perform a fast intersection.
 
@@ -666,7 +742,7 @@ def fast_metric_intersection(
     metric,
     metric_args,
     scale,
-):
+) -> None:
     """Under the assumption of categorical distance for the intersecting
     simplicial set perform a fast intersection.
 
@@ -735,7 +811,7 @@ def reprocess_row(probabilities, k=15, n_iters=32):
 
 
 @numba.njit()
-def reset_local_metrics(simplicial_set_indptr, simplicial_set_data):
+def reset_local_metrics(simplicial_set_indptr, simplicial_set_data) -> None:
     for i in range(simplicial_set_indptr.shape[0] - 1):
         simplicial_set_data[simplicial_set_indptr[i] : simplicial_set_indptr[i + 1]] = (
             reprocess_row(
@@ -1397,7 +1473,7 @@ def init_graph_transform(graph, embedding):
 
 
 @numba.njit()
-def init_update(current_init, n_original_samples, indices):
+def init_update(current_init, n_original_samples, indices) -> None:
     for i in range(n_original_samples, indices.shape[0]):
         n = 0
         for j in range(indices.shape[1]):
@@ -1723,7 +1799,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         output_dens=False,
         disconnection_distance=None,
         precomputed_knn=(None, None, None),
-    ):
+    ) -> None:
         self.n_neighbors = n_neighbors
         self.metric = metric
         self.output_metric = output_metric
@@ -1769,7 +1845,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self.a = a
         self.b = b
 
-    def _validate_parameters(self):
+    def _validate_parameters(self) -> None:
         if self.set_op_mix_ratio < 0.0 or self.set_op_mix_ratio > 1.0:
             msg = "set_op_mix_ratio must be between 0.0 and 1.0"
             raise ValueError(msg)
@@ -2148,7 +2224,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         # True if metric returns iterable of length 2, False otherwise
         return hasattr(metric_out, "__iter__") and len(metric_out) == 2
 
-    def _populate_combined_params(self, *models):
+    def _populate_combined_params(self, *models) -> None:
         self.n_neighbors = flattened([m.n_neighbors for m in models])
         self.metric = flattened([m.metric for m in models])
         self.metric_kwds = flattened([m.metric_kwds for m in models])
@@ -3468,7 +3544,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             tqdm_kwds=self.tqdm_kwds,
         )
 
-    def update(self, X, ensure_all_finite=True):
+    def update(self, X, ensure_all_finite=True) -> None:
         if self.metric in ("bit_hamming", "bit_jaccard"):
             X = check_array(
                 X,
@@ -3702,7 +3778,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             self.rad_orig_ = aux_data["rad_orig"]
             self.rad_emb_ = aux_data["rad_emb"]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         import re
 
         from sklearn.utils._pprint import _EstimatorPrettyPrinter
@@ -3714,7 +3790,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             n_max_elements_to_show=50,
         )
         # Set changed_only via setattr to avoid accessing private member directly
-        setattr(pp, "_changed_only", True)
+        pp._changed_only = True
         repr_ = pp.pformat(self)
         repr_ = re.sub("tqdm_kwds={.*},", "", repr_, flags=re.DOTALL)
         # remove empty lines

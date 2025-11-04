@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "umap-learn"
@@ -93,3 +93,8 @@ line-ending = "lf"
 [tool.pytest.ini_options]
 testmon_db = ".testmon.db"
 addopts = "-v"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-source = "umap"
+module-name = "umap._hnsw_backend"
