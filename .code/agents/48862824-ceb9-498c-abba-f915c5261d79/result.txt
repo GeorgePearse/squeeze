@@ -1,0 +1,226 @@
+[2025-11-09T20:07:24] OpenAI Codex v0.0.0 (research preview)
+--------
+workdir: /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+model: gpt-5-codex
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: auto
+--------
+[2025-11-09T20:07:24] User instructions:
+Context: Repo contains a Rust-backed index exposed to Python (see src/hnsw_index.rs and README Planned Work). Goal: add metadata-aware filtering to nearest-neighbor queries. Current HnswIndex behaves as brute-force; we want an API path that accepts an optional filter while keeping default behavior unchanged and tests passing. Constraints: minimal, non-breaking, with a clear error until the feature is implemented.
+
+Agent: Draft a concise design for metadata-aware filtered HNSW search that fits this codebase’s API. Specify filter representation (e.g., mask, predicate, or key/value), interactions with metrics, and expected performance. Provide API examples (Python + Rust), data validation rules, and acceptance criteria. Include a phased plan from stub to working traversal.
+
+Files to consider: src/hnsw_index.rs, README.md
+[2025-11-09T20:07:24] OpenAI Codex v0.0.0 (research preview)
+--------
+workdir: /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+model: gpt-5-codex
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: auto
+--------
+[2025-11-09T20:07:24] User instructions:
+Context: Repo contains a Rust-backed index exposed to Python (see src/hnsw_index.rs and README Planned Work). Goal: add metadata-aware filtering to nearest-neighbor queries. Current HnswIndex behaves as brute-force; we want an API path that accepts an optional filter while keeping default behavior unchanged and tests passing. Constraints: minimal, non-breaking, with a clear error until the feature is implemented.
+
+Agent: Draft a concise design for metadata-aware filtered HNSW search that fits this codebase’s API. Specify filter representation (e.g., mask, predicate, or key/value), interactions with metrics, and expected performance. Provide API examples (Python + Rust), data validation rules, and acceptance criteria. Include a phased plan from stub to working traversal.
+
+Files to consider: src/hnsw_index.rs, README.md
+
+[2025-11-09T20:07:27] thinking
+
+**Preparing to inspect files with read-only access**
+[2025-11-09T20:07:27] exec bash -lc ls in /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design/.
+[2025-11-09T20:07:27] bash -lc ls exited -1 in 1ms:
+ERROR
+No such file or directory (os error 2)
+[2025-11-09T20:07:27] tokens used: 7,838
+
+[2025-11-09T20:07:29] thinking
+
+**Ensuring correct working directory**
+[2025-11-09T20:07:29] exec bash -lc ls in /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-11-09T20:07:30] bash -lc ls succeeded in 779ms:
+ADDITIONAL_CAPABILITIES_ANALYSIS.md
+AGENTS.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+CONVERSION_SUMMARY.md
+Cargo.lock
+Cargo.toml
+DOCUMENTATION_INDEX.md
+DR_EVALUATION_METRICS_COMPREHENSIVE.md
+FEATURES.md
+HNSW_ARCHITECTURE_DIAGRAM.txt
+HNSW_ARCHITECTURE_SUMMARY.md
+HNSW_EXPLORATION_INDEX.md
+HNSW_QUICK_REFERENCE.md
+LICENSE.txt
+MULTI_VIEW_CROSSFILTER_VISUALIZATION.md
+Makefile
+NAMING_AND_BRANDING.md
+PHASE_1_VALIDATION_SUMMARY.md
+PREK.md
+[2025-11-09T20:07:30] tokens used: 8,090
+
+[2025-11-09T20:07:32] thinking
+
+**Preparing design document for metadata-aware HNSW search**
+[2025-11-09T20:07:33] exec bash -lc "sed -n '1,200p' src/hnsw_index.rs" in /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-11-09T20:07:33] bash -lc "sed -n '1,200p' src/hnsw_index.rs" succeeded in 765ms:
+use pyo3::prelude::*;
+use pyo3::exceptions::PyValueError;
+use numpy::{PyArray2, PyReadonlyArray2, PyUntypedArrayMethods};
+use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
+
+use crate::metrics;
+
+/// Brute-force approximate nearest neighbor index
+///
+/// This is a simplified implementation using brute-force k-NN search.
+/// It provides correct results but without the logarithmic scaling of HNSW.
+/// This can be optimized to use HNSW or other algorithms later.
+#[pyclass]
+pub struct HnswIndex {
+    /// Copy of the data for searching
+    data: Vec<Vec<f32>>,
+    /// Number of neighbors to return
+    n_neighbors: usize,
+    /// Distance metric name
+[2025-11-09T20:07:33] tokens used: 11,410
+[2025-11-09T20:07:35] exec bash -lc "sed -n '200,400p' src/hnsw_index.rs" in /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-11-09T20:07:36] bash -lc "sed -n '200,400p' src/hnsw_index.rs" succeeded in 680ms:
+
+        for query_vec in &self.data {
+            // Find k nearest neighbors for this point
+            let mut neighbors = Vec::with_capacity(self.data.len());
+
+            for (i, data_vec) in self.data.iter().enumerate() {
+                let dist = self.compute_distance(query_vec, data_vec);
+                neighbors.push((i as i64, dist));
+            }
+
+            // Sort by distance (ascending)
+            neighbors.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+
+            // Extract top n_neighbors neighbors
+            let mut indices = Vec::with_capacity(self.n_neighbors);
+            let mut distances = Vec::with_capacity(self.n_neighbors);
+
+            for (i, neighbor) in neighbors.iter().take(self.n_neighbors).enumerate() {
+                indices.push(neighbor.0);
+                distances.push(neighbor.1);
+[2025-11-09T20:07:36] tokens used: 13,569
+
+[2025-11-09T20:07:37] thinking
+
+**Opening README to find design details**
+[2025-11-09T20:07:38] exec bash -lc "sed -n '1,200p' README.md" in /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-11-09T20:07:38] bash -lc "sed -n '1,200p' README.md" succeeded in 636ms:
+> **Note:** I like embeddings, people should use embeddings more
+
+# UMAP
+
+![UMAP logo](doc/logo_large.png)
+
+[![PyPI Version](https://img.shields.io/pypi/v/umap.svg)](https://pypi.python.org/pypi/umap/)
+[![PyPI Downloads](https://pepy.tech/badge/umap/month)](https://pepy.tech/project/umap)
+[![License](https://img.shields.io/pypi/l/umap.svg)](https://github.com/lmcinnes/umap/blob/master/LICENSE.txt)
+[![Build Status](https://dev.azure.com/TutteInstitute/build-pipelines/_apis/build/status/lmcinnes.umap?branchName=master)](https://dev.azure.com/TutteInstitute/build-pipelines/_build/latest?definitionId=2&branchName=master)
+[![Coverage](https://coveralls.io/repos/github/lmcinnes/umap/badge.svg)](https://coveralls.io/github/lmcinnes/umap)
+[![Docs](https://readthedocs.org/projects/umap/badge/?version=latest)](https://umap.readthedocs.io/en/latest/?badge=latest)
+[![JOSS Paper](http://joss.theoj.org/papers/10.21105/joss.00861/status.svg)](https://doi.org/10.21105/joss.00861)
+
+> **Squeeze** (aka **Reductio**) is a research platform for dimensionality reduction built on UMAP.
+> It provides composition, evaluation, and benchmarking capabilities for combining and comparing dimension reduction techniques.
+> For the official UMAP project, visit [lmcinnes/umap](https://github.com/lmcinnes/umap).
+
+Squeeze is a comprehensive research platform for dimensionality reduction and manifold learning. It's built on top of UMAP (Uniform Manifold Approximation and Projection), a dimension reduction technique that can be used for visualisation similarly to t-SNE, but also for general non-linear dimension reduction. The algorithm is founded on three assumptions about the data:
+
+[2025-11-09T20:07:38] tokens used: 17,811
+
+[2025-11-09T20:07:47] thinking
+
+**Planning design document for filtered HNSW search**
+
+I’m outlining a concise design doc focused on metadata-aware filtered HNSW search without changing code files. I’m thinking through how to represent filters, integrate with metrics, and keep default behavior intact, while providing example APIs in Python and Rust plus testing and error handling plans. I’ll reference `src/hnsw_index.rs` and estimate line numbers for key functions to point at relevant code areas.
+[2025-11-09T20:07:49] exec bash -lc "nl -ba src/hnsw_index.rs | sed -n '1,200p'" in /home/georgepearse/.code/working/umap/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-11-09T20:07:49] bash -lc "nl -ba src/hnsw_index.rs | sed -n '1,200p'" exited -1 in 5ms:
+ERROR
+sandbox error: command was killed by a signal
+[2025-11-09T20:07:49] tokens used: 20,563
+
+[2025-11-09T20:07:52] thinking
+
+**Deciding on design documentation approach**
+[2025-11-09T20:07:52] tool browser_status
+[2025-11-09T20:07:52] tool browser_status failed
+Browser is not initialized. Use browser_open to start the browser.
+[2025-11-09T20:07:52] tokens used: 20,807
+
+[2025-11-09T20:08:22] thinking
+
+**Drafting metadata-aware filter design**
+
+I’m putting together a clear design plan for adding metadata-aware filtering to the HNSW index, covering filter representation, API changes, validation, performance expectations, and a phased rollout from stub to full implementation. I’ll include approximate file references to ground the proposal, keeping the default behavior unchanged and using a stub error until filtering is fully supported. Let’s shape this as a structured, concise design doc with examples and criteria to guide future development.
+[2025-11-09T20:08:24] codex
+
+HnswIndex already exposes Python bindings from `src/hnsw_index.rs:15`, so the new capability slots into that surface without altering existing calls.
+
+**Design Overview**
+- Keep `query` signature stable and add a sibling path `query_filtered` that takes an optional filter; both share the same `compute_distance` flow so metrics remain untouched.
+- Introduce an optional `metadata: Vec<Py<PyAny>>` on the Rust side (guarded by the GIL when read) plus a lightweight `MetadataSchema` struct describing allowed keys and value kinds; metadata is absent by default so current users pay no cost.
+
+Filter Representation
+- Accept a `MetadataFilter` enum in Rust with an initial variant `EqualsOneOf { key: String, allowed: HashSet<Py<PyAny>> }`; in Python expose it as either:
+  - a dict (`{"label": {"equals": ["cat", "dog"]}}`) or
+  - a boolean mask (`np.ndarray[bool]`) for power users.
+- Convert dict filters into the enum inside `query_filtered`; masks bypass metadata entirely and simply gate indices.
+
+Metrics Interaction & Performance
+- Filtering trims the candidate ID list before distance evaluation; once filtered, metrics behave exactly as today, including angular handling.
+- Brute-force fallback: filtering adds an O(n_keys + n_samples_match)` scan per query; expect roughly 10–20% overhead when filters are sparse, but skip entirely if `filter=None`.
+- Future HNSW traversal will short-circuit during graph walk by checking the metadata predicate at enqueue time, avoiding wasteful metric calls.
+
+API Examples
+- Python:
+  ```python
+  index = HnswIndex(data, n_neighbors=15, metric="cosine", metadata=labels)
+  # mask filter
+  indices, dists = index.query_filtered(query, k=10, ef=50, filter=np.array([True, False, ...]))
+  # key/value filter
+  filt = {"label": {"equals": ["cat", "dog"]}}
+  indices, dists = index.query_filtered(query, k=10, ef=50, filter=filt)
+  ```
+- Rust (inside `src/hnsw_index.rs`):
+  ```rust
+  let filter = MetadataFilter::EqualsOneOf { key: "label".into(), allowed: hashset!["cat".to_string()] };
+  let (idx, dist) = index.query_filtered(py, queries, 10, 50, Some(filter))?;
+  ```
+
+Data Validation Rules
+- `metadata` length must match `data.len()` (`PyValueError` otherwise).
+- Dict filters must only reference known keys; unknown keys raise `PyKeyError`.
+- Mask filters must be 1D, boolean, and length `n_samples`; reject non-contiguous or incorrect dtype.
+- Enforce JSON-serializable primitive types (`str`, `int`, `float`, `bool`) for equality filters in the first phase to keep hashing predictable.
+- When both metadata and a mask are provided, require they agree on allowed indices; otherwise raise a descriptive error.
+
+Acceptance Criteria
+- Default `query` path stays byte-for-byte identical for existing callers.
+- Supplying any valid filter today yields a deterministic `NotImplementedError` with guidance (“metadata filtering not yet available; track issue #XXX”).
+- Unit tests cover metadata validation failures and the guarded error path.
+- README gains a short section describing the upcoming metadata filtering API and current limitations.
+
+Phased Plan
+- Phase 0 (stub): add metadata storage, filter parsing, and wire `query_filtered` to return `PyNotImplementedError`; ship with tests and docs.
+- Phase 1 (brute-force): implement mask-based gating and dict equality filtering in the existing O(n) scan; add benchmarks and correctness tests.
+- Phase 2 (graph traversal): integrate filter checks into HNSW neighbor expansion, ensuring pruning happens before metric evaluation; add stress tests on sparse and dense filters.
+- Phase 3 (advanced predicates): extend `MetadataFilter` with range/composite operators and consider pre-built inverted indices for hot keys.
+
+Let me know if you’d like me to draft the README blurb or scaffold the Phase 0 stub next.
+[2025-11-09T20:08:34] tokens used: 22,842

@@ -1,0 +1,43 @@
+Now let me create a summary of the changes:
+
+## Summary
+
+I've successfully implemented NaN-safe neighbor handling and optimized top-k selection in `src/hnsw_index.rs`. Here's what was done:
+
+### Key Changes
+
+1. **NaN-Safe Comparison** (src/hnsw_index.rs:36-56)
+   - Added `compare_distances()` function that treats NaN values as worst (largest) distance
+   - Provides deterministic tie-breaking by comparing indices when distances are equal
+   - Eliminates panic risk from `unwrap()` on `partial_cmp()`
+
+2. **O(n log k) Heap-Based Selection** (src/hnsw_index.rs:58-90)
+   - Introduced `MaxDistNeighbor` wrapper with proper `Ord` implementation
+   - BinaryHeap maintains only k smallest distances instead of sorting all n candidates
+   - Performance improvement: O(n log k) vs O(n log n) for typical k << n cases
+
+3. **Buffer Reuse** (src/hnsw_index.rs:199-216, 247-264)
+   - Reuse `candidates` vector and `heap` across queries to avoid allocations
+   - Particularly beneficial in `neighbor_graph()` which processes all data points
+
+4. **Comprehensive Tests** (src/hnsw_index.rs:466-618)
+   - `test_nan_safe_comparison`: Validates NaN ordering logic
+   - `test_select_top_k_with_nans`: Ensures NaN values don't prevent finding finite neighbors
+   - `test_select_top_k_all_nans`: Handles edge case of all-NaN candidates
+   - `test_select_top_k_deterministic_ties`: Verifies stable tie-breaking
+   - `test_select_top_k_fewer_than_k`: Tests padding behavior
+
+5. **Documentation** (src/hnsw_index.rs:1-24)
+   - Module-level documentation explaining rationale and implementation details
+   - Inline comments for complex logic
+   - Performance characteristics documented
+
+### API Stability
+
+All changes are internal to `HnswIndex`. The public API remains completely unchanged, ensuring drop-in compatibility with existing code.
+
+### Test Results
+
+All 19 tests pass successfully, including 6 new tests specifically for NaN handling and heap-based selection.
+
+The implementation is minimal, idiomatic, and preserves existing behavior while eliminating the panic risk and improving performance for typical use cases.

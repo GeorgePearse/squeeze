@@ -88,6 +88,11 @@ line-ending = "lf"
     "S101",    # Use of assert (required in tests)
 ]
 "setup.py" = ["D100"]
+"umap/hnsw_wrapper.py" = [
+    "PLR0913",  # Too many arguments - needed for compatibility
+    "N803",     # Argument name X should be lowercase - sklearn convention
+    "N806",     # Variable X in function should be lowercase - sklearn convention
+]
 
 
 [tool.pytest.ini_options]

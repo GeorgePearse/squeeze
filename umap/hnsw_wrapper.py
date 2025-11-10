@@ -188,6 +188,7 @@ class HnswIndexWrapper:
         query_data: NDArray,
         k: int,
         epsilon: float = 0.1,
+        filter_mask: NDArray | None = None,
     ) -> tuple[NDArray, NDArray]:
         """Query the index for k nearest neighbors.
 
@@ -200,6 +201,9 @@ class HnswIndexWrapper:
         epsilon : float, default=0.1
             Accuracy/speed tradeoff parameter. Higher values search more
             candidates and return more accurate results.
+        filter_mask : ndarray of bool, optional
+            Boolean mask with length equal to the indexed dataset. When provided,
+            candidates with False values are ignored during search.
 
         Returns
         -------
@@ -212,19 +216,35 @@ class HnswIndexWrapper:
         # Ensure data is float32
         query_data = np.asarray(query_data, dtype=np.float32)
 
+        mask_arg = None
+        if filter_mask is not None:
+            mask = np.asarray(filter_mask)
+            if mask.dtype != np.bool_:
+                msg = "filter_mask must be a boolean array"
+                raise ValueError(msg)
+            if mask.ndim != 1:
+                msg = "filter_mask must be 1-dimensional"
+                raise ValueError(msg)
+            if mask.shape[0] != self._data.shape[0]:
+                msg = "filter_mask length must match the number of indexed samples"
+                raise ValueError(
+                    msg,
+                )
+            mask_arg = np.ascontiguousarray(mask, dtype=bool)
+
         # Map epsilon to ef parameter
         # epsilon controls search relaxation in PyNNDescent
         # ef controls candidate list size in HNSW
         ef = self._epsilon_to_ef(epsilon, k)
 
         # Call Rust query method with positional arguments
-        return self._index.query(query_data, k, ef)
+        return self._index.query(query_data, k, ef, mask_arg)
 
     @staticmethod
     def _epsilon_to_ef(epsilon: float, k: int) -> int:
         """Map PyNNDescent epsilon to HNSW ef parameter.
 
-        epsilon semantics: search (1 + epsilon) × optimal distance
+        epsilon semantics: search (1 + epsilon) x optimal distance
         ef semantics: size of candidate list (must be >= k)
         """
         # Empirical mapping: higher epsilon → larger ef
@@ -262,7 +282,7 @@ class HnswIndexWrapper:
         This property is used by UMAP to determine epsilon values
         for queries.
         """
-        return self._index._angular_trees
+        return self._index._angular_trees  # noqa: SLF001
 
     @property
     def _raw_data(self) -> NDArray:
@@ -270,7 +290,7 @@ class HnswIndexWrapper:
         return self._data
 
     def __repr__(self) -> str:
-        """String representation of the index."""
+        """Return string representation of the index."""
         return (
             f"HnswIndexWrapper(n_samples={self._index.n_samples}, "
             f"n_features={self._index.n_features}, "

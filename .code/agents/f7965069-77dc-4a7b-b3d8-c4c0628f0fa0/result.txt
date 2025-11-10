@@ -1,0 +1,42 @@
+Perfect! Let me create a summary:
+
+## Summary
+
+I've successfully created **20 minimal targeted safety tests** for UMAP metrics validation. All tests pass in 0.60 seconds.
+
+### Coverage by Category
+
+**1. Unknown Metric Names (3 tests)**
+- `test_trustworthiness_unknown_metric`: Verifies ValueError for unknown metrics
+- `test_continuity_unknown_metric`: Validates metric name checking
+- `test_local_continuity_meta_estimate_unknown_metric`: Tests all metric functions
+
+**2. Shape Mismatches (5 tests)**
+- Tests mismatched sample counts between original and embedded data (raise IndexError/ValueError)
+- Tests 1D input rejection (metrics require 2D arrays)
+- All properly surface Python-visible exceptions
+
+**3. NaN Safety (8 tests)**
+- NaN in original space → ValueError (both trustworthiness & continuity)
+- NaN in embedded space → ValueError (prevents silent failures)
+- Tests all three metrics (trustworthiness, continuity, local_continuity_meta_estimate)
+- Error consistency validation (same input → same error behavior)
+- NearestNeighbors properly rejects NaN inputs
+
+**4. Edge Cases (4 tests)**
+- Empty arrays → ValueError/IndexError
+- Single sample with k=5 → ValueError/IndexError
+- k > n_samples → ValueError/IndexError
+- Infinity values → ValueError
+
+### Test Quality
+- **Type annotations**: Full typing for all parameters and return values
+- **Docstrings**: Clear descriptions for each test purpose
+- **Organization**: Logical grouping into 4 test classes by concern
+- **Variable naming**: Proper convention (x_orig, x_emb)
+- **Error matching**: Uses raw string regex patterns for precise assertions
+
+### Commit
+Created in commit `83ffb7d`: "Add 20 minimal targeted safety tests for metrics validation"
+
+All tests follow existing project patterns and execute without failures.

@@ -48,6 +48,77 @@ UMAP depends upon `scikit-learn`, and thus `scikit-learn`'s dependencies such as
 
 **New in this version:** This fork includes an optimized Rust-based HNSW nearest neighbor backend (`hnsw-rs`) that provides significant performance improvements over the default implementations, especially for large datasets.
 
+### HNSW Variants and Alternative ANN Strategies
+
+Understanding the broader approximate-nearest-neighbor (ANN) landscape makes it easier to decide when the built-in HNSW backend is the right fit and when other techniques may suit your constraints better.
+
+#### HNSW Variants and Extensions
+- **HNSW with Product Quantization (HNSW-PQ):** Retains HNSW's multi-layer graph search while compressing vectors via PQ to shrink memory footprints with minimal recall loss.
+- **Dynamic HNSW:** Tailors neighbor graph maintenance to heavy insert/delete workloads so the structure stays well-balanced over time.
+- **Filtered HNSW:** Adds metadata-aware filters (e.g., `category="electronics"`) directly into graph traversal for hybrid vector/attribute queries.
+- **HNSW-SQ (Scalar Quantization):** Trades PQ's codebooks for lightweight scalar buckets, offering different accuracy vs. latency tradeoffs.
+- **Distributed HNSW:** Partitions the graph across machines to keep billion-scale corpora queryable when a single node cannot hold the index.
+
+#### Graph-Based Alternatives
+- **NSW (Navigable Small World):** The original single-layer graph; easier to implement but typically slower than hierarchical variants at scale.
+- **NGT (Neighborhood Graph and Tree):** Uses tree-guided entry points for traversal and often competes closely with HNSW on recall vs. latency.
+- **NSG (Navigating Spreading-out Graph):** Enforces well-dispersed neighbor selections to improve coverage of the search space.
+- **DiskANN / Vamana:** SSD-optimized graph search from Microsoft; keeps hot nodes in RAM and streams the rest from disk for billion-vector workloads.
+- **SPTAG (Space Partition Tree and Graph):** Hybrid kd-tree + graph approach tuned for extremely high recall targets.
+
+#### Tree-Based Methods
+- **Annoy:** Builds many random projection trees; memory-mappable and lightweight but typically slower at very high recall.
+- **Ball Trees / Cover Trees:** Great for low-to-mid dimensional data, yet they degrade sharply as dimensionality grows.
+- **KD-Trees:** Classic axis-aligned partitions; fast in low dimensions but hit the curse of dimensionality quickly.
+- **VP-Trees:** Split space by distances from vantage points and work with arbitrary metrics.
+
+#### Hashing-Based Methods
+- **LSH (Locality-Sensitive Hashing):** Simple, theoretically grounded hashing; can require substantial memory replication for high recall.
+- **Multi-Index Hashing:** Stacks multiple hash tables with varied projections to boost recall over vanilla LSH.
+- **Learning to Hash:** Trains neural encoders (e.g., Deep Hashing, HashNet) to produce compact binary codes tailored to a dataset.
+
+#### Quantization-Based Methods
+- **FAISS-IVF (Inverted File Index):** Clusters data then searches only relevant regions; frequently paired with PQ for compression.
+- **ScaNN:** Google's learned quantizer with anisotropic scoring to balance accuracy and throughput.
+- **IVFPQ / IVFADC:** Combines IVF routing with product quantization to scale to massive corpora efficiently.
+- **OPQ (Optimized Product Quantization):** Learns a rotation that improves PQ reconstruction quality before coding vectors.
+
+#### Specialized and Hybrid Approaches
+- **FAISS-HNSW+PQ:** Facebook's combo of HNSW navigation with PQ compression for high recall at lower memory.
+- **Composite Indices:** Pipelines multiple algorithms (e.g., LSH pre-filter + HNSW re-rank) to mix their strengths.
+- **Learned Indices:** Train models to predict neighbor locations and prune the search space.
+- **Proximity Graph Methods:** EFANNA, KGraph, and related techniques vary graph construction heuristics to improve final recall.
+- **Streaming Algorithms:** SW-Graph, dynamic LSH, and similar methods keep pace with continuously arriving data.
+
+#### Choosing the Right Method
+- **Best speed/accuracy mix:** HNSW, NGT, or SPTAG
+- **Tight memory budgets:** Annoy, DiskANN, or quantization-heavy pipelines (IVFPQ, HNSW-PQ)
+- **SSD-first deployments:** DiskANN / Vamana
+- **Heavy update workloads:** Dynamic HNSW variants or hashing-based structures
+- **Metadata-aware queries:** Filtered HNSW, FAISS-IVF with attribute filters, or dedicated vector databases
+- **Distributed deployments:** Distributed HNSW, FAISS in distributed mode, or Elasticsearch/OpenSearch vector support
+
+Modern vector databases typically integrate several of these techniques and automatically route queries to the most appropriate index based on corpus characteristics, latency budgets, and filtering requirements.
+
+#### Planned Work
+- [ ] Add metadata-aware Filtered HNSW queries to support hybrid vector + attribute filtering.
+- [ ] Layer Product Quantization onto HNSW for memory-efficient high-recall search.
+- [ ] Harden Dynamic HNSW updates so insert/delete heavy workloads avoid full rebuilds.
+- [ ] Introduce a Distributed HNSW shard manager for multi-node deployments.
+- [ ] Provide an alternative FAISS IVF+PQ backend for extreme-scale datasets.
+
+```
+# Upcoming filtered-query API (stub)
+indices, dists = index.query(
+    queries,
+    k=15,
+    ef=64,
+    filter=None,  # pass a mask or predicate once implemented
+)
+
+# For now any non-None filter raises NotImplementedError to signal opt-in support
+```
+
 **Requirements:**
 
 * Python 3.6 or greater

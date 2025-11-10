@@ -1,0 +1,220 @@
+def test_ll_dirichlet_grad_metrics_match_metrics(spatial_data) -> None:
+    # LL Dirichlet
+    test_matrix = np.array(
+        [
+            [
+                dist.ll_dirichlet_grad(spatial_data[i], spatial_data[j])[0]
+                for j in range(spatial_data.shape[0])
+            ]
+            for i in range(spatial_data.shape[0])
+        ],
+    )
+    assert test_matrix is not None, "LL Dirichlet grad metric failed"
+
+
+def test_haversine_grad_metrics_match_metrics(spatial_data) -> None:
+    # Haversine
+    tree = BallTree(spatial_data[:, :2], metric="haversine")
+    dist_matrix, _ = tree.query(spatial_data[:, :2], k=spatial_data.shape[0])
+    test_matrix = np.array(
+        [
+            [
+                dist.haversine_grad(spatial_data[i, :2], spatial_data[j, :2])[0]
+                for j in range(spatial_data.shape[0])
+            ]
+            for i in range(spatial_data.shape[0])
+        ],
+    )
+    test_matrix.sort(axis=1)
+    assert_array_almost_equal(
+        test_matrix,
+        dist_matrix,
+        err_msg="Distances don't match for metric haversine",
+    )
+
+
+def test_unknown_metric_raises_error() -> None:
+    with pytest.raises(ValueError, match="Unknown metric foo"):
+        UMAP(metric="foo")
+
+
+def test_bad_input_shape_raises_error() -> None:
+    # Test case 1: Mismatched dimensions for a custom metric
+    def custom_metric(x, y):
+        return np.sum(np.abs(x - y))
+
+    X = np.random.rand(10, 5)
+    # Create a UMAP instance with the custom metric
+    reducer = UMAP(metric=custom_metric)
+
+    # Attempt to fit with data that has a different number of features
+    X_bad_shape = np.random.rand(10, 3)
+    with pytest.raises(ValueError, match="Shape of X does not match shape of X_fit"):
+        reducer.fit(X)
+        reducer.transform(X_bad_shape)
+
+    # Test case 2: Input with incorrect number of dimensions (e.g., 1D array where 2D is expected)
+    X_1d = np.random.rand(10)
+    with pytest.raises(ValueError, match="Expected 2D array, got 1D array instead"):
+        UMAP().fit(X_1d)
+
+    # Test case 3: Empty input array
+    X_empty = np.array([])
+    with pytest.raises(ValueError, match="Expected 2D array, got 1D array instead"):
+        UMAP().fit(X_empty)
+
+    # Test case 4: Input with NaN values where not allowed
+    X_nan = np.array([[1, 2], [3, np.nan]])
+    with pytest.raises(ValueError, match="Input data contains NaN values"):
+        UMAP(metric="euclidean", n_neighbors=2).fit(X_nan)
+
+
+def test_nan_distances_handling() -> None:
+    # Test case 1: Input data with NaNs, ensure no panic and deterministic behavior
+    X_with_nan = np.array([[1.0, 2.0], [3.0, 4.0], [np.nan, 5.0], [6.0, np.nan]])
+    # UMAP should handle NaNs gracefully when `allow_singular` is True or `metric` is 'precomputed'
+    # For standard metrics, it should raise an error if NaNs are present and not explicitly handled.
+    # This test focuses on ensuring no panic and deterministic behavior when NaNs are present
+    # and the metric *could* produce NaNs or infinities.
+
+    # If a metric produces NaN distances, UMAP should ideally either exclude them
+    # or rank them last. Let's simulate a custom metric that produces NaNs.
+    @njit
+    def nan_producing_metric(x, y):
+        if np.any(np.isnan(x)) or np.any(np.isnan(y)):
+            return np.nan
+        return np.sum(np.abs(x - y))
+
+    # Expect a ValueError if NaNs are not handled by `ensure_all_finite`
+    with pytest.raises(ValueError, match="Input data contains NaN values"):
+        UMAP(metric=nan_producing_metric, n_neighbors=2).fit(X_with_nan)
+
+    # Now, test with `ensure_all_finite=False` or 'allow-nan' to see if it proceeds without panic
+    # and produces a result (even if it's not ideal, it shouldn't panic).
+    # Note: UMAP's internal handling of NaNs in distance matrices is complex.
+    # The goal here is to ensure the *system* doesn't crash.
+    # The `test_check_input_data` already covers `ensure_all_finite` for input data.
+    # This test is more about what happens if the *metric itself* produces NaNs.
+
+    # For now, let's focus on the input data NaN handling, as the metric producing NaN
+    # is often caught by the input data checks first.
+    # The `test_check_input_data` already covers this extensively.
+
+    # Let's add a test where a custom metric *might* produce NaNs, but the input data is clean.
+    # This scenario is less about input validation and more about metric robustness.
+    clean_data = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]])
+
+    @njit
+    def conditional_nan_metric(x, y):
+        # This metric will produce NaN if the sum of x is greater than sum of y
+        if np.sum(x) > np.sum(y):
+            return np.nan
+        return np.sum(np.abs(x - y))
+
+    # If a metric produces NaNs, UMAP's internal k-NN graph construction
+    # should ideally handle it without panicking.
+    # The current UMAP implementation might still raise a ValueError if NaNs
+    # appear in the distance matrix during graph construction.
+    # The goal is to ensure it's a Python error, not a Rust/C panic.
+    with pytest.raises(ValueError, match="Distance matrix contains NaN values"):
+        UMAP(metric=conditional_nan_metric, n_neighbors=2).fit(clean_data)
+
+    # Test with a metric that produces infinity, which should also be handled gracefully
+    @njit
+    def inf_producing_metric(x, y):
+        if np.sum(x) > np.sum(y):
+            return np.inf
+        return np.sum(np.abs(x - y))
+
+    with pytest.raises(ValueError, match="Distance matrix contains infinite values"):
+        UMAP(metric=inf_producing_metric, n_neighbors=2).fit(clean_data)
+
+    # Test with precomputed distance matrix containing NaNs
+    precomputed_nan_dist_matrix = np.array([
+        [0.0, 1.0, np.nan, 2.0],
+        [1.0, 0.0, 3.0, np.nan],
+        [np.nan, 3.0, 0.0, 4.0],
+        [2.0, np.nan, 4.0, 0.0],
+    ])
+    with pytest.raises(ValueError, match="Distance matrix contains NaN values"):
+        UMAP(metric="precomputed", n_neighbors=2).fit(precomputed_nan_dist_matrix)
+
+    # Test with precomputed distance matrix containing Infs
+    precomputed_inf_dist_matrix = np.array([
+        [0.0, 1.0, np.inf, 2.0],
+        [1.0, 0.0, 3.0, np.inf],
+        [np.inf, 3.0, 0.0, 4.0],
+        [2.0, np.inf, 4.0, 0.0],
+    ])
+    with pytest.raises(ValueError, match="Distance matrix contains infinite values"):
+        UMAP(metric="precomputed", n_neighbors=2).fit(precomputed_inf_dist_matrix)
+
+    # Test with a custom metric that returns a tuple (distance, gradient) and produces NaN
+    @njit
+    def nan_producing_grad_metric(x, y):
+        if np.sum(x) > np.sum(y):
+            return np.nan, np.zeros_like(x)
+        return np.sum(np.abs(x - y)), np.zeros_like(x)
+
+    with pytest.raises(ValueError, match="Distance matrix contains NaN values"):
+        UMAP(metric=nan_producing_grad_metric, n_neighbors=2).fit(clean_data)
+
+    # Test with a custom metric that returns a tuple (distance, gradient) and produces Inf
+    @njit
+    def inf_producing_grad_metric(x, y):
+        if np.sum(x) > np.sum(y):
+            return np.inf, np.zeros_like(x)
+        return np.sum(np.abs(x - y)), np.zeros_like(x)
+
+    with pytest.raises(ValueError, match="Distance matrix contains infinite values"):
+        UMAP(metric=inf_producing_grad_metric, n_neighbors=2).fit(clean_data)
+
+    # Test with a metric that produces NaNs but is handled by `ensure_all_finite='allow-nan'`
+    # This scenario is already covered by `test_check_input_data` for input data.
+    # If the *metric itself* produces NaNs, even with `allow-nan`, it might still
+    # lead to issues in graph construction if not explicitly handled.
+    # The current UMAP implementation seems to raise ValueError for NaN/Inf in distance matrix.
+    # This is good, as it's a Python-visible error.
+
+    # The key is to ensure that these scenarios result in Python exceptions, not crashes.
+    # The existing `test_check_input_data` already covers input data with NaNs.
+    # The new tests here specifically target scenarios where the *metric function*
+    # or a *precomputed distance matrix* introduces NaNs/Infs.
+    # The current behavior of raising ValueError for NaN/Inf in the distance matrix
+    # is acceptable as it's a clear Python error.The existing tests provide a good foundation. `test_umap_metrics.py` already has a `test_unknown_metric_raises_error` which is great for the first point. `test_data_input.py` covers `NaN` and `Inf` in input data, and `test_umap_metrics.py` has a `test_nan_distances_handling` that covers `NaN` and `Inf` in distance matrices.
+
+I will add a new test function to `test_umap_metrics.py` to specifically address the "bad input shapes" requirement, focusing on scenarios where the input data to `UMAP.fit` or `UMAP.transform` has an incorrect number of dimensions or mismatched features.
+
+Here's my plan:
+
+1.  **Add a test for bad input shapes:** I'll add a new test function `test_bad_input_shape_raises_error` to `umap/tests/test_umap_metrics.py`. This test will cover:
+    *   Input with incorrect number of dimensions (e.g., 1D array where 2D is expected).
+    *   Empty input array.
+    *   Mismatched dimensions for `transform` after `fit`.
+
+I will add this test to `umap/tests/test_umap_metrics.py`.
+
+Here's the content I'll add:
+
+```python
+def test_bad_input_shape_raises_error() -> None:
+    # Test case 1: Input with incorrect number of dimensions (e.g., 1D array where 2D is expected)
+    X_1d = np.random.rand(10)
+    with pytest.raises(ValueError, match="Expected 2D array, got 1D array instead"):
+        UMAP().fit(X_1d)
+
+    # Test case 2: Empty input array
+    X_empty = np.array([])
+    with pytest.raises(ValueError, match="Expected 2D array, got 1D array instead"):
+        UMAP().fit(X_empty)
+
+    # Test case 3: Mismatched dimensions for transform
+    X_fit = np.random.rand(10, 5)
+    reducer = UMAP()
+    reducer.fit(X_fit)
+    X_transform_bad_shape = np.random.rand(5, 3)
+    with pytest.raises(ValueError, match="Shape of X does not match shape of X_fit"):
+        reducer.transform(X_transform_bad_shape)
+```
+
+I will use the `replace` tool to insert this new test function into `test_umap_metrics.py`. I'll place it after the `test_unknown_metric_raises_error` function.
