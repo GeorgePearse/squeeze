@@ -40,3 +40,4 @@ dist
 # Added by cargo
 
 /target
+umap/_hnsw_backend.abi3.so

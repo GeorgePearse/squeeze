@@ -2,8 +2,9 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use rand::Rng;
 use std::hint::black_box as hint_black_box;
 
-// Import from the library (need to set up proper module structure)
-// For now, we'll define benchmark helpers
+// Import SIMD and scalar implementations
+use _hnsw_backend::metrics;
+use _hnsw_backend::metrics_simd;
 
 /// Generate random f32 vectors
 fn generate_vectors(n: usize, dim: usize) -> Vec<Vec<f32>> {
@@ -13,40 +14,18 @@ fn generate_vectors(n: usize, dim: usize) -> Vec<Vec<f32>> {
         .collect()
 }
 
-/// Euclidean distance (reference implementation)
-fn euclidean(a: &[f32], b: &[f32]) -> f32 {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| (x - y).powi(2))
-        .sum::<f32>()
-        .sqrt()
-}
-
-/// Manhattan distance (reference implementation)
-fn manhattan(a: &[f32], b: &[f32]) -> f32 {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| (x - y).abs())
-        .sum()
-}
-
-/// Cosine distance (reference implementation)
-fn cosine(a: &[f32], b: &[f32]) -> f32 {
-    let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
-    let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
-    let norm_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    
-    let denom = norm_a * norm_b;
-    if denom < 1e-10 {
-        1.0
-    } else {
-        1.0 - (dot / denom)
-    }
-}
-
-/// Benchmark distance metric computation
+/// Benchmark distance metric computation (comparing SIMD vs scalar)
 fn bench_distance_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("distance_metrics");
+    
+    // Print SIMD availability info
+    println!("\n=== SIMD Capabilities ===");
+    println!("SIMD available: {}", metrics_simd::has_simd());
+    #[cfg(target_arch = "x86_64")]
+    println!("AVX2 available: {}", metrics_simd::has_avx2());
+    #[cfg(target_arch = "aarch64")]
+    println!("NEON available: {}", metrics_simd::has_neon());
+    println!("========================\n");
     
     for dim in [8, 16, 32, 64, 128, 256, 512, 1024].iter() {
         let vectors = generate_vectors(2, *dim);
@@ -55,23 +34,37 @@ fn bench_distance_metrics(c: &mut Criterion) {
         
         group.throughput(Throughput::Elements(*dim as u64));
         
-        group.bench_with_input(BenchmarkId::new("euclidean", dim), dim, |bench, _| {
-            bench.iter(|| euclidean(black_box(a), black_box(b)));
+        // Scalar implementations
+        group.bench_with_input(BenchmarkId::new("euclidean_scalar", dim), dim, |bench, _| {
+            bench.iter(|| metrics::euclidean(black_box(a), black_box(b)).unwrap());
         });
         
-        group.bench_with_input(BenchmarkId::new("manhattan", dim), dim, |bench, _| {
-            bench.iter(|| manhattan(black_box(a), black_box(b)));
+        group.bench_with_input(BenchmarkId::new("manhattan_scalar", dim), dim, |bench, _| {
+            bench.iter(|| metrics::manhattan(black_box(a), black_box(b)).unwrap());
         });
         
-        group.bench_with_input(BenchmarkId::new("cosine", dim), dim, |bench, _| {
-            bench.iter(|| cosine(black_box(a), black_box(b)));
+        group.bench_with_input(BenchmarkId::new("cosine_scalar", dim), dim, |bench, _| {
+            bench.iter(|| metrics::cosine(black_box(a), black_box(b)).unwrap());
+        });
+        
+        // SIMD implementations (with automatic detection)
+        group.bench_with_input(BenchmarkId::new("euclidean_simd", dim), dim, |bench, _| {
+            bench.iter(|| metrics_simd::euclidean(black_box(a), black_box(b)).unwrap());
+        });
+        
+        group.bench_with_input(BenchmarkId::new("manhattan_simd", dim), dim, |bench, _| {
+            bench.iter(|| metrics_simd::manhattan(black_box(a), black_box(b)).unwrap());
+        });
+        
+        group.bench_with_input(BenchmarkId::new("cosine_simd", dim), dim, |bench, _| {
+            bench.iter(|| metrics_simd::cosine(black_box(a), black_box(b)).unwrap());
         });
     }
     
     group.finish();
 }
 
-/// Benchmark batch distance computation
+/// Benchmark batch distance computation (comparing SIMD vs scalar)
 fn bench_batch_distances(c: &mut Criterion) {
     let mut group = c.benchmark_group("batch_distances");
     
@@ -82,10 +75,18 @@ fn bench_batch_distances(c: &mut Criterion) {
         
         group.throughput(Throughput::Elements(*n as u64));
         
-        group.bench_with_input(BenchmarkId::new("euclidean_batch", n), n, |bench, _| {
+        group.bench_with_input(BenchmarkId::new("euclidean_batch_scalar", n), n, |bench, _| {
             bench.iter(|| {
                 for vec in data {
-                    hint_black_box(euclidean(black_box(query), black_box(vec)));
+                    hint_black_box(metrics::euclidean(black_box(query), black_box(vec)).unwrap());
+                }
+            });
+        });
+        
+        group.bench_with_input(BenchmarkId::new("euclidean_batch_simd", n), n, |bench, _| {
+            bench.iter(|| {
+                for vec in data {
+                    hint_black_box(metrics_simd::euclidean(black_box(query), black_box(vec)).unwrap());
                 }
             });
         });
@@ -176,11 +177,11 @@ fn bench_hnsw_construction(c: &mut Criterion) {
         
         group.bench_with_input(BenchmarkId::from_parameter(n), n, |bench, _| {
             bench.iter(|| {
-                // Simulate construction by computing all-pairs distances
+                // Simulate construction by computing all-pairs distances with SIMD
                 let mut count = 0;
                 for i in 0..*n {
                     for j in (i+1)..*n {
-                        hint_black_box(euclidean(&vectors[i], &vectors[j]));
+                        hint_black_box(metrics_simd::euclidean(&vectors[i], &vectors[j]).unwrap());
                         count += 1;
                     }
                 }
@@ -204,12 +205,12 @@ fn bench_hnsw_search(c: &mut Criterion) {
     for k in [5, 10, 15, 30].iter() {
         group.bench_with_input(BenchmarkId::from_parameter(k), k, |bench, k| {
             bench.iter(|| {
-                // Simulate search by finding k nearest neighbors
+                // Simulate search by finding k nearest neighbors with SIMD
                 for query in queries {
                     let mut distances: Vec<(usize, f32)> = data
                         .iter()
                         .enumerate()
-                        .map(|(i, vec)| (i, euclidean(query, vec)))
+                        .map(|(i, vec)| (i, metrics_simd::euclidean(query, vec).unwrap()))
                         .collect();
                     distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
                     distances.truncate(*k);
