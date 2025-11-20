@@ -297,20 +297,12 @@ def _get_nn_backend(metric, sparse_data, use_hnsw=None):
         "chebyshev",
         "linfinity",
         "hamming",
+        "minkowski",
     }
     if metric not in hnsw_metrics:
         if use_hnsw is True:
             warn(
                 f"Metric '{metric}' not supported by HNSW backend, falling back to PyNNDescent",
-                stacklevel=2,
-            )
-        return NNDescent
-
-    # Check if sparse data (not supported yet)
-    if sparse_data:
-        if use_hnsw is True:
-            warn(
-                "HNSW backend doesn't support sparse data yet, falling back to PyNNDescent",
                 stacklevel=2,
             )
         return NNDescent
@@ -333,6 +325,7 @@ def nearest_neighbors(
     random_state,
     low_memory=True,
     use_pynndescent=True,
+    use_hnsw=None,
     n_jobs=-1,
     verbose=False,
 ):
@@ -362,6 +355,12 @@ def nearest_neighbors(
 
     low_memory: bool (optional, default True)
         Whether to pursue lower memory NNdescent.
+
+    use_pynndescent: bool (optional, default True)
+        Whether to use PyNNDescent for nearest neighbor search.
+
+    use_hnsw: bool (optional, default None)
+        Whether to use HNSW backend. If True, overrides use_pynndescent.
 
     verbose: bool (optional, default False)
         Whether to print status data during the computation.
@@ -401,8 +400,11 @@ def nearest_neighbors(
 
         # Determine which NN backend to use (HNSW or PyNNDescent)
         sparse_data = scipy.sparse.issparse(X)
-        # If use_pynndescent=False, prefer HNSW; otherwise use PyNNDescent
-        use_hnsw_backend = not use_pynndescent if use_pynndescent is not None else None
+        if use_hnsw is not None:
+            use_hnsw_backend = use_hnsw
+        else:
+            use_hnsw_backend = not use_pynndescent if use_pynndescent is not None else None
+
         NNBackend = _get_nn_backend(metric, sparse_data, use_hnsw=use_hnsw_backend)
 
         knn_search_index = NNBackend(
@@ -1816,6 +1818,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         output_dens=False,
         disconnection_distance=None,
         precomputed_knn=(None, None, None),
+        use_hnsw=None,
     ) -> None:
         self.n_neighbors = n_neighbors
         self.metric = metric
@@ -1856,6 +1859,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self.output_dens = output_dens
         self.disconnection_distance = disconnection_distance
         self.precomputed_knn = precomputed_knn
+        self.use_hnsw = use_hnsw
 
         self.n_jobs = n_jobs
 
@@ -2817,6 +2821,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     random_state,
                     self.low_memory,
                     use_pynndescent=True,
+                    use_hnsw=self.use_hnsw,
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
                 )

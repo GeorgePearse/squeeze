@@ -101,5 +101,5 @@ addopts = "-v"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
-python-source = "umap"
+python-source = "."
 module-name = "umap._hnsw_backend"

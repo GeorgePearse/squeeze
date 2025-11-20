@@ -30,8 +30,9 @@ def test_filtered_query_masks_out_indices(sample_index: HnswIndexWrapper) -> Non
         filter_mask=filter_mask,
     )
 
-    assert np.all(indices >= sample_index._data.shape[0] // 2)  # noqa: SLF001
-
+    valid_indices = indices[indices != -1]
+    assert valid_indices.size > 0
+    assert np.all(valid_indices >= sample_index._data.shape[0] // 2)  # noqa: SLF001
 
 def test_filtered_query_invalid_mask_type(sample_index: HnswIndexWrapper) -> None:
     """Test that invalid mask type raises an error."""

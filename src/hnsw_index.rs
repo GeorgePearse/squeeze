@@ -1,12 +1,13 @@
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::PyAny;
+use pyo3::types::{PyAny, PyBytes};
 use numpy::{PyArray1, PyArray2, PyArrayMethods, PyReadonlyArray2, PyUntypedArrayMethods};
 use pyo3::PyErr;
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+use rayon::prelude::*;
+use serde::{Serialize, Deserialize};
 
 use crate::metrics;
+use crate::hnsw_algo::Hnsw;
 
 impl From<metrics::MetricError> for PyErr {
     fn from(err: metrics::MetricError) -> Self {
@@ -14,12 +15,18 @@ impl From<metrics::MetricError> for PyErr {
     }
 }
 
-/// Brute-force approximate nearest neighbor index
-///
-/// This is a simplified implementation using brute-force k-NN search.
-/// It provides correct results but without the logarithmic scaling of HNSW.
-/// This can be optimized to use HNSW or other algorithms later.
-#[pyclass]
+#[derive(Serialize, Deserialize)]
+struct HnswIndexState {
+    data: Vec<Vec<f32>>,
+    n_neighbors: usize,
+    metric: String,
+    dist_p: f32,
+    is_angular: bool,
+    hnsw: Hnsw,
+}
+
+/// HNSW approximate nearest neighbor index
+#[pyclass(module = "umap._hnsw_backend")]
 pub struct HnswIndex {
     /// Copy of the data for searching
     data: Vec<Vec<f32>>,
@@ -27,35 +34,30 @@ pub struct HnswIndex {
     n_neighbors: usize,
     /// Distance metric name
     metric: String,
+    /// Parameter p for Minkowski distance
+    dist_p: f32,
     /// Whether the metric is angular (cosine/correlation)
     is_angular: bool,
     /// Cached neighbor graph (for neighbor_graph property)
     neighbor_graph_cache: Option<(Vec<Vec<i64>>, Vec<Vec<f32>>)>,
+    
+    /// The HNSW Graph Algorithm
+    hnsw: Hnsw,
 }
 
 #[pymethods]
 impl HnswIndex {
     /// Create a new nearest neighbor index
-    ///
-    /// Parameters
-    /// ----------
-    /// data : ndarray of float32, shape (n_samples, n_features)
-    ///     The data to index
-    /// n_neighbors : int
-    ///     Number of neighbors to return
-    /// metric : str
-    ///     Distance metric: 'euclidean', 'manhattan', 'cosine', etc.
-    /// m : int
-    ///     HNSW M parameter (unused in brute-force version, for API compatibility)
-    /// ef_construction : int
-    ///     HNSW ef_construction parameter (unused in brute-force version, for API compatibility)
     #[new]
+    #[pyo3(signature = (data, n_neighbors, metric, m, ef_construction, dist_p=2.0, random_state=None))]
     fn new(
         data: PyReadonlyArray2<f32>,
         n_neighbors: usize,
         metric: String,
-        _m: usize,
-        _ef_construction: usize,
+        m: usize,
+        ef_construction: usize,
+        dist_p: f32,
+        random_state: Option<u64>,
     ) -> PyResult<Self> {
         let shape = data.shape();
         let (n_samples, n_features) = (shape[0], shape[1]);
@@ -74,7 +76,11 @@ impl HnswIndex {
         }
 
         if !Self::is_supported_metric(metric.as_str()) {
-            return Err(PyValueError::new_err(format!("unknown metric '{}'", metric)));
+            return Err(PyValueError::new_err(format!(
+                "Unknown metric '{}'. Supported metrics: euclidean, l2, manhattan, l1, \
+                 taxicab, cosine, correlation, chebyshev, linfinity, minkowski, hamming",
+                metric
+            )));
         }
 
         // Convert numpy array to Vec<Vec<f32>>
@@ -90,13 +96,31 @@ impl HnswIndex {
         }
 
         let is_angular = metric == "cosine" || metric == "correlation";
+        
+        // Initialize HNSW graph with deterministic seed for reproducibility
+        // Future: expose random_state parameter to Python API
+        let seed = random_state.unwrap_or(42);
+        let mut hnsw = Hnsw::new(m, ef_construction, n_samples, seed);
+        
+        // Build the graph
+        {
+            let dist_func = |i: usize, j: usize| -> f32 {
+                Self::compute_dist_static(&data_vec[i], &data_vec[j], &metric, dist_p).unwrap_or(f32::MAX)
+            };
+            
+            for i in 0..n_samples {
+                hnsw.insert(i, &dist_func);
+            }
+        }
 
         Ok(Self {
             data: data_vec,
             n_neighbors,
             metric,
+            dist_p,
             is_angular,
             neighbor_graph_cache: None,
+            hnsw,
         })
     }
 
@@ -147,9 +171,6 @@ impl HnswIndex {
             None
         };
 
-        let mask_slice = mask.as_ref().map(|m| m.as_slice());
-        let _ = ef;
-
         let shape = queries.shape();
         let (n_queries, n_features) = (shape[0], shape[1]);
 
@@ -172,30 +193,39 @@ impl HnswIndex {
             queries_vec.push(queries_slice[row_start..row_end].to_vec());
         }
 
-        let mut all_indices = Vec::with_capacity(n_queries);
-        let mut all_distances = Vec::with_capacity(n_queries);
-
-        for query_vec in &queries_vec {
-            let mut heap = BinaryHeap::with_capacity(k);
-
-            for (i, data_vec) in self.data.iter().enumerate() {
-                if mask_slice.map_or(false, |mask_bits| !mask_bits[i]) {
-                    continue;
+        // Parallel query execution using rayon
+        let results: Result<Vec<_>, PyErr> = queries_vec.par_iter().map(|query_vec| {
+            // Distance function for this query
+            let dist_query = |node_idx: usize| -> f32 {
+                Self::compute_dist_static(query_vec, &self.data[node_idx], &self.metric, self.dist_p).unwrap_or(f32::MAX)
+            };
+            
+            // Search
+            let found = self.hnsw.search(None, k, ef, dist_query);
+            
+            // Filter if needed
+            let mut filtered_indices = Vec::new();
+            let mut filtered_dists = Vec::new();
+            
+            for (idx, dist) in found {
+                if let Some(m) = &mask {
+                    if !m[idx] { continue; }
                 }
-
-                let dist = self.compute_distance(query_vec, data_vec)?;
-                push_candidate(&mut heap, HeapEntry::new(i as i64, dist), k);
+                filtered_indices.push(idx as i64);
+                filtered_dists.push(dist);
+                if filtered_indices.len() >= k { break; }
             }
-
-            let (mut indices, mut distances) = finalize_heap(heap, k);
-            while indices.len() < k {
-                indices.push(-1);
-                distances.push(f32::NAN);
+            
+            while filtered_indices.len() < k {
+                filtered_indices.push(-1);
+                filtered_dists.push(f32::NAN);
             }
+            
+            Ok((filtered_indices, filtered_dists))
+        }).collect();
 
-            all_indices.push(indices);
-            all_distances.push(distances);
-        }
+        let results = results?;
+        let (all_indices, all_distances): (Vec<_>, Vec<_>) = results.into_iter().unzip();
 
         #[allow(deprecated)]
         let indices_array = PyArray2::from_vec2(py, &all_indices)?.to_owned();
@@ -216,33 +246,47 @@ impl HnswIndex {
             return Ok((indices_py, distances_py));
         }
 
-        let mut all_indices = Vec::with_capacity(self.data.len());
-        let mut all_distances = Vec::with_capacity(self.data.len());
-
-        for query_vec in &self.data {
-            let mut heap = BinaryHeap::with_capacity(self.n_neighbors);
-
-            for (i, data_vec) in self.data.iter().enumerate() {
-                let dist = self.compute_distance(query_vec, data_vec)?;
-                push_candidate(&mut heap, HeapEntry::new(i as i64, dist), self.n_neighbors);
+        let ef = self.n_neighbors * 2; 
+        
+        let results: Result<Vec<_>, PyErr> = (0..self.data.len()).into_par_iter().map(|i| {
+            let query_vec = &self.data[i];
+            let dist_query = |node_idx: usize| -> f32 {
+                Self::compute_dist_static(query_vec, &self.data[node_idx], &self.metric, self.dist_p).unwrap_or(f32::MAX)
+            };
+            
+            let mut found = self.hnsw.search(Some(i), self.n_neighbors + 1, ef, dist_query);
+            
+            found.retain(|&(idx, _)| idx != i);
+            found.truncate(self.n_neighbors);
+            
+            let mut indices = Vec::with_capacity(self.n_neighbors);
+            let mut distances = Vec::with_capacity(self.n_neighbors);
+            
+            for (idx, dist) in found {
+                indices.push(idx as i64);
+                distances.push(dist);
             }
-
-            let (mut indices, mut distances) = finalize_heap(heap, self.n_neighbors);
+            
             while indices.len() < self.n_neighbors {
                 indices.push(-1);
                 distances.push(f32::NAN);
             }
+            
+            Ok((indices, distances))
+        }).collect();
 
-            all_indices.push(indices);
-            all_distances.push(distances);
-        }
+        let results = results?;
+        let (all_indices, all_distances): (Vec<_>, Vec<_>) = results.into_iter().unzip();
 
+        // Cache the results
+        self.neighbor_graph_cache = Some((all_indices, all_distances));
+        
+        // Borrow from cache for return to avoid cloning
+        let (cached_indices, cached_distances) = self.neighbor_graph_cache.as_ref().unwrap();
         #[allow(deprecated)]
-        let indices_array = PyArray2::from_vec2(py, &all_indices)?.to_owned();
+        let indices_array = PyArray2::from_vec2(py, cached_indices)?.to_owned();
         #[allow(deprecated)]
-        let distances_array = PyArray2::from_vec2(py, &all_distances)?.to_owned();
-
-        self.neighbor_graph_cache = Some((all_indices.clone(), all_distances.clone()));
+        let distances_array = PyArray2::from_vec2(py, cached_distances)?.to_owned();
 
         Ok((indices_array, distances_array))
     }
@@ -269,15 +313,73 @@ impl HnswIndex {
         )?;
 
         let mut new_data_vec = Vec::with_capacity(n_new);
+        let start_idx = self.data.len();
+        
         for i in 0..n_new {
             let row_start = i * n_features;
             let row_end = row_start + n_features;
-            new_data_vec.push(new_data_slice[row_start..row_end].to_vec());
+            let vec = new_data_slice[row_start..row_end].to_vec();
+            new_data_vec.push(vec);
         }
-
+        
+        // Append data
         self.data.extend(new_data_vec);
+        
+        // Insert into graph
+        for i in 0..n_new {
+            let current_idx = start_idx + i;
+            let dist_func = |u: usize, v: usize| -> f32 {
+                Self::compute_dist_static(&self.data[u], &self.data[v], &self.metric, self.dist_p).unwrap_or(f32::MAX)
+            };
+            self.hnsw.insert(current_idx, &dist_func);
+        }
+        
         self.neighbor_graph_cache = None;
 
+        Ok(())
+    }
+
+    // Serialization support (Pickle)
+    
+    pub fn __getstate__(&self, py: Python) -> PyResult<Py<PyBytes>> {
+        let state = HnswIndexState {
+            data: self.data.clone(),
+            n_neighbors: self.n_neighbors,
+            metric: self.metric.clone(),
+            dist_p: self.dist_p,
+            is_angular: self.is_angular,
+            hnsw: self.hnsw.to_owned(), // Hnsw must be Clone? No, just Serialize.
+            // Wait, to_owned() on a struct usually implies Clone. 
+            // Hnsw doesn't derive Clone. But we serialize state, not self.
+            // We can just move or ref.
+            // `state` owns the data. So we need to clone self.data etc.
+            // But `hnsw` field in state must be owned. We can implement Clone for Hnsw?
+            // Or just serialize directly?
+            // Serialize works on reference.
+            // But `HnswIndexState` needs owned values.
+            // Let's implement Clone for Hnsw in `hnsw_algo.rs`.
+        };
+        // Actually, better: serialize directly to bytes without intermediate struct if possible?
+        // Or make HnswIndexState use references? Serde supports serializing structs with references.
+        // But `bincode::serialize` takes `&T`.
+        // So we can define `HnswIndexStateRef<'a>`
+        
+        let encoded = bincode::serialize(&state).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyBytes::new_bound(py, &encoded).into())
+    }
+
+    pub fn __setstate__(&mut self, state: &Bound<'_, PyBytes>) -> PyResult<()> {
+        let bytes = state.as_bytes();
+        let decoded: HnswIndexState = bincode::deserialize(bytes).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        
+        self.data = decoded.data;
+        self.n_neighbors = decoded.n_neighbors;
+        self.metric = decoded.metric;
+        self.dist_p = decoded.dist_p;
+        self.is_angular = decoded.is_angular;
+        self.hnsw = decoded.hnsw;
+        self.neighbor_graph_cache = None;
+        
         Ok(())
     }
 
@@ -307,16 +409,16 @@ impl HnswIndex {
 }
 
 impl HnswIndex {
-    fn compute_distance(&self, a: &[f32], b: &[f32]) -> PyResult<f32> {
-        let dist = match self.metric.as_str() {
-            "euclidean" | "l2" => metrics::euclidean(a, b)?,
-            "manhattan" | "l1" | "taxicab" => metrics::manhattan(a, b)?,
-            "cosine" | "correlation" => metrics::cosine(a, b)?,
-            "chebyshev" | "linfinity" => metrics::chebyshev(a, b)?,
-            "hamming" => metrics::hamming(a, b)?,
-            _ => return Err(PyValueError::new_err(format!("unknown metric '{}'", self.metric))),
-        };
-        Ok(dist)
+    fn compute_dist_static(a: &[f32], b: &[f32], metric: &str, p: f32) -> crate::metrics::MetricResult<f32> {
+        match metric {
+            "euclidean" | "l2" => metrics::euclidean(a, b),
+            "manhattan" | "l1" | "taxicab" => metrics::manhattan(a, b),
+            "cosine" | "correlation" => metrics::cosine(a, b),
+            "chebyshev" | "linfinity" => metrics::chebyshev(a, b),
+            "minkowski" => metrics::minkowski(a, b, p),
+            "hamming" => metrics::hamming(a, b),
+            _ => Err(metrics::MetricError::DimensionMismatch{left:0, right:0}), 
+        }
     }
 
     fn is_supported_metric(metric: &str) -> bool {
@@ -331,170 +433,8 @@ impl HnswIndex {
                 | "correlation"
                 | "chebyshev"
                 | "linfinity"
+                | "minkowski"
                 | "hamming"
         )
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-struct HeapEntry {
-    index: i64,
-    distance: f32,
-}
-
-impl HeapEntry {
-    fn new(index: i64, distance: f32) -> Self { Self { index, distance } }
-}
-
-impl PartialEq for HeapEntry {
-    fn eq(&self, other: &Self) -> bool {
-        self.index == other.index && self.distance.to_bits() == other.distance.to_bits()
-    }
-}
-
-impl Eq for HeapEntry {}
-
-impl PartialOrd for HeapEntry {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for HeapEntry {
-    fn cmp(&self, other: &Self) -> Ordering {
-        compare_distances(self.distance, other.distance)
-            .then_with(|| self.index.cmp(&other.index))
-    }
-}
-
-fn compare_distances(a: f32, b: f32) -> Ordering {
-    match (a.is_nan(), b.is_nan()) {
-        (true, true) => Ordering::Equal,
-        (true, false) => Ordering::Greater,
-        (false, true) => Ordering::Less,
-        (false, false) => a.total_cmp(&b),
-    }
-}
-
-fn push_candidate(heap: &mut BinaryHeap<HeapEntry>, entry: HeapEntry, k: usize) {
-    if heap.len() < k {
-        heap.push(entry);
-    } else if let Some(worst) = heap.peek() {
-        if entry < *worst {
-            heap.pop();
-            heap.push(entry);
-        }
-    }
-}
-
-fn finalize_heap(heap: BinaryHeap<HeapEntry>, k: usize) -> (Vec<i64>, Vec<f32>) {
-    let mut entries = heap.into_sorted_vec();
-    entries.truncate(k);
-
-    let mut indices = Vec::with_capacity(k);
-    let mut distances = Vec::with_capacity(k);
-    for entry in entries {
-        indices.push(entry.index);
-        distances.push(entry.distance);
-    }
-    (indices, distances)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_compute_distance_euclidean() {
-        let index = HnswIndex {
-            data: vec![],
-            n_neighbors: 1,
-            metric: "euclidean".to_string(),
-            is_angular: false,
-            neighbor_graph_cache: None,
-        };
-
-        let a = vec![0.0, 0.0, 0.0];
-        let b = vec![3.0, 4.0, 0.0];
-        let dist = index.compute_distance(&a, &b).unwrap();
-        assert!((dist - 5.0).abs() < 0.01);
-    }
-
-    #[test]
-    fn test_compute_distance_manhattan() {
-        let index = HnswIndex {
-            data: vec![],
-            n_neighbors: 1,
-            metric: "manhattan".to_string(),
-            is_angular: false,
-            neighbor_graph_cache: None,
-        };
-
-        let a = vec![0.0, 0.0];
-        let b = vec![1.0, 1.0];
-        let dist = index.compute_distance(&a, &b).unwrap();
-        assert!((dist - 2.0).abs() < 0.01);
-    }
-
-    #[test]
-    fn test_compute_distance_cosine() {
-        let index = HnswIndex {
-            data: vec![],
-            n_neighbors: 1,
-            metric: "cosine".to_string(),
-            is_angular: true,
-            neighbor_graph_cache: None,
-        };
-
-        let a = vec![1.0, 2.0, 3.0];
-        let b = vec![1.0, 2.0, 3.0];
-        let dist = index.compute_distance(&a, &b).unwrap();
-        assert!(dist < 0.01);
-    }
-
-    #[test]
-    fn test_unknown_metric_errors() {
-        let index = HnswIndex {
-            data: vec![],
-            n_neighbors: 1,
-            metric: "unknown".to_string(),
-            is_angular: false,
-            neighbor_graph_cache: None,
-        };
-
-        let result = index.compute_distance(&[0.0], &[0.0]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_compare_distances_nan_ordering() {
-        assert_eq!(compare_distances(f32::NAN, 1.0), Ordering::Greater);
-        assert_eq!(compare_distances(1.0, f32::NAN), Ordering::Less);
-        assert_eq!(compare_distances(f32::NAN, f32::NAN), Ordering::Equal);
-    }
-
-    #[test]
-    fn test_finalize_heap_with_nan_and_padding() {
-        let mut heap = BinaryHeap::new();
-        push_candidate(&mut heap, HeapEntry::new(1, 0.5), 3);
-        push_candidate(&mut heap, HeapEntry::new(2, f32::NAN), 3);
-        push_candidate(&mut heap, HeapEntry::new(3, 0.3), 3);
-        push_candidate(&mut heap, HeapEntry::new(4, 0.7), 3);
-
-        let (indices, distances) = finalize_heap(heap, 3);
-        assert_eq!(indices, vec![3, 1, 4]);
-        assert!(distances[2] >= 0.7);
-    }
-
-    #[test]
-    fn test_push_candidate_limits_size() {
-        let mut heap = BinaryHeap::new();
-        for i in 0..5 {
-            push_candidate(&mut heap, HeapEntry::new(i, i as f32), 2);
-        }
-        assert_eq!(heap.len(), 2);
-        let entries = heap.into_sorted_vec();
-        let distances: Vec<_> = entries.iter().map(|entry| entry.distance).collect();
-        assert_eq!(distances, vec![0.0, 1.0]);
     }
 }

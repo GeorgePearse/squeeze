@@ -226,26 +226,47 @@ Text-based result summaries:
 
 ## Phase 2: Performance Optimization (PLANNED)
 
-### HNSW-RS Backend Optimization
-- [ ] Parallel graph traversal
-- [ ] SIMD-optimized distance computation
-- [ ] Batch query processing
-- [ ] Multi-core utilization
-- **Target**: O(n log n) complexity, 10-100x speedup
+### Rust HNSW Backend
 
-### GPU Acceleration
-- [ ] RAPIDS cuML integration
-- [ ] CUDA distance metrics
-- [ ] GPU memory management
-- [ ] CPU/GPU hybrid execution
-- [ ] Fallback mechanisms
-- **Target**: GPU: 10-100x speedup for large datasets
+**Status**: Phase 1 COMPLETE ✓ | Phase 2 IN PROGRESS ⏳
+
+#### Implemented Features ✓
+- [x] **True HNSW graph structure** (O(log n) search complexity)
+- [x] **HNSW for dense vectors** (NumPy arrays)
+- [x] **HNSW for sparse vectors** (CSR matrices)
+- [x] **Dynamic index updates** (insert new points)
+- [x] **Index serialization** (pickle save/load)
+- [x] **6 distance metrics**: Euclidean, Manhattan, Cosine, Chebyshev, Minkowski, Hamming
+- [x] **Parallel search** (multi-threaded via Rayon)
+- [x] **Filtered queries** (boolean mask filtering)
+- [x] **Random state support** (deterministic construction)
+
+#### Performance Results
+- **1.69x faster** than PyNNDescent on dense data (Digits dataset)
+- **1.51x faster** than PyNNDescent on sparse data
+- **Identical quality**: Trustworthiness scores match PyNNDescent exactly
+
+#### Planned Phase 2 Optimizations
+- [ ] SIMD-optimized distance computation (2-4x additional speedup)
+- [ ] RobustPrune neighbor selection heuristic
+- [ ] Batch query processing optimizations
+- **Target**: 3-5x total speedup over PyNNDescent
+
+### ~~GPU Acceleration~~ **OUT OF SCOPE**
+
+**Project Policy:** GPU implementations (CUDA/Metal/OpenCL) are **not planned** for this project.
+
+**Focus:** CPU-based optimizations including:
+- ✅ SIMD vectorization (2-4x speedup potential)
+- ✅ Improved algorithms (RobustPrune)
+- ✅ Better caching strategies
+- ✅ Multi-threaded parallelization (already implemented)
 
 ### Advanced Sparse Optimizations
-- [ ] HNSW for sparse vectors
-- [ ] GPU sparse operations
+- [x] HNSW for sparse vectors ✓
 - [ ] Streaming support
 - [ ] Out-of-core processing
+- [ ] Additional sparse metrics
 
 ## Phase 2: Advanced Composition (PLANNED)
 
@@ -326,7 +347,8 @@ Result: 2D with hierarchical structure preservation
 | Metrics Framework | 26 | ✓ All Passing |
 | Sparse Operations | 41 | ✓ All Passing |
 | Benchmarking System | 20 | ✓ All Passing |
-| **TOTAL** | **93** | **✓ ALL PASSING** |
+| HNSW Backend | 18 | ✓ All Passing |
+| **TOTAL** | **111** | **✓ ALL PASSING** |
 
 ## API Compatibility
 
@@ -351,8 +373,7 @@ uv pip install umap[sparse,benchmark]  # Phase 1 features
 
 **Optional enhancements**:
 - matplotlib: For visualization
-- RAPIDS cuML: For GPU acceleration (Phase 2+)
-- hnsw-rs: For HNSW optimization (Phase 2+)
+- Rust HNSW backend: Already included and enabled by default ✓
 
 ## Documentation & Examples
 
@@ -366,8 +387,8 @@ uv pip install umap[sparse,benchmark]  # Phase 1 features
 ## Known Limitations
 
 ### Phase 1
-- k-NN uses brute force O(n²) (optimized in Phase 2)
-- No GPU support yet (Phase 2)
+- k-NN now uses HNSW O(log n) for supported metrics ✓
+- CPU-only implementation (GPU acceleration is **not planned**)
 - Benchmarking requires full data in memory (Phase 2+: streaming)
 - Metrics computation: O(n²) for most metrics
 

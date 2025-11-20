@@ -1,0 +1,45 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for comparison
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+    
+    - name: Run benchmarks
+      run: |
+        cargo bench --no-fail-fast -- --save-baseline current
+    
+    - name: Compare with baseline
+      if: github.event_name == 'pull_request'
+      run: |
+        # Checkout master branch baseline
+        git fetch origin master:master
+        git checkout master
+        cargo bench --no-fail-fast -- --save-baseline master
+        
+        # Checkout PR branch and compare
+        git checkout ${{ github.head_ref }}
+        cargo bench --no-fail-fast -- --baseline master
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: criterion-results
+        path: target/criterion/

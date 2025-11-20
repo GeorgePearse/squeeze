@@ -6,6 +6,10 @@ This document specifies the workflow for implementing tasks and features in this
 
 Every task should follow a structured workflow to ensure code quality, traceability, and easy review.
 
+## Project Scope Constraints
+
+**GPU Implementation Policy:** We are **NOT pursuing GPU implementations** (CUDA/Metal/OpenCL) for this project. The focus is on CPU-based optimizations including SIMD vectorization, improved algorithms (RobustPrune), and better caching strategies. Any roadmap items or documentation mentioning GPU acceleration should be considered **out of scope** and de-prioritized.
+
 ## Workflow
 
 ### 1. Create a Fresh Branch
@@ -19,7 +23,7 @@ git checkout -b <branch-name>
 ```
 
 **Branch naming conventions:**
-- Feature: `feat/<description>` (e.g., `feat/add-gpu-support`)
+- Feature: `feat/<description>` (e.g., `feat/add-simd-vectorization`)
 - Bug fix: `fix/<description>` (e.g., `fix/memory-leak`)
 - Documentation: `docs/<description>` (e.g., `docs/update-installation`)
 - Refactoring: `refactor/<description>` (e.g., `refactor/optimize-metric-computation`)
@@ -44,11 +48,11 @@ Work on the implementation in your branch:
 Example:
 ```bash
 git add .
-git commit -m "Add GPU support for metric computation
+git commit -m "Add SIMD vectorization for distance metrics
 
-- Implement CUDA kernels for distance calculations
-- Add device selection logic
-- Update tests for GPU paths
+- Implement AVX2/NEON optimized Euclidean distance
+- Add runtime CPU feature detection
+- Update benchmarks to measure SIMD impact
 "
 ```
 
@@ -71,19 +75,17 @@ gh pr create --draft --title "<title>" --body "<description>"
 Example:
 ```markdown
 ## Summary
-Implements GPU acceleration for metric computation using CUDA.
+Implements SIMD vectorization for distance metrics on CPU.
 
 ## Changes
-- Added CUDA kernels for Euclidean and Cosine distances
-- Implemented device management and memory pooling
-- Added fallback to CPU for unsupported operations
+- Added AVX2-optimized Euclidean distance computation
+- Implemented NEON support for ARM processors
+- Added runtime CPU feature detection and fallback
 
 ## Testing
-- Unit tests pass on GPU and CPU paths
-- Performance benchmarks show 3.2x speedup on MNIST
-
-## Known Issues
-- Sparse matrix operations not yet GPU-accelerated
+- Unit tests pass on all CPU architectures
+- Benchmarks show 3.2x speedup on large vectors (AVX2)
+- Validated on x86_64 and ARM64 platforms
 ```
 
 ### 4. Code Review

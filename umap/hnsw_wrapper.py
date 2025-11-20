@@ -15,13 +15,20 @@ if TYPE_CHECKING:
 
 try:
     from _hnsw_backend import HnswIndex as _HnswIndex  # type: ignore[import-not-found]
+    from _hnsw_backend import (
+        SparseHnswIndex as _SparseHnswIndex,  # type: ignore[import-not-found]
+    )
 except ImportError:
     try:
         from umap._hnsw_backend import (
             HnswIndex as _HnswIndex,  # type: ignore[import-not-found]
         )
+        from umap._hnsw_backend import (
+            SparseHnswIndex as _SparseHnswIndex,  # type: ignore[import-not-found]
+        )
     except ImportError:
         _HnswIndex = None  # type: ignore[assignment]
+        _SparseHnswIndex = None  # type: ignore[assignment]
 
 
 class HnswIndexWrapper:
@@ -87,10 +94,6 @@ class HnswIndexWrapper:
                 msg,
             )
 
-        # Ensure data is float32 (required by Rust backend)
-        data = np.asarray(data, dtype=np.float32)
-
-        self._data = data
         self._n_neighbors = n_neighbors
         self._metric = metric
         self._metric_kwds = metric_kwds or {}
@@ -108,15 +111,56 @@ class HnswIndexWrapper:
             data.shape[0],
         )
 
-        # Create the Rust-based index
-        # Note: PyO3 exposes positional arguments, not keyword arguments
-        self._index = _HnswIndex(
-            data,
-            n_neighbors,
-            metric,
-            self._m,
-            self._ef_construction,
-        )
+        # Extract 'p' parameter for Minkowski distance
+        p_val = metric_kwds.get("p", 2.0) if metric_kwds else 2.0
+
+        # Convert random_state to u64 seed
+        seed = None
+        if random_state is not None:
+            if isinstance(random_state, int):
+                seed = abs(random_state) % (2**64)  # Ensure it fits in u64
+
+        import scipy.sparse
+
+        if scipy.sparse.isspmatrix_csr(data):
+            self._is_sparse = True
+            self._data = data
+            data.sort_indices()
+
+            if _SparseHnswIndex is None:
+                msg = "Sparse HNSW backend not available."
+                raise ImportError(msg)
+
+            self._index = _SparseHnswIndex(
+                data.data.astype(np.float32),
+                data.indices.astype(np.int32),
+                data.indptr.astype(np.int32),
+                data.shape[0],
+                data.shape[1],
+                n_neighbors,
+                metric,
+                self._m,
+                self._ef_construction,
+                p_val,
+                seed,
+            )
+        else:
+            self._is_sparse = False
+            # Ensure data is float32 (required by Rust backend)
+            data = np.asarray(data, dtype=np.float32)
+            self._data = data
+
+            # Create the Rust-based index
+            # Note: PyO3 exposes positional arguments, not keyword arguments
+            self._index = _HnswIndex(
+                data,
+                n_neighbors,
+                metric,
+                self._m,
+                self._ef_construction,
+                p_val,
+                seed,
+            )
 
         # Store state for API compatibility
         self._neighbor_graph_cache: tuple[NDArray, NDArray] | None = None
@@ -213,9 +257,6 @@ class HnswIndexWrapper:
             The distances to the k nearest neighbors
 
         """
-        # Ensure data is float32
-        query_data = np.asarray(query_data, dtype=np.float32)
-
         mask_arg = None
         if filter_mask is not None:
             mask = np.asarray(filter_mask)
@@ -237,8 +278,31 @@ class HnswIndexWrapper:
         # ef controls candidate list size in HNSW
         ef = self._epsilon_to_ef(epsilon, k)
 
-        # Call Rust query method with positional arguments
-        return self._index.query(query_data, k, ef, mask_arg)
+        if self._is_sparse:
+            import scipy.sparse
+
+            if not scipy.sparse.isspmatrix_csr(query_data):
+                query_data = scipy.sparse.csr_matrix(query_data)
+
+            query_data.sort_indices()
+
+            # Call Rust sparse query method
+            # Note: filter_mask is not yet supported in sparse backend query signature
+            # We should update Rust side to accept it or ignore it for now.
+            # The Rust SparseHnswIndex.query signature is (query_data, query_indices, query_indptr, k, ef)
+            return self._index.query(
+                query_data.data.astype(np.float32),
+                query_data.indices.astype(np.int32),
+                query_data.indptr.astype(np.int32),
+                k,
+                ef,
+            )
+        else:
+            # Ensure data is float32
+            query_data = np.asarray(query_data, dtype=np.float32)
+
+            # Call Rust query method with positional arguments
+            return self._index.query(query_data, k, ef, mask_arg)
 
     @staticmethod
     def _epsilon_to_ef(epsilon: float, k: int) -> int:
@@ -291,8 +355,10 @@ class HnswIndexWrapper:
 
     def __repr__(self) -> str:
         """Return string representation of the index."""
+        type_str = "sparse" if getattr(self, "_is_sparse", False) else "dense"
         return (
             f"HnswIndexWrapper(n_samples={self._index.n_samples}, "
             f"n_features={self._index.n_features}, "
-            f"metric='{self._metric}')"
+            f"metric='{self._metric}', "
+            f"type='{type_str}')"
         )
