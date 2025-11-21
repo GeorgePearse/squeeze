@@ -60,6 +60,15 @@ Do not use larger datasets (MNIST, etc.) or synthetic datasets for standard benc
 - Eigensolvers → used by PCA, MDS, spectral methods
 - Gradient descent → used by UMAP, t-SNE, MDS
 
+**Working Documentation:** All working documents, design notes, exploration summaries, and internal documentation should be placed in the `working_docs/` directory. This keeps the root directory clean while preserving useful context. Standard files like `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md` remain in the root.
+
+Key documents in `working_docs/`:
+- `FEATURES.md` - Overview of implemented features
+- `GPU_POLICY.md` - Why we're CPU-focused
+- `HNSW_*.md` - HNSW implementation details and architecture
+- `OPTIMIZATION_*.md` - Performance optimization notes
+- `BENCHMARKING*.md` - Benchmarking methodology and results
+
 ---
 
 ## Common Commands
