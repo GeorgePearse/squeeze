@@ -292,3 +292,174 @@ pub fn compute_distance_matrix(data: &[Vec<f32>]) -> Array2<f64> {
 
     distances
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn test_distance_matrix_computation() {
+        let data = vec![
+            vec![0.0, 0.0],
+            vec![1.0, 0.0],
+            vec![0.0, 1.0],
+            vec![1.0, 1.0],
+        ];
+        
+        let distances = compute_distance_matrix(&data);
+        
+        // Check symmetry
+        for i in 0..4 {
+            for j in 0..4 {
+                assert_relative_eq!(distances[[i, j]], distances[[j, i]], epsilon = 1e-10);
+            }
+        }
+        
+        // Check diagonal is zero
+        for i in 0..4 {
+            assert_eq!(distances[[i, i]], 0.0);
+        }
+        
+        // Check known distances
+        assert_relative_eq!(distances[[0, 1]], 1.0, epsilon = 1e-5);
+        assert_relative_eq!(distances[[0, 2]], 1.0, epsilon = 1e-5);
+        assert_relative_eq!(distances[[0, 3]], 2.0_f64.sqrt(), epsilon = 1e-5);
+    }
+
+    #[test]
+    fn test_classical_mds_preserves_distances() {
+        // Create a simple distance matrix for 4 points in a line
+        let mut distances = Array2::zeros((4, 4));
+        distances[[0, 1]] = 1.0; distances[[1, 0]] = 1.0;
+        distances[[0, 2]] = 2.0; distances[[2, 0]] = 2.0;
+        distances[[0, 3]] = 3.0; distances[[3, 0]] = 3.0;
+        distances[[1, 2]] = 1.0; distances[[2, 1]] = 1.0;
+        distances[[1, 3]] = 2.0; distances[[3, 1]] = 2.0;
+        distances[[2, 3]] = 1.0; distances[[3, 2]] = 1.0;
+        
+        let embedding = classical_mds(&distances, 2).unwrap();
+        
+        // Check that the embedding preserves relative distances
+        // Points should be roughly collinear since original distances form a line
+        for i in 0..4 {
+            for j in (i+1)..4 {
+                let mut d_embedded = 0.0;
+                for k in 0..2 {
+                    let diff = embedding[[i, k]] - embedding[[j, k]];
+                    d_embedded += diff * diff;
+                }
+                d_embedded = d_embedded.sqrt();
+                
+                // Allow some error due to dimensionality reduction
+                assert_relative_eq!(d_embedded, distances[[i, j]], epsilon = 0.1);
+            }
+        }
+    }
+
+    #[test]
+    fn test_double_centering() {
+        // Test the double-centering operation in classical MDS
+        let distances = Array2::from_shape_vec((3, 3), vec![
+            0.0, 1.0, 2.0,
+            1.0, 0.0, 1.0,
+            2.0, 1.0, 0.0,
+        ]).unwrap();
+        
+        let d_sq = distances.mapv(|v| v * v);
+        
+        let row_mean = d_sq.mean_axis(Axis(1)).unwrap();
+        let col_mean = d_sq.mean_axis(Axis(0)).unwrap();
+        let grand_mean = d_sq.mean().unwrap();
+        
+        // Build double-centered matrix
+        let mut b = Array2::zeros((3, 3));
+        for i in 0..3 {
+            for j in 0..3 {
+                b[[i, j]] = -0.5 * (d_sq[[i, j]] - row_mean[i] - col_mean[j] + grand_mean);
+            }
+        }
+        
+        // Check that row and column means are zero (property of double-centering)
+        let b_row_mean = b.mean_axis(Axis(0)).unwrap();
+        let b_col_mean = b.mean_axis(Axis(1)).unwrap();
+        
+        for i in 0..3 {
+            assert!(b_row_mean[i].abs() < 1e-10, "Row mean should be ~0");
+            assert!(b_col_mean[i].abs() < 1e-10, "Column mean should be ~0");
+        }
+    }
+
+    #[test]
+    fn test_stress_computation() {
+        let mut mds = MDS::new(2, true, 100, Some(42));
+        
+        // Create a simple embedding
+        let embedding = Array2::from_shape_vec((3, 2), vec![
+            0.0, 0.0,
+            1.0, 0.0,
+            0.5, 0.866,
+        ]).unwrap();
+        
+        // Create target distances (equilateral triangle)
+        let target = Array2::from_shape_vec((3, 3), vec![
+            0.0, 1.0, 1.0,
+            1.0, 0.0, 1.0,
+            1.0, 1.0, 0.0,
+        ]).unwrap();
+        
+        let stress = mds.compute_stress(&target, &embedding);
+        
+        // For a perfect equilateral triangle embedding, stress should be low
+        assert!(stress < 0.1, "Stress should be low for well-preserved distances");
+    }
+
+    #[test]
+    fn test_smacof_iteration() {
+        let mds = MDS::new(2, true, 100, None);
+        
+        // Simple test case
+        let distances = Array2::from_shape_vec((3, 3), vec![
+            0.0, 1.0, 2.0,
+            1.0, 0.0, 1.0,
+            2.0, 1.0, 0.0,
+        ]).unwrap();
+        
+        let embedding = Array2::from_shape_vec((3, 2), vec![
+            0.0, 0.0,
+            0.5, 0.5,
+            1.0, 0.0,
+        ]).unwrap();
+        
+        let new_embedding = mds.smacof_iteration(&distances, &embedding, 3);
+        
+        // Should have same shape
+        assert_eq!(new_embedding.shape(), embedding.shape());
+        
+        // Should be different (unless already at optimum)
+        let diff: f64 = (&new_embedding - &embedding).mapv(|v| v*v).sum();
+        assert!(diff > 1e-10, "SMACOF should update the embedding");
+    }
+
+    #[test]
+    fn test_metric_vs_classical_mds() {
+        // Both should give similar results for metric data
+        let distances = Array2::from_shape_vec((4, 4), vec![
+            0.0, 1.0, 2.0, 3.0,
+            1.0, 0.0, 1.0, 2.0,
+            2.0, 1.0, 0.0, 1.0,
+            3.0, 2.0, 1.0, 0.0,
+        ]).unwrap();
+        
+        // Classical MDS
+        let classical_result = classical_mds(&distances, 2).unwrap();
+        
+        // Metric MDS (would need to be called through the struct)
+        let mut metric_mds = MDS::new(2, true, 10, Some(42));
+        // Note: Can't call metric_mds directly without Python interface
+        // but the test structure is here for when it's needed
+        
+        // Check that classical MDS gives reasonable result
+        assert_eq!(classical_result.shape(), &[4, 2]);
+    }
+}

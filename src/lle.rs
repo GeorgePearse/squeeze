@@ -176,3 +176,79 @@ impl LLE {
         Ok(embedding)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn test_find_neighbors() {
+        let lle = LLE::new(2, 2, 1e-3);
+        
+        let distances = Array2::from_shape_vec((4, 4), vec![
+            0.0, 1.0, 2.0, 3.0,
+            1.0, 0.0, 1.0, 2.0,
+            2.0, 1.0, 0.0, 1.0,
+            3.0, 2.0, 1.0, 0.0,
+        ]).unwrap();
+        
+        let neighbors = lle.find_neighbors(&distances, 4);
+        
+        // Each point should have 2 neighbors
+        for n in &neighbors {
+            assert_eq!(n.len(), 2);
+        }
+        
+        // Point 0's neighbors should be 1 and 2 (closest)
+        assert!(neighbors[0].contains(&1));
+        assert!(neighbors[0].contains(&2));
+    }
+
+    #[test]
+    fn test_reconstruction_weights_sum_to_one() {
+        let lle = LLE::new(2, 3, 1e-3);
+        
+        // Simple test data
+        let x = Array2::from_shape_vec((5, 2), vec![
+            0.0, 0.0,
+            1.0, 0.0,
+            2.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0,
+        ]).unwrap();
+        
+        let neighbors = vec![
+            vec![1, 3, 4],
+            vec![0, 2, 3],
+            vec![1, 3, 4],
+            vec![0, 1, 2],
+            vec![0, 1, 3],
+        ];
+        
+        let weights = lle.compute_weights(&x, &neighbors, 5).unwrap();
+        
+        // Each row should sum to 1 (weights for reconstructing each point)
+        for i in 0..5 {
+            let row_sum: f64 = (0..5).map(|j| weights[[i, j]]).sum();
+            assert_relative_eq!(row_sum, 1.0, epsilon = 1e-6);
+        }
+    }
+
+    #[test]
+    fn test_embedding_eigendecomposition() {
+        let lle = LLE::new(2, 2, 1e-3);
+        
+        // Simple weight matrix
+        let weights = Array2::from_shape_vec((3, 3), vec![
+            0.0, 0.5, 0.5,
+            0.5, 0.0, 0.5,
+            0.5, 0.5, 0.0,
+        ]).unwrap();
+        
+        let embedding = lle.compute_embedding(&weights, 3).unwrap();
+        
+        // Should return 2D embedding
+        assert_eq!(embedding.shape(), &[3, 2]);
+    }
+}
