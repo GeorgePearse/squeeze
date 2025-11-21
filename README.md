@@ -464,6 +464,12 @@ benchmark.plot_quality_vs_speed(results, output_file='benchmark.png')
 print(benchmark.summary())
 ```
 
+### HNSW Optimization Benchmark Results
+
+The following plot shows trustworthiness scores at different k values (k=5, k=15, k=30) for various HNSW strategies. Execution times are shown in the legend.
+
+![Benchmark Results](benchmark_results.png)
+
 **Features:**
 - Multi-run experiments with statistics
 - Scaling experiments across dataset sizes
