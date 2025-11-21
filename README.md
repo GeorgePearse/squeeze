@@ -47,19 +47,29 @@ pca_embedding = squeeze.PCA(n_components=2).fit_transform(digits.data)
 
 ## Supported Algorithms
 
-All algorithms are implemented in **Rust** for maximum performance.
+All algorithms are implemented in **Rust** for maximum performance. See the [Algorithm Guide](docs/algorithms/index.md) for detailed documentation on each algorithm.
 
-| Algorithm | Status | Description |
-|-----------|--------|-------------|
-| **UMAP** | ✅ Implemented | Uniform Manifold Approximation and Projection |
-| **t-SNE** | ✅ Implemented | t-Distributed Stochastic Neighbor Embedding |
-| **PCA** | ✅ Implemented | Principal Component Analysis (eigendecomposition) |
-| **Isomap** | ✅ Implemented | Isometric Mapping (geodesic distances + MDS) |
-| **LLE** | ✅ Implemented | Locally Linear Embedding |
-| **MDS** | ✅ Implemented | Multidimensional Scaling (classical + metric SMACOF) |
-| **PHATE** | ✅ Implemented | Potential of Heat-diffusion for Affinity-based Trajectory Embedding |
-| **TriMap** | ✅ Implemented | Large-scale Dimensionality Reduction Using Triplets |
-| **PaCMAP** | ✅ Implemented | Pairwise Controlled Manifold Approximation |
+| Algorithm | Status | Description | Docs |
+|-----------|--------|-------------|------|
+| **UMAP** | ✅ Implemented | Uniform Manifold Approximation and Projection | [Guide](docs/how_umap_works.md) |
+| **t-SNE** | ✅ Implemented | t-Distributed Stochastic Neighbor Embedding | [Guide](docs/algorithms/tsne.md) |
+| **PCA** | ✅ Implemented | Principal Component Analysis (eigendecomposition) | [Guide](docs/algorithms/pca.md) |
+| **Isomap** | ✅ Implemented | Isometric Mapping (geodesic distances + MDS) | [Guide](docs/algorithms/isomap.md) |
+| **LLE** | ✅ Implemented | Locally Linear Embedding | [Guide](docs/algorithms/lle.md) |
+| **MDS** | ✅ Implemented | Multidimensional Scaling (classical + metric SMACOF) | [Guide](docs/algorithms/mds.md) |
+| **PHATE** | ✅ Implemented | Potential of Heat-diffusion for Affinity-based Trajectory Embedding | [Guide](docs/algorithms/phate.md) |
+| **TriMap** | ✅ Implemented | Large-scale Dimensionality Reduction Using Triplets | [Guide](docs/algorithms/trimap.md) |
+| **PaCMAP** | ✅ Implemented | Pairwise Controlled Manifold Approximation | [Guide](docs/algorithms/pacmap.md) |
+
+### Choosing an Algorithm
+
+| Use Case | Recommended | Why |
+|----------|-------------|-----|
+| Quick exploration | PCA | Fast, interpretable |
+| Cluster visualization | t-SNE, UMAP | Best local structure |
+| Large datasets (>100k) | PaCMAP, TriMap | Fast, scalable |
+| Biological trajectories | PHATE | Designed for this |
+| Best speed/quality | PaCMAP | 0.13s, 0.978 trustworthiness |
 
 ## Benchmark Results
 
@@ -266,7 +276,7 @@ If you use Squeeze in your research, please cite the original UMAP paper:
 
 ## License
 
-BSD 3-Clause License
+Apache License 2.0
 
 ## Acknowledgments
 
