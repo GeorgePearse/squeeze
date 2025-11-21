@@ -24,6 +24,8 @@ License: BSD 3 clause
 
 from __future__ import annotations
 
+import copy
+import pickle
 from typing import Any
 
 import numpy as np
@@ -31,6 +33,86 @@ from sklearn.base import BaseEstimator, clone
 from sklearn.utils.validation import check_is_fitted
 
 __all__ = ["AdaptiveDR", "DRPipeline", "EnsembleDR", "ProgressiveDR"]
+
+
+def _safe_fit_transform(
+    estimator: Any, X: np.ndarray, y: Any = None, **kwargs
+) -> np.ndarray:
+    """Safely call fit_transform, handling estimators that don't accept y or kwargs."""
+    if hasattr(estimator, "fit_transform"):
+        # Try with all parameters first
+        try:
+            return estimator.fit_transform(X, y=y, **kwargs)
+        except TypeError:
+            pass
+
+        # Try with just y
+        try:
+            return estimator.fit_transform(X, y=y)
+        except TypeError:
+            pass
+
+        # Try with just kwargs
+        try:
+            return estimator.fit_transform(X, **kwargs)
+        except TypeError:
+            pass
+
+        # Try with just X
+        try:
+            return estimator.fit_transform(X)
+        except TypeError as e:
+            raise TypeError(
+                f"Cannot call fit_transform on {type(estimator)}: {e}"
+            ) from e
+
+    # Fallback to fit then transform
+    if hasattr(estimator, "fit") and hasattr(estimator, "transform"):
+        try:
+            estimator.fit(X, y=y, **kwargs)
+        except TypeError:
+            try:
+                estimator.fit(X, y=y)
+            except TypeError:
+                try:
+                    estimator.fit(X, **kwargs)
+                except TypeError:
+                    estimator.fit(X)
+        return estimator.transform(X)
+
+    raise TypeError(
+        f"Estimator {type(estimator)} has no fit_transform or fit+transform methods"
+    )
+
+
+def _safe_clone(estimator: Any) -> Any:
+    """Clone an estimator, handling non-sklearn estimators gracefully.
+
+    Parameters
+    ----------
+    estimator : Any
+        The estimator to clone.
+
+    Returns
+    -------
+    Any
+        A cloned copy of the estimator, or the original if cloning fails.
+    """
+    try:
+        return clone(estimator)
+    except TypeError:
+        pass
+
+    # Try deepcopy
+    try:
+        return copy.deepcopy(estimator)
+    except (TypeError, pickle.PicklingError):
+        pass
+
+    # Last resort: return the original estimator
+    # This means the estimator will be modified in place
+    # but at least the code will work
+    return estimator
 
 
 class DRPipeline(BaseEstimator):
@@ -124,8 +206,10 @@ class DRPipeline(BaseEstimator):
                 msg = f"step name must be string, got {type(name)}"
                 raise TypeError(msg)
 
-            if not hasattr(estimator, "fit"):
-                msg = f"step '{name}' must implement fit() method"
+            if not hasattr(estimator, "fit") and not hasattr(
+                estimator, "fit_transform"
+            ):
+                msg = f"step '{name}' must implement fit() or fit_transform() method"
                 raise TypeError(msg)
 
     def fit(
@@ -174,17 +258,22 @@ class DRPipeline(BaseEstimator):
                 if key.startswith(f"{name}__"):
                     step_fit_params[key.split("__", 1)[1]] = value
 
-            # Fit and transform
-            X = estimator.fit_transform(X, y=y, **step_fit_params)
+            # Fit and transform (safely handle estimators that don't accept y)
+            X = _safe_fit_transform(estimator, X, y=y, **step_fit_params)
 
-        # Fit the last step (don't transform)
+        # Fit the last step (don't transform, but store result)
         name, estimator = self.steps_[-1]
         step_fit_params = {}
         for key, value in fit_params.items():
             if key.startswith(f"{name}__"):
                 step_fit_params[key.split("__", 1)[1]] = value
 
-        estimator.fit(X, y=y, **step_fit_params)
+        # Handle estimators that only have fit_transform
+        if hasattr(estimator, "fit"):
+            estimator.fit(X, y=y, **step_fit_params)
+        else:
+            # For estimators without fit(), call fit_transform and cache result
+            self._last_step_result_ = estimator.fit_transform(X, **step_fit_params)
 
         return self
 
@@ -231,20 +320,17 @@ class DRPipeline(BaseEstimator):
                 if key.startswith(f"{name}__"):
                     step_fit_params[key.split("__", 1)[1]] = value
 
-            # Fit and transform
-            X = estimator.fit_transform(X, y=y, **step_fit_params)
+            # Fit and transform (safely handle estimators that don't accept y)
+            X = _safe_fit_transform(estimator, X, y=y, **step_fit_params)
 
-        # Fit and transform the last step
+        # Fit and transform the last step (safely handle estimators that don't accept y)
         name, estimator = self.steps_[-1]
         step_fit_params = {}
         for key, value in fit_params.items():
             if key.startswith(f"{name}__"):
                 step_fit_params[key.split("__", 1)[1]] = value
 
-        if hasattr(estimator, "fit_transform"):
-            X = estimator.fit_transform(X, y=y, **step_fit_params)
-        else:
-            X = estimator.fit(X, y=y, **step_fit_params).transform(X)
+        X = _safe_fit_transform(estimator, X, y=y, **step_fit_params)
 
         return X
 
@@ -462,7 +548,7 @@ class EnsembleDR(BaseEstimator):
         self : EnsembleDR
 
         """
-        self.steps_ = [(name, clone(est)) for name, est, _ in self.methods]
+        self.steps_ = [(name, _safe_clone(est)) for name, est, _ in self.methods]
         self.weights_ = np.array([w for _, _, w in self.methods])
 
         # Normalize weights if needed
@@ -471,8 +557,18 @@ class EnsembleDR(BaseEstimator):
                 msg = f"Weights should sum to 1.0 for weighted_average, got {self.weights_.sum()}"
                 raise ValueError(msg)
 
+        # Store embeddings during fit for estimators without transform()
+        self.embeddings_ = []
+        self.X_fit_ = X
+
         for _name, estimator in self.steps_:
-            estimator.fit(X, y)
+            # Use fit_transform if available, otherwise fit then transform
+            if hasattr(estimator, "fit_transform"):
+                embedding = estimator.fit_transform(X)
+            else:
+                estimator.fit(X, y)
+                embedding = estimator.transform(X)
+            self.embeddings_.append(embedding)
 
         return self
 
@@ -494,7 +590,7 @@ class EnsembleDR(BaseEstimator):
 
         """
         self.fit(X, y)
-        return self.transform(X)
+        return self._blend_embeddings(self.embeddings_)
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """Transform data and blend embeddings.
@@ -512,10 +608,23 @@ class EnsembleDR(BaseEstimator):
         """
         check_is_fitted(self, "steps_")
 
+        # Check if this is the same data as fit (return cached embeddings)
+        if hasattr(self, "X_fit_") and X is self.X_fit_:
+            return self._blend_embeddings(self.embeddings_)
+
         embeddings = []
         for _name, estimator in self.steps_:
-            X_transformed = estimator.transform(X)
+            if hasattr(estimator, "transform"):
+                X_transformed = estimator.transform(X)
+            else:
+                # Fallback: re-run fit_transform (not ideal but works)
+                X_transformed = estimator.fit_transform(X)
             embeddings.append(X_transformed)
+
+        return self._blend_embeddings(embeddings)
+
+    def _blend_embeddings(self, embeddings: list[np.ndarray]) -> np.ndarray:
+        """Blend multiple embeddings according to blend_mode."""
 
         if self.blend_mode == "weighted_average":
             # Weighted average of embeddings
@@ -626,30 +735,54 @@ class ProgressiveDR(BaseEstimator):
 
     def fit(self, X: np.ndarray, y: np.ndarray | None = None) -> ProgressiveDR:
         """Fit both coarse and fine methods."""
-        self.coarse_ = clone(self.coarse)
-        self.fine_ = clone(self.fine)
+        self.coarse_ = _safe_clone(self.coarse)
+        self.fine_ = _safe_clone(self.fine)
+        self.X_fit_ = X
 
-        self.coarse_.fit(X, y)
-        self.fine_.fit(X, y)
+        # Fit and store embeddings for estimators without transform()
+        if hasattr(self.coarse_, "fit_transform"):
+            self.X_coarse_ = self.coarse_.fit_transform(X)
+        else:
+            self.coarse_.fit(X, y)
+            self.X_coarse_ = self.coarse_.transform(X)
+
+        if hasattr(self.fine_, "fit_transform"):
+            self.X_fine_ = self.fine_.fit_transform(X)
+        else:
+            self.fine_.fit(X, y)
+            self.X_fine_ = self.fine_.transform(X)
 
         return self
 
     def fit_transform(self, X: np.ndarray, y: np.ndarray | None = None) -> np.ndarray:
         """Fit and return progressively refined embedding."""
         self.fit(X, y)
-        return self.transform(X)
+        return self._blend(self.X_coarse_, self.X_fine_)
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """Transform and progressively blend coarse and fine embeddings."""
         check_is_fitted(self, "coarse_")
 
-        X_coarse = self.coarse_.transform(X)
-        X_fine = self.fine_.transform(X)
+        # Return cached if same data
+        if hasattr(self, "X_fit_") and X is self.X_fit_:
+            return self._blend(self.X_coarse_, self.X_fine_)
 
-        # Compute blend weights based on blend_function
+        # Get embeddings
+        if hasattr(self.coarse_, "transform"):
+            X_coarse = self.coarse_.transform(X)
+        else:
+            X_coarse = self.coarse_.fit_transform(X)
+
+        if hasattr(self.fine_, "transform"):
+            X_fine = self.fine_.transform(X)
+        else:
+            X_fine = self.fine_.fit_transform(X)
+
+        return self._blend(X_coarse, X_fine)
+
+    def _blend(self, X_coarse: np.ndarray, X_fine: np.ndarray) -> np.ndarray:
+        """Blend coarse and fine embeddings."""
         alpha = self._get_blend_weights()
-
-        # Final blend uses the last alpha value
         return (1 - alpha[-1]) * X_coarse + alpha[-1] * X_fine
 
     def _get_blend_weights(self) -> np.ndarray:
@@ -733,7 +866,7 @@ class AdaptiveDR(BaseEstimator):
 
         # Select method based on strategy
         method_key = self._select_method(X)
-        self.selected_method_ = clone(self.method_map[method_key])
+        self.selected_method_ = _safe_clone(self.method_map[method_key])
         self.selected_method_.fit(X, y)
 
         return self

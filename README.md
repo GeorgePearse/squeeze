@@ -112,11 +112,60 @@ All algorithms benchmarked on the sklearn Digits dataset (1,797 samples, 64 feat
 | 4 | **PaCMAP** | Speed + quality tradeoff |
 | 5 | **PHATE** | Biological trajectories |
 
+### Hybrid Techniques
+
+Intelligent combinations of algorithms can outperform individual methods:
+
+![Hybrid Comparison](hybrid_comparison.png)
+
+| Hybrid Technique | Trust. k=15 | Silhouette | Classif. Acc | Time | Key Benefit |
+|------------------|:-----------:|:----------:|:------------:|:----:|-------------|
+| **PCA(50)→t-SNE** | **0.59** | 0.66 | 0.97 | 32.3s | Best local structure |
+| **PCA(30)→UMAP** | 0.52 | **0.80** | 0.98 | 6.5s | Best silhouette, 35% faster |
+| **Multi-scale UMAP** | 0.51 | 0.77 | 0.98 | 16.4s | Captures multiple scales |
+| **MDS+UMAP Ensemble** | 0.34 | 0.63 | 0.91 | 18.8s | Best global structure |
+| **Progressive PaCMAP→UMAP** | 0.51 | 0.76 | 0.98 | 8.7s | Fast + refined |
+
+**Key Findings:**
+- **PCA(50)→t-SNE** achieves the best trustworthiness (0.59), beating pure t-SNE
+- **PCA(30)→UMAP** is Pareto optimal: 35% faster than UMAP with better silhouette
+- Hybrid pipelines inherit PCA's noise reduction + manifold method's structure preservation
+
+```python
+from squeeze.composition import DRPipeline, EnsembleDR, ProgressiveDR
+from sklearn.decomposition import PCA
+import squeeze
+
+# Best overall: PCA → t-SNE
+pipeline = DRPipeline([
+    ('pca', PCA(n_components=50)),
+    ('tsne', squeeze.TSNE(n_components=2))
+])
+
+# Fastest high-quality: PCA → UMAP  
+pipeline = DRPipeline([
+    ('pca', PCA(n_components=30)),
+    ('umap', squeeze.UMAP(n_components=2))
+])
+
+# Multi-scale structure
+ensemble = EnsembleDR([
+    ('local', squeeze.UMAP(n_neighbors=5), 0.5),
+    ('global', squeeze.UMAP(n_neighbors=30), 0.5)
+], blend_mode='procrustes')
+```
+
+Run the hybrid benchmark:
+
+```bash
+python benchmark_hybrid_techniques.py
+```
+
 ![Benchmark Results](benchmark_results.png)
 
 ![Embeddings Comparison](embeddings_comparison.png)
 
-Run the benchmark yourself:
+Run the base benchmark:
 
 ```bash
 just benchmark              # Quick benchmark
