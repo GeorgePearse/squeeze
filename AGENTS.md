@@ -310,6 +310,7 @@ Implements TriMap for large-scale dimensionality reduction using triplets.
 - [ ] Usage examples
 
 ### Phase 4: Advanced Features
+- [ ] Replace TensorFlow with PyTorch for Parametric UMAP
 - [ ] Streaming/incremental DR
 - [ ] Out-of-sample extension
 - [ ] Ensemble methods
