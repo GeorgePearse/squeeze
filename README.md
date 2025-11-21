@@ -75,19 +75,52 @@ All algorithms are implemented in **Rust** for maximum performance. See the [Alg
 
 All algorithms benchmarked on the sklearn Digits dataset (1,797 samples, 64 features):
 
+### Algorithm vs Metrics Heatmap
+
+![Metrics Heatmap](metrics_heatmap.png)
+
+*Green = best performance, Red = worst performance (relative within each metric)*
+
+### Metrics Comparison Table
+
+| Algorithm | Trust. k=15 | Spearman | Global | Silhouette | Classif. Acc | Time |
+|-----------|:-----------:|:--------:|:------:|:----------:|:------------:|:----:|
+| **t-SNE** | 0.59 | 0.41 | 0.63 | 0.65 | 0.97 | 24.2s |
+| **UMAP** | 0.51 | 0.36 | 0.62 | **0.78** | **0.98** | 9.2s |
+| **PaCMAP** | 0.48 | 0.24 | 0.30 | 0.71 | 0.97 | **0.2s** |
+| **MDS** | 0.20 | **0.73** | **0.83** | 0.39 | 0.72 | 10.6s |
+| **PHATE** | 0.16 | 0.55 | 0.79 | 0.40 | 0.61 | 7.4s |
+| **PCA** | 0.15 | 0.58 | 0.82 | 0.39 | 0.61 | **<0.01s** |
+| **Isomap** | 0.09 | 0.29 | 0.55 | 0.39 | 0.41 | 6.3s |
+| **LLE** | 0.02 | -0.03 | 0.05 | 0.32 | 0.13 | 13.7s |
+| **TriMap** | 0.01 | -0.06 | 0.05 | 0.33 | 0.09 | 0.6s |
+
+**Legend:**
+- **Trust. k=15**: Trustworthiness - local neighborhood preservation (higher = better)
+- **Spearman**: Distance correlation - global structure preservation (higher = better)
+- **Global**: Inter-cluster distance preservation (higher = better)
+- **Silhouette**: Cluster separation quality (higher = better)
+- **Classif. Acc**: 5-fold CV classification accuracy (higher = better)
+
+### Overall Rankings
+
+| Rank | Algorithm | Best For |
+|:----:|-----------|----------|
+| 1 | **t-SNE** | Local structure, cluster visualization |
+| 2 | **UMAP** | Balanced local/global, fast |
+| 3 | **MDS** | Global structure preservation |
+| 4 | **PaCMAP** | Speed + quality tradeoff |
+| 5 | **PHATE** | Biological trajectories |
+
 ![Benchmark Results](benchmark_results.png)
 
 ![Embeddings Comparison](embeddings_comparison.png)
 
-**Key findings:**
-- **Best quality**: t-SNE (0.990 trustworthiness) and UMAP (0.985)
-- **Best speed/quality tradeoff**: PaCMAP (0.13s, 0.978 trustworthiness)
-- **Fastest**: PCA (<0.01s)
-
 Run the benchmark yourself:
 
 ```bash
-just benchmark
+just benchmark              # Quick benchmark
+python benchmark_metrics_heatmap.py  # Full metrics heatmap
 ```
 
 ### k-NN Backend Performance
@@ -212,17 +245,33 @@ embedding = SparseUMAP(n_components=2).fit_transform(sparse_data)
 
 ### Evaluation Metrics
 
+Comprehensive metrics for evaluating DR quality:
+
 ```python
-from squeeze.metrics import trustworthiness, continuity, DREvaluator
+from squeeze.evaluation import trustworthiness, continuity, DREvaluator, quick_evaluate
 
-# Single metric
-trust = trustworthiness(X_original, X_embedded, k=15)
+# Quick evaluation (3 core metrics)
+metrics = quick_evaluate(X_original, X_embedded, k=15)
+print(f"Trustworthiness: {metrics['trustworthiness']:.3f}")
+print(f"Continuity: {metrics['continuity']:.3f}")
+print(f"Spearman: {metrics['spearman_correlation']:.3f}")
 
-# All metrics
-evaluator = DREvaluator(k=15)
-metrics = evaluator.evaluate(X_original, X_embedded)
-print(evaluator.summary())
+# Comprehensive evaluation
+evaluator = DREvaluator(X_original, X_embedded, labels=y, method_name='UMAP')
+report = evaluator.evaluate_all()
+print(report)
+
+# Individual metrics
+from squeeze.evaluation import (
+    spearman_distance_correlation,
+    global_structure_preservation,
+    local_density_preservation,
+    clustering_quality,
+    classification_accuracy,
+)
 ```
+
+See [Evaluation Metrics Guide](docs/evaluation_metrics.md) for full documentation.
 
 ## Development
 
