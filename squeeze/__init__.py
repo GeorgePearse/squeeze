@@ -76,6 +76,23 @@ from importlib.metadata import PackageNotFoundError, version
 
 from .aligned_umap import AlignedUMAP
 from .composition import AdaptiveDR, DRPipeline, EnsembleDR, ProgressiveDR
+from .evaluation import (
+    DREvaluator,
+    EvaluationReport,
+    bootstrap_stability,
+    classification_accuracy,
+    clustering_quality,
+    co_ranking_quality,
+    continuity,
+    global_structure_preservation,
+    local_density_preservation,
+    noise_robustness,
+    parameter_sensitivity,
+    quick_evaluate,
+    reconstruction_error,
+    spearman_distance_correlation,
+    trustworthiness,
+)
 from .extensions import OutOfSampleDR, StreamingDR
 from .strategies import (
     STRATEGIES,
@@ -113,6 +130,22 @@ __all__ = [
     # Extension utilities
     "OutOfSampleDR",
     "StreamingDR",
+    # Evaluation metrics
+    "DREvaluator",
+    "EvaluationReport",
+    "trustworthiness",
+    "continuity",
+    "co_ranking_quality",
+    "spearman_distance_correlation",
+    "global_structure_preservation",
+    "local_density_preservation",
+    "reconstruction_error",
+    "clustering_quality",
+    "classification_accuracy",
+    "bootstrap_stability",
+    "noise_robustness",
+    "parameter_sensitivity",
+    "quick_evaluate",
     # Strategy registry
     "STRATEGIES",
     "Strategy",

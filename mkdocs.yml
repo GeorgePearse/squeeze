@@ -104,6 +104,7 @@ nav:
       - Performance: performance.md
       - Benchmarking: benchmarking.md
       - Precomputed k-NN: precomputed_k-nn.md
+      - Evaluation Metrics: evaluation_metrics.md
   - Reference & Support:
       - API Reference: api.md
       - FAQ: faq.md
