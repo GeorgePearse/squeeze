@@ -311,9 +311,9 @@ Implements TriMap for large-scale dimensionality reduction using triplets.
 
 ### Phase 4: Advanced Features
 - [ ] Replace TensorFlow with PyTorch for Parametric UMAP
-- [ ] Streaming/incremental DR
-- [ ] Out-of-sample extension
-- [ ] Ensemble methods
+- [x] Streaming/incremental DR (StreamingDR wrapper)
+- [x] Out-of-sample extension (OutOfSampleDR wrapper with k-NN interpolation)
+- [x] Ensemble methods (EnsembleDR, ProgressiveDR, AdaptiveDR in composition.py)
 
 ---
 

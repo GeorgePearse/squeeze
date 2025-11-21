@@ -76,6 +76,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from .aligned_umap import AlignedUMAP
 from .composition import AdaptiveDR, DRPipeline, EnsembleDR, ProgressiveDR
+from .extensions import OutOfSampleDR, StreamingDR
 from .strategies import (
     STRATEGIES,
     Strategy,
@@ -109,6 +110,9 @@ __all__ = [
     "DRPipeline",
     "EnsembleDR",
     "ProgressiveDR",
+    # Extension utilities
+    "OutOfSampleDR",
+    "StreamingDR",
     # Strategy registry
     "STRATEGIES",
     "Strategy",
