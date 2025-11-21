@@ -70,9 +70,9 @@ All algorithms benchmarked on the sklearn Digits dataset (1,797 samples, 64 feat
 ![Embeddings Comparison](embeddings_comparison.png)
 
 **Key findings:**
-- **Best quality**: t-SNE (0.99 trustworthiness) and UMAP (0.98)
-- **Best speed/quality tradeoff**: PaCMAP (0.23s, 0.98 trustworthiness)
-- **Fastest**: PCA (0.01s)
+- **Best quality**: t-SNE (0.990 trustworthiness) and UMAP (0.985)
+- **Best speed/quality tradeoff**: PaCMAP (0.13s, 0.978 trustworthiness)
+- **Fastest**: PCA (<0.01s)
 
 Run the benchmark yourself:
 
