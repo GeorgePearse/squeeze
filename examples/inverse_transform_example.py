@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_openml
 
-import umap
+import squeeze
 
 mnist = fetch_openml("Fashion-MNIST", version=1)
 

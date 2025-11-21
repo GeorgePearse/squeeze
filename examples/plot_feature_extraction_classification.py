@@ -25,7 +25,7 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
-from umap import UMAP
+from squeeze import UMAP
 
 # Make a toy dataset
 X, y = make_classification(

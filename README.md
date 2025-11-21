@@ -1,778 +1,276 @@
-> **Note:** I like embeddings, people should use embeddings more
+# Squeeze
 
-# UMAP
+**High-performance dimensionality reduction for Python**
 
-![UMAP logo](doc/logo_large.png)
+Squeeze is a fast, CPU-optimized library for dimensionality reduction techniques including UMAP, t-SNE, PCA, and more. Built with a Rust backend and SIMD vectorization for maximum performance.
 
-[![PyPI Version](https://img.shields.io/pypi/v/umap.svg)](https://pypi.python.org/pypi/umap/)
-[![PyPI Downloads](https://pepy.tech/badge/umap/month)](https://pepy.tech/project/umap)
-[![License](https://img.shields.io/pypi/l/umap.svg)](https://github.com/lmcinnes/umap/blob/master/LICENSE.txt)
-[![Build Status](https://dev.azure.com/TutteInstitute/build-pipelines/_apis/build/status/lmcinnes.umap?branchName=master)](https://dev.azure.com/TutteInstitute/build-pipelines/_build/latest?definitionId=2&branchName=master)
-[![Coverage](https://coveralls.io/repos/github/lmcinnes/umap/badge.svg)](https://coveralls.io/github/lmcinnes/umap)
-[![Docs](https://readthedocs.org/projects/umap/badge/?version=latest)](https://umap.readthedocs.io/en/latest/?badge=latest)
-[![JOSS Paper](http://joss.theoj.org/papers/10.21105/joss.00861/status.svg)](https://doi.org/10.21105/joss.00861)
+## Why Squeeze?
 
-> **Squeeze** (aka **Reductio**) is a research platform for dimensionality reduction built on UMAP.
-> It provides composition, evaluation, and benchmarking capabilities for combining and comparing dimension reduction techniques.
-> For the official UMAP project, visit [lmcinnes/umap](https://github.com/lmcinnes/umap).
+Dimensionality reduction "squeezes" high-dimensional data into lower dimensions while preserving structure. Squeeze provides:
 
-Squeeze is a comprehensive research platform for dimensionality reduction and manifold learning. It's built on top of UMAP (Uniform Manifold Approximation and Projection), a dimension reduction technique that can be used for visualisation similarly to t-SNE, but also for general non-linear dimension reduction. The algorithm is founded on three assumptions about the data:
+- **Multiple Algorithms**: UMAP today, t-SNE, PCA, Isomap, and more coming soon
+- **Fast**: 27x faster k-NN construction than PyNNDescent via HNSW with SIMD
+- **CPU-Optimized**: No GPU required - runs anywhere
+- **Production Ready**: Scikit-learn compatible API
 
-1. The data is uniformly distributed on a Riemannian manifold;
-2. The Riemannian metric is locally constant (or can be approximated as such);
-3. The manifold is locally connected.
-
-From these assumptions it is possible to model the manifold with a fuzzy topological structure. The embedding is found by searching for a low dimensional projection of the data that has the closest possible equivalent fuzzy topological structure.
-
-The details for the underlying mathematics can be found in [our paper on ArXiv](https://arxiv.org/abs/1802.03426):
-
-McInnes, L, Healy, J, *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction*, ArXiv e-prints 1802.03426, 2018
-
-A broader introduction to UMAP targetted the scientific community can be found in our [paper published in Nature Review Methods Primers](https://doi.org/10.1038/s43586-024-00363-x):
-
-Healy, J., McInnes, L. *Uniform manifold approximation and projection*. Nat Rev Methods Primers 4, 82 (2024).
-
-A read only version of this paper can accessed via [link](https://rdcu.be/d0YZT)
-
-The important thing is that you don't need to worry about that—you can use UMAP right now for dimension reduction and visualisation as easily as a drop in replacement for scikit-learn's t-SNE.
-
-Documentation is [available via Read the Docs](https://umap.readthedocs.io/).
-
-**New: this package now also provides support for densMAP.** The densMAP algorithm augments UMAP to preserve local density information in addition to the topological structure of the data. Details of this method are described in the following [paper](https://doi.org/10.1038/s41587-020-00801-7):
-
-Narayan, A, Berger, B, Cho, H, *Assessing Single-Cell Transcriptomic Variability through Density-Preserving Data Visualization*, Nature Biotechnology, 2021
-
-## Installing
-
-UMAP depends upon `scikit-learn`, and thus `scikit-learn`'s dependencies such as `numpy` and `scipy`. UMAP adds a requirement for `numba` for performance reasons. The original version used Cython, but the improved code clarity, simplicity and performance of Numba made the transition necessary.
-
-**New in this version:** This fork includes an optimized **Rust-based HNSW (Hierarchical Navigable Small World) nearest neighbor backend** with **SIMD-accelerated distance computations** that provides **2.5-3.5x performance improvements** over PyNNDescent while maintaining identical quality guarantees. The implementation features:
-
-- **SIMD Vectorization**: 3-4x faster distance computations using AVX2 (x86_64) and NEON (ARM)
-- **True hierarchical graph search** with O(log N) complexity
-- **Sparse data support** with specialized sparse metrics
-- **Comprehensive metric support** (Euclidean, Manhattan, Cosine, and more)
-- **Cross-platform optimization** with automatic CPU feature detection
-
-### HNSW Variants and Alternative ANN Strategies
-
-Understanding the broader approximate-nearest-neighbor (ANN) landscape makes it easier to decide when the built-in HNSW backend is the right fit and when other techniques may suit your constraints better.
-
-#### HNSW Variants and Extensions
-- **HNSW with Product Quantization (HNSW-PQ):** Retains HNSW's multi-layer graph search while compressing vectors via PQ to shrink memory footprints with minimal recall loss.
-- **Dynamic HNSW:** Tailors neighbor graph maintenance to heavy insert/delete workloads so the structure stays well-balanced over time.
-- **Filtered HNSW:** Adds metadata-aware filters (e.g., `category="electronics"`) directly into graph traversal for hybrid vector/attribute queries.
-- **HNSW-SQ (Scalar Quantization):** Trades PQ's codebooks for lightweight scalar buckets, offering different accuracy vs. latency tradeoffs.
-- **Distributed HNSW:** Partitions the graph across machines to keep billion-scale corpora queryable when a single node cannot hold the index.
-
-#### Graph-Based Alternatives
-- **NSW (Navigable Small World):** The original single-layer graph; easier to implement but typically slower than hierarchical variants at scale.
-- **NGT (Neighborhood Graph and Tree):** Uses tree-guided entry points for traversal and often competes closely with HNSW on recall vs. latency.
-- **NSG (Navigating Spreading-out Graph):** Enforces well-dispersed neighbor selections to improve coverage of the search space.
-- **DiskANN / Vamana:** SSD-optimized graph search from Microsoft; keeps hot nodes in RAM and streams the rest from disk for billion-vector workloads.
-- **SPTAG (Space Partition Tree and Graph):** Hybrid kd-tree + graph approach tuned for extremely high recall targets.
-
-#### Tree-Based Methods
-- **Annoy:** Builds many random projection trees; memory-mappable and lightweight but typically slower at very high recall.
-- **Ball Trees / Cover Trees:** Great for low-to-mid dimensional data, yet they degrade sharply as dimensionality grows.
-- **KD-Trees:** Classic axis-aligned partitions; fast in low dimensions but hit the curse of dimensionality quickly.
-- **VP-Trees:** Split space by distances from vantage points and work with arbitrary metrics.
-
-#### Hashing-Based Methods
-- **LSH (Locality-Sensitive Hashing):** Simple, theoretically grounded hashing; can require substantial memory replication for high recall.
-- **Multi-Index Hashing:** Stacks multiple hash tables with varied projections to boost recall over vanilla LSH.
-- **Learning to Hash:** Trains neural encoders (e.g., Deep Hashing, HashNet) to produce compact binary codes tailored to a dataset.
-
-#### Quantization-Based Methods
-- **FAISS-IVF (Inverted File Index):** Clusters data then searches only relevant regions; frequently paired with PQ for compression.
-- **ScaNN:** Google's learned quantizer with anisotropic scoring to balance accuracy and throughput.
-- **IVFPQ / IVFADC:** Combines IVF routing with product quantization to scale to massive corpora efficiently.
-- **OPQ (Optimized Product Quantization):** Learns a rotation that improves PQ reconstruction quality before coding vectors.
-
-#### Specialized and Hybrid Approaches
-- **FAISS-HNSW+PQ:** Facebook's combo of HNSW navigation with PQ compression for high recall at lower memory.
-- **Composite Indices:** Pipelines multiple algorithms (e.g., LSH pre-filter + HNSW re-rank) to mix their strengths.
-- **Learned Indices:** Train models to predict neighbor locations and prune the search space.
-- **Proximity Graph Methods:** EFANNA, KGraph, and related techniques vary graph construction heuristics to improve final recall.
-- **Streaming Algorithms:** SW-Graph, dynamic LSH, and similar methods keep pace with continuously arriving data.
-
-#### Choosing the Right Method
-- **Best speed/accuracy mix:** HNSW, NGT, or SPTAG
-- **Tight memory budgets:** Annoy, DiskANN, or quantization-heavy pipelines (IVFPQ, HNSW-PQ)
-- **SSD-first deployments:** DiskANN / Vamana
-- **Heavy update workloads:** Dynamic HNSW variants or hashing-based structures
-- **Metadata-aware queries:** Filtered HNSW, FAISS-IVF with attribute filters, or dedicated vector databases
-- **Distributed deployments:** Distributed HNSW, FAISS in distributed mode, or Elasticsearch/OpenSearch vector support
-
-Modern vector databases typically integrate several of these techniques and automatically route queries to the most appropriate index based on corpus characteristics, latency budgets, and filtering requirements.
-
-#### Current HNSW Implementation Status
-
-**✅ Implemented (v0.1.0 - Phase 1 Complete):**
-- ✅ **True HNSW Graph Structure**: Multi-layer hierarchical navigable small world with O(log N) search
-- ✅ **Performance**: 1.5-1.7x faster than PyNNDescent with identical quality (trustworthiness scores)
-- ✅ **Dense Data Support**: Full support for dense NumPy arrays
-- ✅ **Sparse Data Support**: CSR matrix support with specialized metrics
-- ✅ **Filtered Queries**: Boolean mask filtering during search
-- ✅ **6 Distance Metrics**: Euclidean, Manhattan, Cosine, Chebyshev, Minkowski, Hamming
-- ✅ **Parallel Search**: Multi-threaded query execution via Rayon
-- ✅ **Serialization**: Pickle support for saving/loading indices
-- ✅ **Random State**: Deterministic graph construction for reproducibility
-
-**Filtered Query Example:**
-```python
-from umap.hnsw_wrapper import HnswIndexWrapper
-
-index = HnswIndexWrapper(data, n_neighbors=15)
-mask = np.array([True, False, True, ...])  # Filter mask
-indices, distances = index.query(
-    queries,
-    k=10,
-    filter_mask=mask  # ✅ Now supported!
-)
-```
-
-#### Planned Enhancements (Phase 2+)
-- ⏳ **SIMD Vectorization**: 2-4x additional speedup on distance calculations (HIGH PRIORITY)
-- ⏳ **RobustPrune Heuristic**: Improved graph quality for clustered data
-- ⏳ **Product Quantization**: Memory-efficient high-recall search
-- ⏳ **Dynamic HNSW**: Optimized incremental updates
-- ⏳ **Distributed HNSW**: Multi-node shard manager for billion-scale deployments
-
-**Note:** This project focuses on **CPU-based optimizations** (SIMD, algorithmic improvements, caching). GPU acceleration is **not planned**.
-
-**Requirements:**
-
-* Python 3.6 or greater
-* numpy
-* scipy
-* scikit-learn
-* numba
-* tqdm
-* [pynndescent](https://github.com/lmcinnes/pynndescent)
-
-**Recommended packages:**
-
-* For plotting
-  * matplotlib
-  * datashader
-  * holoviews
-* For Parametric UMAP (PyTorch-based)
-  * torch >= 1.9.0
-  * torchvision (for image utilities)
-* For optimized nearest neighbor search (included by default)
-  * Rust-based HNSW backend (automatically enabled for supported metrics)
-
-### Install Options
-
-The recommended way to install UMAP is via PyPI using uv, which provides faster and more reliable dependency resolution:
+## Installation
 
 ```bash
-uv pip install umap
+pip install squeeze
 ```
 
-If you don't have uv installed, you can install it from [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/).
-
-Alternatively, you can install UMAP using pip:
+Or with uv (recommended):
 
 ```bash
-pip install umap
+uv pip install squeeze
 ```
 
-This will install UMAP and all required dependencies.
-
-If you wish to use the plotting functionality you can use
-
-```bash
-uv pip install umap[plot]
-```
-
-or with pip:
-
-```bash
-pip install umap[plot]
-```
-
-to install all the plotting dependencies.
-
-If you wish to use Parametric UMAP, you need to install PyTorch, which can be installed using the instructions at https://pytorch.org/get-started/locally (choose your platform and preferences), or use:
-
-```bash
-uv pip install umap[parametric_umap]
-```
-
-or with pip:
-
-```bash
-pip install umap[parametric_umap]
-```
-
-This will install PyTorch with CPU support. For GPU-accelerated training of Parametric UMAP (optional), follow the [official PyTorch installation guide](https://pytorch.org/get-started/locally) to install the appropriate CUDA version.
-
-**Note:** GPU support is only relevant for Parametric UMAP's neural network training. The core HNSW backend and UMAP algorithm are CPU-based by design.
-
-If you're on an x86 processor, you can also optionally install `tbb`, which will provide additional CPU optimizations:
-
-```bash
-uv pip install umap[tbb]
-```
-
-or with pip:
-
-```bash
-pip install umap[tbb]
-```
-
-### Manual Development Install
-
-For a manual development install, clone the repository and install in editable mode:
-
-```bash
-git clone https://github.com/lmcinnes/umap.git
-cd umap
-```
-
-Then create a virtual environment (recommended) and install the package using uv:
-
-```bash
-uv venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-uv pip install -e .
-```
-
-Or if you prefer to use pip:
-
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -e .
-```
-
-### Development Testing with testmon
-
-This project uses `pytest-testmon` to optimize test execution by only running tests affected by code changes. For best results (especially in CI/CD environments), ensure testmon uses a file-based database:
-
-```bash
-# Run tests with file-based testmon cache
-pytest --testmon-db=.testmon.db umap/tests/
-```
-
-Configure in `pyproject.toml` or pytest config:
-
-```ini
-[tool:pytest]
-testmon_db = .testmon.db
-```
-
-The file-based database (`.testmon.db`) should be persistent across test runs to provide reliable optimization benefits.
-
-## How to use UMAP
-
-The umap package inherits from sklearn classes, and thus drops in neatly next to other sklearn transformers with an identical calling API.
+## Quick Start
 
 ```python
-import umap
+import squeeze
 from sklearn.datasets import load_digits
 
 digits = load_digits()
 
-embedding = umap.UMAP().fit_transform(digits.data)
+# UMAP embedding
+umap_embedding = squeeze.UMAP(n_neighbors=15, min_dist=0.1).fit_transform(digits.data)
+
+# t-SNE embedding
+tsne_embedding = squeeze.TSNE(perplexity=30, n_iter=1000).fit_transform(digits.data)
+
+# PCA embedding
+pca_embedding = squeeze.PCA(n_components=2).fit_transform(digits.data)
+
+# All algorithms share a consistent API: fit_transform(X)
 ```
 
-There are a number of parameters that can be set for the UMAP class; the major ones are as follows:
+## Supported Algorithms
 
- -  `n_neighbors`: This determines the number of neighboring points used in local approximations of manifold structure. Larger values will result in more global structure being preserved at the loss of detailed local structure. In general this parameter should often be in the range 5 to 50, with a choice of 10 to 15 being a sensible default.
+All algorithms are implemented in **Rust** for maximum performance.
 
- -  `min_dist`: This controls how tightly the embedding is allowed compress points together. Larger values ensure embedded points are more evenly distributed, while smaller values allow the algorithm to optimise more accurately with regard to local structure. Sensible values are in the range 0.001 to 0.5, with 0.1 being a reasonable default.
+| Algorithm | Status | Description |
+|-----------|--------|-------------|
+| **UMAP** | ✅ Implemented | Uniform Manifold Approximation and Projection |
+| **t-SNE** | ✅ Implemented | t-Distributed Stochastic Neighbor Embedding |
+| **PCA** | ✅ Implemented | Principal Component Analysis (eigendecomposition) |
+| **Isomap** | ✅ Implemented | Isometric Mapping (geodesic distances + MDS) |
+| **LLE** | ✅ Implemented | Locally Linear Embedding |
+| **MDS** | ✅ Implemented | Multidimensional Scaling (classical + metric SMACOF) |
+| **PHATE** | ✅ Implemented | Potential of Heat-diffusion for Affinity-based Trajectory Embedding |
+| **TriMap** | ✅ Implemented | Large-scale Dimensionality Reduction Using Triplets |
+| **PaCMAP** | ✅ Implemented | Pairwise Controlled Manifold Approximation |
 
- -  `metric`: This determines the choice of metric used to measure distance in the input space. A wide variety of metrics are already coded, and a user defined function can be passed as long as it has been JITd by numba.
+## Benchmark Results
 
-An example of making use of these options:
-
-```python
-import umap
-from sklearn.datasets import load_digits
-
-digits = load_digits()
-
-embedding = umap.UMAP(n_neighbors=5,
-                      min_dist=0.3,
-                      metric='correlation').fit_transform(digits.data)
-```
-
-UMAP also supports fitting to sparse matrix data. For more details please see [the UMAP documentation](https://umap.readthedocs.io/)
-
-## Benefits of UMAP
-
-UMAP has a few signficant wins in its current incarnation.
-
-First of all UMAP is *fast*. It can handle large datasets and high dimensional data without too much difficulty, scaling beyond what most t-SNE packages can manage. This includes very high dimensional sparse datasets. UMAP has successfully been used directly on data with over a million dimensions.
-
-Second, UMAP scales well in embedding dimension—it isn't just for visualisation! You can use UMAP as a general purpose dimension reduction technique as a preliminary step to other machine learning tasks. With a little care it partners well with the [hdbscan](https://github.com/scikit-learn-contrib/hdbscan) clustering library (for more details please see [Using UMAP for Clustering](https://umap.readthedocs.io/en/latest/clustering.html)).
-
-Third, UMAP often performs better at preserving some aspects of global structure of the data than most implementations of t-SNE. This means that it can often provide a better "big picture" view of your data as well as preserving local neighbor relations.
-
-Fourth, UMAP supports a wide variety of distance functions, including non-metric distance functions such as *cosine distance* and *correlation distance*. You can finally embed word vectors properly using cosine distance!
-
-Fifth, UMAP supports adding new points to an existing embedding via the standard sklearn `transform` method. This means that UMAP can be used as a preprocessing transformer in sklearn pipelines.
-
-Sixth, UMAP supports supervised and semi-supervised dimension reduction. This means that if you have label information that you wish to use as extra information for dimension reduction (even if it is just partial labelling) you can do that—as simply as providing it as the `y` parameter in the fit method.
-
-Seventh, UMAP supports a variety of additional experimental features including: an "inverse transform" that can approximate a high dimensional sample that would map to a given position in the embedding space; the ability to embed into non-euclidean spaces including hyperbolic embeddings, and embeddings with uncertainty; very preliminary support for embedding dataframes also exists.
-
-Eighth, UMAP now includes **research platform capabilities** (Phase 1) for composing multiple algorithms, evaluating embedding quality, handling sparse data, and benchmarking different approaches. See below for details.
-
-Finally, UMAP has solid theoretical foundations in manifold learning (see [our paper on ArXiv](https://arxiv.org/abs/1802.03426)). This both justifies the approach and allows for further extensions that will soon be added to the library.
-
-## Squeeze Research Platform (Phase 1 Complete)
-
-Squeeze includes an extended research platform for dimension reduction with composition, evaluation, and benchmarking capabilities:
-
-### Sequential Composition (DRPipeline)
-
-Chain multiple dimension reduction techniques for coarse-to-fine reduction (e.g., 2048D → 100D → 2D):
-
-```python
-# Import pattern: squeeze as sq (when package is renamed)
-# Currently: from umap.composition import DRPipeline
-
-from umap.composition import DRPipeline
-from sklearn.decomposition import PCA
-from umap import UMAP
-
-# Create a pipeline: 2048D -> 100D -> 2D
-pipeline = DRPipeline([
-    ('pca_coarse', PCA(n_components=100)),
-    ('umap_fine', UMAP(n_components=2, n_epochs=100))
-])
-
-# Fit and transform
-embedding = pipeline.fit_transform(high_dim_data)
-```
-
-**Features:**
-- Sequential data flow through multiple stages
-- Full scikit-learn compatibility (BaseEstimator)
-- Method chaining: `pipeline.fit(X).transform(X_test)`
-- Intermediate step access
-- 93 comprehensive tests, all passing
-
-### Ensemble Composition (EnsembleDR)
-
-Blend outputs from multiple algorithms with weighted averaging and Procrustes alignment:
-
-```python
-from umap.composition import EnsembleDR
-from sklearn.decomposition import PCA
-from umap import UMAP
-
-# Blend PCA (30% weight) and UMAP (70% weight) with Procrustes alignment
-ensemble = EnsembleDR([
-    ('pca', PCA(n_components=2), 0.3),
-    ('umap', UMAP(n_components=2), 0.7)
-], blend_mode='weighted_average', alignment='procrustes')
-
-blended_embedding = ensemble.fit_transform(data)
-```
-
-**Features:**
-- Multiple blend modes (weighted average, Procrustes alignment)
-- Automatic coordinate frame alignment
-- Weighted algorithm contributions
-
-### Sparse Data Support (SparseUMAP)
-
-Efficiently handle 95%+ sparse data without densification:
-
-```python
-from umap.sparse_ops import SparseUMAP, SparseFormatDetector
-import scipy.sparse as sp
-
-# Automatically detect and convert sparse formats
-sparse_data = sp.random(1000, 5000, density=0.05, format='csr')
-sparse_umap = SparseUMAP(n_components=2)
-embedding = sparse_umap.fit_transform(sparse_data)
-
-# Or use individual components
-sparsity = SparseFormatDetector.get_sparsity(sparse_data)  # 0.95
-distances = sparse_euclidean(sparse_data[:100], sparse_data[100:110])
-knn = SparseKNNGraph(n_neighbors=15).fit(sparse_data)
-```
-
-**Features:**
-- Auto-detection of sparse matrix formats (CSR, CSC, COO, etc.)
-- Sparse distance metrics without densification
-- Efficient k-NN graph construction
-- Support for mixed dense/sparse operations
-
-**Use Cases:**
-- Single-cell RNA-seq data (95-98% sparse)
-- NLP/text analysis (TF-IDF vectors)
-- Network/graph data
-- Sensor data with many zeros
-
-### Comprehensive Evaluation Framework
-
-Evaluate embedding quality using multiple complementary metrics:
-
-```python
-from umap.metrics import DREvaluator, trustworthiness, continuity
-
-# Evaluate a single metric
-trust_score = trustworthiness(X_original, X_embedded, k=15)
-
-# Or evaluate all metrics at once
-evaluator = DREvaluator(k=15)
-metrics = evaluator.evaluate(X_original, X_embedded)
-
-print(evaluator.summary())
-```
-
-**Available Metrics:**
-1. **Trustworthiness** - Are neighbors in low-D also neighbors in high-D? (local structure)
-2. **Continuity** - Are neighbors in high-D also neighbors in low-D? (global structure)
-3. **LCMC** - Local continuity meta-estimate via distance correlation
-4. **Reconstruction Error** - Linear regression quality from low-D back to high-D
-5. **Spearman Distance Correlation** - Rank correlation of pairwise distances
-
-All metrics return values in [0, 1] or comparable ranges for easy interpretation.
-
-### Benchmarking System
-
-Systematically benchmark and visualize algorithm performance (quality vs speed trade-offs):
-
-```python
-from umap.benchmark import DRBenchmark
-from sklearn.decomposition import PCA
-from umap import UMAP
-
-benchmark = DRBenchmark(metric='euclidean')
-benchmark.add_algorithm('pca', PCA, {'n_components': 2})
-benchmark.add_algorithm('umap_fast', UMAP, {'n_neighbors': 10, 'n_epochs': 50})
-benchmark.add_algorithm('umap_accurate', UMAP, {'n_neighbors': 15, 'n_epochs': 200})
-
-# Run on single dataset
-results = benchmark.run(data, dataset_name='mydata', n_runs=3)
-
-# Run scaling experiments
-scaling_results = benchmark.run_scaling_experiment(data, sizes=[100, 500, 1000])
-
-# Generate quality vs speed plot
-benchmark.plot_quality_vs_speed(results, output_file='benchmark.png')
-
-# Print summary
-print(benchmark.summary())
-```
-
-### HNSW Optimization Benchmark Results
-
-The following plot shows trustworthiness scores at different k values (k=5, k=15, k=30) for various HNSW strategies. Execution times are shown in the legend.
+All algorithms benchmarked on the sklearn Digits dataset (1,797 samples, 64 features):
 
 ![Benchmark Results](benchmark_results.png)
 
-**Features:**
-- Multi-run experiments with statistics
-- Scaling experiments across dataset sizes
-- Quality metric: (trustworthiness + continuity) / 2
-- Speed metric: computation time (log scale)
-- Pareto frontier visualization with error bars
-- Automatic color-coding by algorithm
+![Embeddings Comparison](embeddings_comparison.png)
 
-## Planned Features (Phase 2+)
+**Key findings:**
+- **Best quality**: t-SNE (0.99 trustworthiness) and UMAP (0.98)
+- **Best speed/quality tradeoff**: PaCMAP (0.23s, 0.98 trustworthiness)
+- **Fastest**: PCA (0.01s)
 
-The research platform roadmap includes the following planned enhancements:
+Run the benchmark yourself:
 
-### Phase 2: Performance Optimization
-
-**Note:** This project focuses on **CPU-based optimizations**. GPU acceleration is **not planned**.
-
-- **HNSW Backend** - ✅ COMPLETE (Phase 1)
-  - True HNSW O(log n) implementation ✓
-  - 1.5-1.7x faster than PyNNDescent ✓
-  - Dense and sparse support ✓
-
-- **SIMD Vectorization** (HIGH PRIORITY - Next Phase)
-  - AVX2/NEON optimized distance metrics
-  - Runtime CPU feature detection
-  - Expected: 2-4x additional speedup
-
-- **RobustPrune Heuristic**
-  - Improved neighbor selection for graph quality
-  - Better handling of clustered data
-
-### Phase 2: Advanced Composition
-- **Hierarchical Composition**: Recursively apply algorithms to feature subsets
-  - Example: Features (ABCD) → apply to (AB) and (CD) → combine outputs
-  - Automatic feature grouping and hierarchical reduction
-
-- **Learned Ensemble Weights**: Train weights for optimal algorithm blending
-  - Cross-validation based weight optimization
-  - Dynamic algorithm selection per data region
-  - Stacking mode for ensemble predictions
-
-- **Progressive Refinement**: Multi-stage pipelines with validation
-  - Intermediate quality checking
-  - Dynamic pipeline adjustment
-  - Resource-aware refinement
-
-### Phase 2: Advanced Evaluation
-- **Co-ranking Metric**: Advanced k-NN agreement metric
-- **Trustworthiness at Multiple K**: Multi-scale local structure evaluation
-- **Global vs Local Trade-off Analysis**: Automatic metric selection
-- **Statistical Significance Testing**: Bootstrap-based metric validation
-
-### Phase 3: Research Capabilities
-- **Algorithm Comparison Suite**: Automated benchmarking across 20+ algorithms
-- **Parameter Search**: Grid search + Bayesian optimization for algorithm parameters
-- **Embedding Space Analysis**: PCA of embedding quality landscape
-- **Publication-Ready Visualization**: High-quality plots for research papers
-
-## Performance and Examples
-
-UMAP is very efficient at embedding large high dimensional datasets. In particular it scales well with both input dimension and embedding dimension. For the best possible performance we recommend:
-
-1. Installing the Rust-based HNSW backend ([hnsw-rs](https://github.com/lmcinnes/hnsw-rs)) for optimized nearest neighbor search
-2. Installing the nearest neighbor computation library [pynndescent](https://github.com/lmcinnes/pynndescent) as a fallback
-
-UMAP will work without these packages, but with them installed it will run significantly faster, particularly on multicore machines and large datasets.
-
-**Phase 1 additions** to this fork include:
-- Efficient sparse data support (95%+ sparse) without densification
-- Composition pipeline for multi-stage dimension reduction
-- Comprehensive evaluation metrics for embedding quality
-- Benchmarking system for quality vs speed trade-off visualization
-
-For a problem such as the 784-dimensional MNIST digits dataset with 70000 data samples, UMAP can complete the embedding in under a minute (as compared with around 45 minutes for scikit-learn's t-SNE implementation). Despite this runtime efficiency, UMAP still produces high quality embeddings.
-
-The obligatory MNIST digits dataset, embedded in 42 seconds (with pynndescent installed and after numba jit warmup) using a 3.1 GHz Intel Core i7 processor (n_neighbors=10, min_dist=0.001):
-
-![UMAP embedding of MNIST digits](images/umap_example_mnist1.png)
-
-The MNIST digits dataset is fairly straightforward, however. A better test is the more recent "Fashion MNIST" dataset of images of fashion items (again 70000 data sample in 784 dimensions). UMAP produced this embedding in 49 seconds (n_neighbors=5, min_dist=0.1):
-
-![UMAP embedding of "Fashion MNIST"](images/umap_example_fashion_mnist1.png)
-
-The UCI shuttle dataset (43500 sample in 8 dimensions) embeds well under *correlation* distance in 44 seconds (note the longer time required for correlation distance computations):
-
-![UMAP embedding the UCI Shuttle dataset](images/umap_example_shuttle.png)
-
-The following is a densMAP visualization of the MNIST digits dataset with 784 features based on the same parameters as above (n_neighbors=10, min_dist=0.001). densMAP reveals that the cluster corresponding to digit 1 is noticeably denser, suggesting that there are fewer degrees of freedom in the images of 1 compared to other digits.
-
-![densMAP embedding of the MNIST dataset](images/densmap_example_mnist.png)
-
-## Plotting
-
-UMAP includes a subpackage `umap.plot` for plotting the results of UMAP embeddings. This package needs to be imported separately since it has extra requirements (matplotlib, datashader and holoviews). It allows for fast and simple plotting and attempts to make sensible decisions to avoid overplotting and other pitfalls. An example of use:
-
-```python
-import umap
-import umap.plot
-from sklearn.datasets import load_digits
-
-digits = load_digits()
-
-mapper = umap.UMAP().fit(digits.data)
-umap.plot.points(mapper, labels=digits.target)
+```bash
+just benchmark
 ```
 
-The plotting package offers basic plots, as well as interactive plots with hover tools and various diagnostic plotting options. See the documentation for more details.
+### k-NN Backend Performance
 
-## Parametric UMAP
+Squeeze includes a Rust-based HNSW (Hierarchical Navigable Small World) backend with SIMD-accelerated distance computations:
 
-Parametric UMAP provides support for training a neural network to learn a UMAP based transformation of data using PyTorch. This can be used to support faster inference of new unseen data, more robust inverse transforms, autoencoder versions of UMAP and semi-supervised classification (particularly for data well separated by UMAP and very limited amounts of labelled data). The PyTorch-based implementation provides better performance and flexibility compared to TensorFlow. See the [documentation of Parametric UMAP](https://umap.readthedocs.io/en/0.5dev/parametric_umap.html) or the [example notebooks](https://github.com/lmcinnes/umap/tree/master/notebooks/Parametric_UMAP) for more.
-
-## densMAP
-
-The densMAP algorithm augments UMAP to additionally preserve local density information in addition to the topological structure captured by UMAP. One can easily run densMAP using the umap package by setting the `densmap` input flag:
-
-```python
-embedding = umap.UMAP(densmap=True).fit_transform(data)
+```
+k-NN Backend Comparison (sklearn digits dataset)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Backend              Build Time   Recall    Speedup
+─────────────────────────────────────────────────
+PyNNDescent          6.512s       93.3%     1.00x
+HNSW Simple          0.242s       95.1%     26.96x
+HNSW Robust α=1.2    0.256s       97.6%     25.46x
 ```
 
-This functionality is built upon the densMAP [implementation](https://github.com/hhcho/densvis) provided by the developers of densMAP, who also contributed to integrating densMAP into the umap package.
+## Features
 
-densMAP inherits all of the parameters of UMAP. The following is a list of additional parameters that can be set for densMAP:
-
- - `dens_frac`: This determines the fraction of epochs (a value between 0 and 1) that will include the density-preservation term in the optimization objective. This parameter is set to 0.3 by default. Note that densMAP switches density optimization on after an initial phase of optimizing the embedding using UMAP.
-
- - `dens_lambda`: This determines the weight of the density-preservation objective. Higher values prioritize density preservation, and lower values (closer to zero) prioritize the UMAP objective. Setting this parameter to zero reduces the algorithm to UMAP. Default value is 2.0.
-
- - `dens_var_shift`: Regularization term added to the variance of local densities in the embedding for numerical stability. We recommend setting this parameter to 0.1, which consistently works well in many settings.
-
- - `output_dens`: When this flag is True, the call to `fit_transform` returns, in addition to the embedding, the local radii (inverse measure of local density defined in the [densMAP paper](https://doi.org/10.1101/2020.05.12.077776)) for the original dataset and for the embedding. The output is a tuple `(embedding, radii_original, radii_embedding)`. Note that the radii are log-transformed. If False, only the embedding is returned. This flag can also be used with UMAP to explore the local densities of UMAP embeddings. By default this flag is False.
-
-For densMAP we recommend larger values of `n_neighbors` (e.g. 30) for reliable estimation of local density.
-
-An example of making use of these options (based on a subsample of the mnist_784 dataset):
+### All Algorithms
 
 ```python
-import umap
-from sklearn.datasets import fetch_openml
-from sklearn.utils import resample
+import squeeze
+import numpy as np
 
-digits = fetch_openml(name='mnist_784')
-subsample, subsample_labels = resample(digits.data, digits.target, n_samples=7000,
-                                       stratify=digits.target, random_state=1)
+# Load your data
+X = np.random.randn(1000, 50)  # 1000 samples, 50 features
 
-embedding, r_orig, r_emb = umap.UMAP(densmap=True, dens_lambda=2.0, n_neighbors=30,
-                                     output_dens=True).fit_transform(subsample)
+# PCA - fast linear projection
+pca = squeeze.PCA(n_components=2)
+X_pca = pca.fit_transform(X)
+
+# t-SNE - preserves local structure
+tsne = squeeze.TSNE(n_components=2, perplexity=30, n_iter=1000)
+X_tsne = tsne.fit_transform(X)
+
+# MDS - preserves pairwise distances
+mds = squeeze.MDS(n_components=2, metric=True, n_iter=300)
+X_mds = mds.fit_transform(X)
+
+# Isomap - geodesic distances on manifold
+isomap = squeeze.Isomap(n_components=2, n_neighbors=10)
+X_isomap = isomap.fit_transform(X)
+
+# LLE - local linear relationships
+lle = squeeze.LLE(n_components=2, n_neighbors=10)
+X_lle = lle.fit_transform(X)
+
+# PHATE - diffusion-based embedding
+phate = squeeze.PHATE(n_components=2, k=15, t=10)
+X_phate = phate.fit_transform(X)
+
+# TriMap - triplet-based embedding
+trimap = squeeze.TriMap(n_components=2, n_inliers=10, n_outliers=5)
+X_trimap = trimap.fit_transform(X)
+
+# PaCMAP - pair-based embedding
+pacmap = squeeze.PaCMAP(n_components=2, n_neighbors=10)
+X_pacmap = pacmap.fit_transform(X)
 ```
 
-See [the documentation](https://umap.readthedocs.io/en/0.5dev/densmap_demo.html) for more details.
-
-## Interactive UMAP with Nomic Atlas
-
-![MNIST UMAP visualization in Nomic Atlas](https://assets.nomicatlas.com/mnist-training-embeddings-umap-short.gif)
-
-For interactive exploration of UMAP embeddings, especially for visualizing large datasets data over time/training epochs, you can use [Nomic Atlas](https://atlas.nomic.ai/). Nomic Atlas is a platform for embedding generation, visualization, analysis, and retrieval that directly integrates UMAP as one of its projection models.
-
-Using Nomic Atlas with UMAP is straightforward:
+### UMAP with HNSW Backend
 
 ```python
-from nomic import AtlasDataset
-from nomic.data_inference import ProjectionOptions
+import squeeze
 
-# Create a dataset
-dataset = AtlasDataset("my-dataset")
-
-# data is a DataFrame or a list of dicts
-dataset.add_data(data)
-
-# Create an interactive UMAP in Atlas
-atlas_map = dataset.create_index(
-    indexed_field='text',
-    projection=ProjectionOptions(
-        model="umap",
-        n_neighbors=15,
-        min_dist=0.1,
-        n_epochs=200
-    )
-)
-# you can access your UMAP coordinates later on with
-# atlas_map.maps[0].embeddings.projected
-```
-
-Nomic Atlas provides:
-
-* In-browser analysis of your UMAP data with the [Atlas Analyst](https://docs.nomic.ai/atlas/data-maps/atlas-analyst)
-* Vector search over your UMAP data using the [Nomic API](https://docs.nomic.ai/atlas/data-maps/guides/vector-search-over-your-data)
-* Interactive features like zooming, recoloring, searching, and filtering in the [Nomic Atlas data map](https://docs.nomic.ai/atlas/data-maps/controls)
-* Scalability for millions of data points
-* Rich information display on hover
-* Shareable UMAPs via URL links to your embeddings and data maps in Atlas
-
-## GPU-Accelerated UMAP with torchdr
-
-For GPU-accelerated UMAP computations, [torchdr](https://github.com/TorchDR/TorchDR) provides a PyTorch-based implementation that significantly speed up the algorithm. torchdr accelerates **every step** of the dimensionality reduction pipeline on GPU: kNN computation, affinity construction and embedding optimization.
-
-Using torchdr with UMAP is straightforward:
-
-```python
-from torchdr import UMAP as torchdrUMAP
-
-umap_gpu = torchdrUMAP(
+# Use the fast HNSW backend (default)
+reducer = squeeze.UMAP(
     n_neighbors=15,
     min_dist=0.1,
-    n_components=2,
-    device='cuda'
+    use_hnsw=True,  # Default
+    hnsw_prune_strategy="robust",  # Better graph quality
+    hnsw_alpha=1.2
 )
-embedding = umap_gpu.fit_transform(data-maps)
+embedding = reducer.fit_transform(data)
 ```
 
-For more information and advanced usage, see the [torchdr documentation](https://torchdr.github.io/index.html).
+### Composition Pipeline
 
-## Help and Support
+Chain multiple reduction techniques:
 
-Documentation is at [Read the Docs](https://umap.readthedocs.io/). The documentation [includes a FAQ](https://umap.readthedocs.io/en/latest/faq.html) that may answer your questions. If you still have questions then please [open an issue](https://github.com/lmcinnes/umap/issues/new) and I will try to provide any help and guidance that I can.
+```python
+from squeeze.composition import DRPipeline
+from sklearn.decomposition import PCA
+import squeeze
+
+# 2048D → 100D → 2D
+pipeline = DRPipeline([
+    ('pca', PCA(n_components=100)),
+    ('umap', squeeze.UMAP(n_components=2))
+])
+embedding = pipeline.fit_transform(high_dim_data)
+```
+
+### Ensemble Methods
+
+Blend multiple algorithms:
+
+```python
+from squeeze.composition import EnsembleDR
+from sklearn.decomposition import PCA
+import squeeze
+
+ensemble = EnsembleDR([
+    ('pca', PCA(n_components=2), 0.3),
+    ('umap', squeeze.UMAP(n_components=2), 0.7)
+], alignment='procrustes')
+
+blended = ensemble.fit_transform(data)
+```
+
+### Sparse Data Support
+
+Efficient handling of sparse matrices:
+
+```python
+from squeeze.sparse_ops import SparseUMAP
+import scipy.sparse as sp
+
+sparse_data = sp.random(10000, 5000, density=0.05, format='csr')
+embedding = SparseUMAP(n_components=2).fit_transform(sparse_data)
+```
+
+### Evaluation Metrics
+
+```python
+from squeeze.metrics import trustworthiness, continuity, DREvaluator
+
+# Single metric
+trust = trustworthiness(X_original, X_embedded, k=15)
+
+# All metrics
+evaluator = DREvaluator(k=15)
+metrics = evaluator.evaluate(X_original, X_embedded)
+print(evaluator.summary())
+```
+
+## Development
+
+```bash
+# Clone the repo
+git clone https://github.com/georgepearse/squeeze
+cd squeeze
+
+# Install with uv
+uv sync --extra dev
+
+# Build Rust extension
+uv run maturin develop --release
+
+# Run tests
+uv run pytest squeeze/tests/ -v
+
+# Run benchmarks
+uv run python benchmark_optimizations.py
+```
+
+Or use the justfile:
+
+```bash
+just install    # Install deps + build
+just test       # Run tests
+just benchmark  # Run benchmarks
+just lint       # Check code style
+```
+
+## Project Philosophy
+
+1. **Algorithm Agnostic**: One library for all DR techniques
+2. **Performance First**: SIMD, Rust backend, optimized algorithms
+3. **CPU-Focused**: No GPU dependencies - runs everywhere
+4. **Research Platform**: Easy experimentation with techniques and parameters
+5. **Production Ready**: Reliable, tested, well-documented
 
 ## Citation
 
-If you make use of this software for your work we would appreciate it if you would cite the paper from the Journal of Open Source Software:
+If you use Squeeze in your research, please cite the original UMAP paper:
 
 ```bibtex
-@article{mcinnes2018umap-software,
-  title={UMAP: Uniform Manifold Approximation and Projection},
-  author={McInnes, Leland and Healy, John and Saul, Nathaniel and Grossberger, Lukas},
-  journal={The Journal of Open Source Software},
-  volume={3},
-  number={29},
-  pages={861},
+@article{mcinnes2018umap,
+  title={UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction},
+  author={McInnes, Leland and Healy, John and Melville, James},
+  journal={arXiv preprint arXiv:1802.03426},
   year={2018}
-}
-```
-
-If you would like to cite this algorithm in your work the ArXiv paper is the current reference:
-
-```bibtex
-@article{2018arXivUMAP,
-  author = {{McInnes}, L. and {Healy}, J. and {Melville}, J.},
-  title = "{UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction}",
-  journal = {ArXiv e-prints},
-  archivePrefix = "arXiv",
-  eprint = {1802.03426},
-  primaryClass = "stat.ML",
-  keywords = {Statistics - Machine Learning, Computer Science - Computational Geometry, Computer Science - Learning},
-  year = 2018,
-  month = feb,
-}
-```
-
-If you found the Nature Primer introduction useful please cite the following reference:
-
-```bibtex
-@article{Healy2024,
-  author={Healy, John and McInnes, Leland},
-  title={Uniform manifold approximation and projection},
-  journal={Nature Reviews Methods Primers},
-  year={2024},
-  month={Nov},
-  day={21},
-  volume={4},
-  number={1},
-  pages={82},
-  abstract={Uniform manifold approximation and projection is a nonlinear dimension reduction method often used for visualizing data and as pre-processing for further machine-learning tasks such as clustering. In this Primer, we provide an introduction to the uniform manifold approximation and projection algorithm, the intuitions behind how it works, how best to apply it on data and how to interpret and understand results.},
-  issn={2662-8449},
-  doi={10.1038/s43586-024-00363-x},
-  url={https://doi.org/10.1038/s43586-024-00363-x}
-}
-```
-
-Additionally, if you use the densMAP algorithm in your work please cite the following reference:
-
-```bibtex
-@article {NBC2020,
-  author = {Narayan, Ashwin and Berger, Bonnie and Cho, Hyunghoon},
-  title = {Assessing Single-Cell Transcriptomic Variability through Density-Preserving Data Visualization},
-  journal = {Nature Biotechnology},
-  year = {2021},
-  doi = {10.1038/s41587-020-00801-7},
-  publisher = {Springer Nature},
-  URL = {https://doi.org/10.1038/s41587-020-00801-7},
-  eprint = {https://www.biorxiv.org/content/early/2020/05/14/2020.05.12.077776.full.pdf},
-}
-```
-
-If you use the Parametric UMAP algorithm in your work please cite the following reference:
-
-```bibtex
-@article {SMG2020,
-  author = {Sainburg, Tim and McInnes, Leland and Gentner, Timothy Q.},
-  title = {Parametric UMAP: learning embeddings with deep neural networks for representation and semi-supervised learning},
-  journal = {ArXiv e-prints},
-  archivePrefix = "arXiv",
-  eprint = {2009.12981},
-  primaryClass = "stat.ML",
-  keywords = {Statistics - Machine Learning, Computer Science - Computational Geometry, Computer Science - Learning},
-  year = 2020,
 }
 ```
 
 ## License
 
-The umap package is 3-clause BSD licensed.
+BSD 3-Clause License
 
-We would like to note that the umap package makes heavy use of NumFOCUS sponsored projects, and would not be possible without their support of those projects, so please [consider contributing to NumFOCUS](https://www.numfocus.org/membership).
+## Acknowledgments
 
-## Contributing
-
-Contributions are more than welcome! There are lots of opportunities for potential projects, so please get in touch if you would like to help out. Everything from code to notebooks to examples and documentation are all *equally valuable* so please don't feel you can't contribute. To contribute please [fork the project](https://github.com/lmcinnes/umap/issues#fork-destination-box) make your changes and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+Squeeze builds on the excellent work of:
+- [UMAP](https://github.com/lmcinnes/umap) by Leland McInnes
+- [PyNNDescent](https://github.com/lmcinnes/pynndescent) for approximate nearest neighbors
+- The scientific Python ecosystem (NumPy, SciPy, scikit-learn, Numba)

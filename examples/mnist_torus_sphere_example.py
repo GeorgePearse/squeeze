@@ -7,7 +7,7 @@ from mayavi import mlab
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 
-import umap
+import squeeze
 
 digits = load_digits()
 X_train, X_test, y_train, y_test = train_test_split(

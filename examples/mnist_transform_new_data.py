@@ -20,7 +20,7 @@ import seaborn as sns
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
-import umap
+import squeeze
 
 sns.set(context="paper", style="white")
 

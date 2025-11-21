@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 
-import umap
+import squeeze
 
 if not os.path.isfile("Galaxy10.h5"):
     url = "http://astro.utoronto.ca/~bovy/Galaxy10/Galaxy10.h5"

@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import sklearn.datasets
 
-import umap
-import umap.plot
+import squeeze
+import squeeze.plot
 
 fmnist = sklearn.datasets.fetch_openml("Fashion-MNIST")
 

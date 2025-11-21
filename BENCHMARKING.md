@@ -9,10 +9,116 @@
 
 This project uses a comprehensive benchmarking system to track performance and prevent regressions. The system includes:
 
-1. **Criterion.rs** - Statistically rigorous benchmarks
+1. **Criterion.rs** - Statistically rigorous Rust benchmarks
 2. **Pre-commit hook** - Automatic regression detection
 3. **CI/CD integration** - Continuous performance tracking
 4. **Baseline comparison** - Track improvements over time
+5. **Python benchmark script** - End-to-end k-NN and UMAP benchmarks
+
+---
+
+## Python Benchmark Script
+
+### Running the Benchmark
+
+```bash
+# Using uv (recommended)
+uv run python benchmark_optimizations.py
+
+# Using just
+just benchmark
+```
+
+### What It Measures
+
+The Python benchmark (`benchmark_optimizations.py`) compares different k-NN backends:
+
+| Metric | Description |
+|--------|-------------|
+| **k-NN Build Time** | Time to construct the approximate nearest neighbor graph |
+| **k-NN Recall** | Accuracy of approximate k-NN vs exact brute-force k-NN |
+| **Full UMAP Time** | Total time for the complete UMAP pipeline |
+
+### Sample Output
+
+```
+============================================================
+k-NN BACKEND COMPARISON
+============================================================
+
+Configuration             Build Time   Recall     Speedup   
+---------------------------------------------------------
+PyNNDescent                    6.512s     93.3%      1.00x
+HNSW Simple                    0.242s     95.1%     26.96x
+HNSW Robust α=1.0              0.320s     99.9%     20.38x
+HNSW Robust α=1.2              0.256s     97.6%     25.46x
+HNSW Robust α=1.5              0.249s     97.7%     26.19x
+```
+
+### Why We Changed the Benchmark (November 2025)
+
+#### What We Were Doing Before (Problematic)
+
+The original benchmark measured **trustworthiness** of the final UMAP embedding:
+
+```python
+# OLD APPROACH - Don't do this!
+def benchmark_configuration(X, config_name, **umap_kwargs):
+    reducer = umap.UMAP(**umap_kwargs, random_state=42)
+    X_embedded = reducer.fit_transform(X)
+    trust = trustworthiness(X, X_embedded, k=15)  # Always ~0.5077
+    return {"trust": trust, "time": elapsed}
+```
+
+**The problem:** Trustworthiness was **identical** across all configurations (e.g., 0.5077 for all). This made the benchmark appear "faked" because:
+
+1. **Trustworthiness uses exact k-NN**: The metric computes exact neighbors in both original and embedded spaces using sklearn's brute-force `NearestNeighbors`, completely bypassing the approximate k-NN backend being tested.
+
+2. **Deterministic layout optimization**: With `random_state=42`, UMAP's SGD layout optimizer produces nearly identical embeddings regardless of which k-NN backend was used.
+
+3. **High neighbor overlap**: Different k-NN backends find ~90-95% of the same neighbors on small datasets, so the fuzzy simplicial sets are nearly identical.
+
+#### What We Do Now (Correct)
+
+The new benchmark measures metrics that **actually differ** between backends:
+
+```python
+# NEW APPROACH - Measures real differences
+def benchmark_knn_backend(X, config_name, backend_class, **kwargs):
+    # 1. Time the k-NN construction specifically
+    start = time.time()
+    index = backend_class(X, **kwargs)
+    indices, distances = index.neighbor_graph
+    knn_time = time.time() - start
+    
+    # 2. Compute recall against exact k-NN
+    exact_indices = compute_exact_knn(X, k)
+    recall = compute_knn_recall(indices, exact_indices)
+    
+    return {"knn_time": knn_time, "recall": recall}
+```
+
+**Why this is better:**
+
+| Metric | Old Approach | New Approach |
+|--------|--------------|--------------|
+| **k-NN Build Time** | Buried in total UMAP time | Measured separately (shows 27x speedup) |
+| **k-NN Recall** | Not measured | Measured against exact k-NN (shows 93-99% range) |
+| **Trustworthiness** | Identical for all backends | Removed (misleading for this purpose) |
+| **Interpretation** | "All backends are the same" | "HNSW is 27x faster with comparable quality" |
+
+### Key Findings
+
+The corrected benchmark reveals:
+
+- **HNSW is 27x faster** than PyNNDescent for k-NN construction
+- **RobustPrune improves recall** (99.9% at α=1.0 vs 95.1% for simple pruning)
+- **Full UMAP is 1.5-1.8x faster** with HNSW backend
+- **Recall > 90%** produces embeddings of equivalent quality
+
+### Lesson Learned
+
+> **Don't measure the wrong thing.** The original benchmark measured embedding quality (which is dominated by layout optimization), not k-NN quality (which is what the backends actually affect). Always ensure your benchmark metrics directly reflect the component being tested.
 
 ---
 

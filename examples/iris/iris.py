@@ -3,7 +3,7 @@ from bokeh.palettes import Category10
 from bokeh.plotting import figure, output_file, show
 from sklearn.datasets import load_iris
 
-import umap
+import squeeze
 
 iris = load_iris()
 embedding = umap.UMAP(

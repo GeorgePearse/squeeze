@@ -22,7 +22,7 @@ import requests
 import seaborn as sns
 from datashader import utils
 
-import umap
+import squeeze
 
 sns.set(context="paper", style="white")
 

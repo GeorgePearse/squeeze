@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.datasets import fetch_openml
 
-import umap
+import squeeze
 
 sns.set(context="paper", style="white")
 

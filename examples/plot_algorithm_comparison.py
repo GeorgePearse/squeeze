@@ -51,7 +51,7 @@ import numpy as np
 import seaborn as sns
 from sklearn import datasets, decomposition, manifold, preprocessing
 
-import umap
+import squeeze
 
 sns.set(context="paper", style="white")
 

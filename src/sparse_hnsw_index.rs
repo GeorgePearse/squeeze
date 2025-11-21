@@ -6,6 +6,7 @@ use pyo3::PyErr;
 use rayon::prelude::*;
 use serde::{Serialize, Deserialize};
 
+// Note: sparse_metrics doesn't have SIMD version yet (sparse data is harder to vectorize)
 use crate::sparse_metrics;
 use crate::hnsw_algo::Hnsw;
 
@@ -56,7 +57,7 @@ pub struct SparseHnswIndex {
 impl SparseHnswIndex {
     /// Create a new sparse nearest neighbor index
     #[new]
-    #[pyo3(signature = (data, indices, indptr, n_samples, n_features, n_neighbors, metric, m, ef_construction, dist_p=2.0, random_state=None))]
+    #[pyo3(signature = (data, indices, indptr, n_samples, n_features, n_neighbors, metric, m, ef_construction, dist_p=2.0, random_state=None, prune_strategy="simple", prune_alpha=1.2))]
     fn new(
         data: PyReadonlyArray1<f32>,
         indices: PyReadonlyArray1<i32>,
@@ -69,6 +70,8 @@ impl SparseHnswIndex {
         ef_construction: usize,
         dist_p: f32,
         random_state: Option<u64>,
+        prune_strategy: &str,
+        prune_alpha: f32,
     ) -> PyResult<Self> {
         // Validate inputs
         if n_samples == 0 {
@@ -105,9 +108,20 @@ impl SparseHnswIndex {
 
         let is_angular = metric == "cosine" || metric == "correlation";
         
+        // Parse pruning strategy
+        use crate::hnsw_algo::PruneStrategy;
+        let prune_strat = match prune_strategy {
+            "simple" => PruneStrategy::Simple,
+            "robust" => PruneStrategy::RobustPrune { alpha: prune_alpha },
+            _ => return Err(PyValueError::new_err(format!(
+                "Unknown prune_strategy '{}'. Supported: 'simple', 'robust'",
+                prune_strategy
+            ))),
+        };
+        
         // Initialize HNSW with deterministic seed for reproducibility
         let seed = random_state.unwrap_or(42);
-        let mut hnsw = Hnsw::new(m, ef_construction, n_samples, seed);
+        let mut hnsw = Hnsw::with_prune_strategy(m, ef_construction, n_samples, seed, prune_strat);
         
         // Build graph
         {

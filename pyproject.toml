@@ -3,21 +3,23 @@ requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "umap"
-version = "0.5.9.post2"
-description = "Uniform Manifold Approximation and Projection"
+name = "squeeze"
+version = "0.1.0"
+description = "High-performance dimensionality reduction library (UMAP, t-SNE, PCA, and more)"
 readme = "README.md"
 license = {text = "BSD"}
-keywords = ["dimension reduction", "umap", "t-sne", "manifold"]
+keywords = ["dimension reduction", "umap", "t-sne", "pca", "manifold", "visualization", "machine learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "License :: OSI Approved",
-    "Programming Language :: C",
     "Programming Language :: Python",
+    "Programming Language :: Rust",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Operating System :: Unix",
@@ -38,12 +40,11 @@ dependencies = [
 ]
 
 [[project.maintainers]]
-name = "Leland McInnes"
-email = "leland.mcinnes@gmail.com"
+name = "George Pearse"
 
 [project.urls]
-Homepage = "http://github.com/lmcinnes/umap"
-Repository = "http://github.com/lmcinnes/umap"
+Homepage = "http://github.com/georgepearse/squeeze"
+Repository = "http://github.com/georgepearse/squeeze"
 
 [project.optional-dependencies]
 plot = [
@@ -57,12 +58,14 @@ plot = [
     "scikit-image",
     "dask",
 ]
-parametric_umap = ["tensorflow >= 2.1"]
+parametric = ["tensorflow >= 2.1"]
 tbb = ["tbb >= 2019.0"]
 test = ["pytest", "pytest-testmon", "pytest-watch"]
+benchmark = ["matplotlib"]
+dev = ["pytest", "pytest-testmon", "pytest-watch", "matplotlib", "ruff", "pre-commit"]
 
 [tool.setuptools]
-packages = ["umap"]
+packages = ["squeeze"]
 zip-safe = false
 
 [tool.setuptools.package-data]
@@ -82,13 +85,13 @@ indent-style = "space"
 line-ending = "lf"
 
 [tool.ruff.lint.per-file-ignores]
-"umap/tests/*" = [
+"squeeze/tests/*" = [
     "D100",    # Missing module docstring
     "D101",    # Missing class docstring
     "S101",    # Use of assert (required in tests)
 ]
 "setup.py" = ["D100"]
-"umap/hnsw_wrapper.py" = [
+"squeeze/hnsw_wrapper.py" = [
     "PLR0913",  # Too many arguments - needed for compatibility
     "N803",     # Argument name X should be lowercase - sklearn convention
     "N806",     # Variable X in function should be lowercase - sklearn convention
@@ -102,4 +105,4 @@ addopts = "-v"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "."
-module-name = "umap._hnsw_backend"
+module-name = "squeeze._hnsw_backend"
