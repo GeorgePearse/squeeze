@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squeeze - Interactive Dimensionality Reduction Demos</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Squeeze</h1>
+      <p class="tagline">High-performance dimensionality reduction</p>
+    </header>
+
+    <nav id="controls">
+      <div class="control-group">
+        <label for="dataset-select">Dataset</label>
+        <select id="dataset-select">
+          <option value="digits">MNIST Digits (1,797 points)</option>
+          <option value="fashion">Fashion MNIST (10,000 points)</option>
+          <option value="cifar10">CIFAR-10 (10,000 points)</option>
+          <option value="newsgroups">20 Newsgroups (11,314 points)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="algorithm-select">Algorithm</label>
+        <select id="algorithm-select">
+          <option value="umap">UMAP</option>
+          <option value="tsne">t-SNE</option>
+          <option value="pacmap">PaCMAP</option>
+          <option value="pca">PCA</option>
+          <option value="mds">MDS</option>
+          <option value="phate">PHATE</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="color-select">Color by</label>
+        <select id="color-select">
+          <option value="label">Class Label</option>
+          <option value="density">Local Density</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="point-size">Point Size</label>
+        <input type="range" id="point-size" min="1" max="10" value="3" step="0.5">
+        <span id="point-size-value">3</span>
+      </div>
+
+      <div class="control-group">
+        <label for="opacity">Opacity</label>
+        <input type="range" id="opacity" min="0.1" max="1" value="0.8" step="0.1">
+        <span id="opacity-value">0.8</span>
+      </div>
+    </nav>
+
+    <main>
+      <div id="canvas-container">
+        <canvas id="scatterplot"></canvas>
+      </div>
+      <aside id="info-panel">
+        <h3>Dataset Info</h3>
+        <div id="dataset-info">
+          <p><strong>Points:</strong> <span id="n-points">-</span></p>
+          <p><strong>Classes:</strong> <span id="n-classes">-</span></p>
+          <p><strong>Algorithm:</strong> <span id="current-algo">-</span></p>
+          <p><strong>Compute Time:</strong> <span id="compute-time">-</span></p>
+        </div>
+        
+        <h3>Selected Point</h3>
+        <div id="selected-info">
+          <p>Hover over a point to see details</p>
+        </div>
+
+        <h3>Legend</h3>
+        <div id="legend"></div>
+      </aside>
+    </main>
+
+    <footer>
+      <p>
+        Built with <a href="https://github.com/flekschas/regl-scatterplot">regl-scatterplot</a> | 
+        Powered by <a href="https://github.com/GeorgePearse/umap">Squeeze</a>
+      </p>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -20,7 +20,7 @@ import seaborn as sns
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
-import squeeze
+import squeeze as sqz
 
 sns.set(context="paper", style="white")
 
@@ -32,7 +32,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42,
 )
 
-reducer = umap.UMAP(random_state=42)
+reducer = sqz.UMAP(random_state=42)
 embedding_train = reducer.fit_transform(X_train)
 embedding_test = reducer.transform(X_test)
 

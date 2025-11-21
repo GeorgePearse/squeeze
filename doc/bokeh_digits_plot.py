@@ -4,9 +4,9 @@ from sklearn.datasets import load_digits
 
 digits = load_digits()
 
-import squeeze
+import squeeze as sqz
 
-reducer = umap.UMAP(random_state=42)
+reducer = sqz.UMAP(random_state=42)
 embedding = reducer.fit_transform(digits.data)
 
 import base64

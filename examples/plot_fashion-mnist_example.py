@@ -22,7 +22,7 @@ import requests
 import seaborn as sns
 from datashader import utils
 
-import squeeze
+import squeeze as sqz
 
 sns.set(context="paper", style="white")
 
@@ -49,7 +49,7 @@ pal = [
 ]
 color_key = {str(d): c for d, c in enumerate(pal)}
 
-reducer = umap.UMAP(random_state=42)
+reducer = sqz.UMAP(random_state=42)
 embedding = reducer.fit_transform(data)
 
 df = pd.DataFrame(embedding, columns=("x", "y"))

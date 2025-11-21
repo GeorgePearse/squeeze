@@ -29,7 +29,7 @@ from sklearn.manifold import trustworthiness
 matplotlib.use("Agg")  # Non-interactive backend for saving plots
 import matplotlib.pyplot as plt
 
-import squeeze
+import squeeze as sqz
 from squeeze import STRATEGIES, list_strategies
 
 # Default k values for trustworthiness evaluation

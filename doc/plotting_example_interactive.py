@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 import sklearn.datasets
 
-import squeeze
+import squeeze as sqz
 import squeeze.plot
 
 fmnist = sklearn.datasets.fetch_openml("Fashion-MNIST")
 
-mapper = umap.UMAP().fit(fmnist.data[:30000])
+mapper = sqz.UMAP().fit(fmnist.data[:30000])
 
 hover_data = pd.DataFrame({"index": np.arange(30000), "label": fmnist.target[:30000]})
 hover_data["item"] = hover_data.label.map(
@@ -25,12 +25,12 @@ hover_data["item"] = hover_data.label.map(
     },
 )
 
-umap.plot.output_file("plotting_interactive_example.html")
+sqz.plot.output_file("plotting_interactive_example.html")
 
-p = umap.plot.interactive(
+p = sqz.plot.interactive(
     mapper,
     labels=fmnist.target[:30000],
     hover_data=hover_data,
     point_size=2,
 )
-umap.plot.show(p)
+sqz.plot.show(p)

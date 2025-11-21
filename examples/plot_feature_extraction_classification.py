@@ -25,7 +25,7 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
-from squeeze import UMAP
+import squeeze as sqz
 
 # Make a toy dataset
 X, y = make_classification(
@@ -53,7 +53,7 @@ clf = GridSearchCV(svc, params_grid)
 clf.fit(X_train, y_train)
 
 # Transformation with UMAP followed by classification with a linear SVM
-umap = UMAP(random_state=456)
+umap = sqz.UMAP(random_state=456)
 pipeline = Pipeline([("umap", umap), ("svc", svc)])
 params_grid_pipeline = {
     "umap__n_neighbors": [5, 20],

@@ -51,7 +51,7 @@ import numpy as np
 import seaborn as sns
 from sklearn import datasets, decomposition, manifold, preprocessing
 
-import squeeze
+import squeeze as sqz
 
 sns.set(context="paper", style="white")
 
@@ -89,7 +89,7 @@ reducers = [
     (manifold.Isomap, {"n_neighbors": 30}),
     (manifold.MDS, {}),
     (decomposition.PCA, {}),
-    (umap.UMAP, {"n_neighbors": 30, "min_dist": 0.3}),
+    (sqz.UMAP, {"n_neighbors": 30, "min_dist": 0.3}),
 ]
 
 test_data = [

@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 
-import squeeze
+import squeeze as sqz
 
 if not os.path.isfile("Galaxy10.h5"):
     url = "http://astro.utoronto.ca/~bovy/Galaxy10/Galaxy10.h5"
@@ -58,7 +58,7 @@ plt.title("Data Subset")
 plt.savefig("galaxy10_subset.svg")
 # 2D Embedding
 ## UMAP
-reducer = umap.UMAP(
+reducer = sqz.UMAP(
     n_components=2,
     n_neighbors=20,
     random_state=42,
@@ -81,7 +81,7 @@ plt.scatter(
 plt.colorbar(boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
 plt.savefig("galaxy10_2D_umap.svg")
 ### UMAP - Supervised
-reducer = umap.UMAP(
+reducer = sqz.UMAP(
     n_components=2,
     n_neighbors=15,
     random_state=42,
@@ -148,7 +148,7 @@ plt.savefig("galaxy10_2D_umap_supervised_prediction_clustered.svg")
 
 # 3D Embedding
 ## UMAP
-reducer = umap.UMAP(
+reducer = sqz.UMAP(
     n_components=3,
     n_neighbors=20,
     random_state=42,
@@ -172,7 +172,7 @@ p = ax.scatter(
 fig.colorbar(p, ax=ax, boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
 plt.savefig("galaxy10_3D_umap.svg")
 ## UMAP - Supervised
-reducer = umap.UMAP(
+reducer = sqz.UMAP(
     n_components=3,
     n_neighbors=20,
     random_state=42,
@@ -245,7 +245,7 @@ plt.savefig("galaxy10_3D_umap_supervised_prediction_clustered.svg")
 
 # Dimensions 4 to 25
 for dimensions in range(4, 26):
-    reducer = umap.UMAP(
+    reducer = sqz.UMAP(
         n_components=dimensions,
         n_neighbors=20,
         random_state=42,

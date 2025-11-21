@@ -7,7 +7,7 @@ from mayavi import mlab
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 
-import squeeze
+import squeeze as sqz
 
 digits = load_digits()
 X_train, X_test, y_train, y_test = train_test_split(
@@ -22,7 +22,7 @@ target_spaces = ["plane", "torus", "sphere"]
 if "plane" in target_spaces:
     # embed onto a plane
 
-    trans = umap.UMAP(
+    trans = sqz.UMAP(
         n_neighbors=10,
         random_state=42,
         metric="euclidean",
@@ -64,7 +64,7 @@ if "torus" in target_spaces:
         distance = np.sqrt(distance_sqr)
         return distance, g / (1e-6 + distance)
 
-    trans = umap.UMAP(
+    trans = sqz.UMAP(
         n_neighbors=10,
         random_state=42,
         metric="euclidean",
@@ -102,7 +102,7 @@ if "torus" in target_spaces:
 
 if "sphere" in target_spaces:
     # embed onto a sphere
-    trans = umap.UMAP(
+    trans = sqz.UMAP(
         n_neighbors=10,
         random_state=42,
         metric="euclidean",

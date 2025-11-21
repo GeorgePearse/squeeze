@@ -3,10 +3,10 @@ from bokeh.palettes import Category10
 from bokeh.plotting import figure, output_file, show
 from sklearn.datasets import load_digits
 
-import squeeze
+import squeeze as sqz
 
 digits = load_digits()
-embedding = umap.UMAP().fit_transform(digits.data)
+embedding = sqz.UMAP().fit_transform(digits.data)
 
 output_file("digits.html")
 

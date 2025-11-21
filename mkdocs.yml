@@ -40,6 +40,9 @@ plugins:
   - search:
       lang: en
 
+extra_javascript:
+  - https://cdn.plot.ly/plotly-2.27.0.min.js
+
 markdown_extensions:
   - admonition
   - pymdownx.arithmatex
@@ -67,6 +70,8 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+  - md_in_html
+  - attr_list
 
 nav:
   - Home: index.md
@@ -103,6 +108,7 @@ nav:
   - Performance & Optimization:
       - Performance: performance.md
       - Benchmarking: benchmarking.md
+      - Interactive Metrics Comparison: interactive_metrics.md
       - Precomputed k-NN: precomputed_k-nn.md
       - Evaluation Metrics: evaluation_metrics.md
   - Reference & Support:

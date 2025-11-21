@@ -3,10 +3,10 @@ from bokeh.palettes import Category10
 from bokeh.plotting import figure, output_file, show
 from sklearn.datasets import load_iris
 
-import squeeze
+import squeeze as sqz
 
 iris = load_iris()
-embedding = umap.UMAP(
+embedding = sqz.UMAP(
     n_neighbors=50,
     learning_rate=0.5,
     init="random",

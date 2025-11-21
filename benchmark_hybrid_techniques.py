@@ -57,8 +57,10 @@ def load_data() -> tuple[np.ndarray, np.ndarray]:
 
 def create_hybrid_techniques() -> list[tuple[str, Any]]:
     """Create all hybrid technique configurations."""
-    from squeeze import UMAP, PaCMAP, MDS, TSNE
+    import squeeze as sqz
     from squeeze.composition import DRPipeline, EnsembleDR, ProgressiveDR
+
+    UMAP, PaCMAP, MDS, TSNE = sqz.UMAP, sqz.PaCMAP, sqz.MDS, sqz.TSNE
 
     hybrids = []
 
@@ -206,7 +208,9 @@ def create_hybrid_techniques() -> list[tuple[str, Any]]:
 
 def create_baseline_techniques() -> list[tuple[str, Any]]:
     """Create baseline techniques for comparison."""
-    from squeeze import UMAP, PaCMAP, MDS, TSNE, PCA
+    import squeeze as sqz
+
+    UMAP, PaCMAP, MDS, TSNE, PCA = sqz.UMAP, sqz.PaCMAP, sqz.MDS, sqz.TSNE, sqz.PCA
 
     baselines = [
         ("UMAP", UMAP(n_components=2, random_state=42)),

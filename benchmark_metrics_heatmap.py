@@ -49,73 +49,57 @@ def load_data() -> tuple[np.ndarray, np.ndarray]:
 
 def get_algorithms() -> list[tuple[str, object]]:
     """Get list of DR algorithms to benchmark."""
-    from squeeze import UMAP
+    import squeeze as sqz
 
-    algorithms = [("UMAP", UMAP(n_components=2, random_state=42))]
+    algorithms = [("UMAP", sqz.UMAP(n_components=2, random_state=42))]
 
     # Try to import Rust-based algorithms
     try:
-        from squeeze import PCA
-
-        if PCA is not None:
-            algorithms.append(("PCA", PCA(n_components=2)))
-    except (ImportError, TypeError):
+        if sqz.PCA is not None:
+            algorithms.append(("PCA", sqz.PCA(n_components=2)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import TSNE
-
-        if TSNE is not None:
-            algorithms.append(("t-SNE", TSNE(n_components=2, random_state=42)))
-    except (ImportError, TypeError):
+        if sqz.TSNE is not None:
+            algorithms.append(("t-SNE", sqz.TSNE(n_components=2, random_state=42)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import MDS
-
-        if MDS is not None:
-            algorithms.append(("MDS", MDS(n_components=2)))
-    except (ImportError, TypeError):
+        if sqz.MDS is not None:
+            algorithms.append(("MDS", sqz.MDS(n_components=2)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import Isomap
-
-        if Isomap is not None:
-            algorithms.append(("Isomap", Isomap(n_components=2, n_neighbors=15)))
-    except (ImportError, TypeError):
+        if sqz.Isomap is not None:
+            algorithms.append(("Isomap", sqz.Isomap(n_components=2, n_neighbors=15)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import LLE
-
-        if LLE is not None:
-            algorithms.append(("LLE", LLE(n_components=2, n_neighbors=15)))
-    except (ImportError, TypeError):
+        if sqz.LLE is not None:
+            algorithms.append(("LLE", sqz.LLE(n_components=2, n_neighbors=15)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import PHATE
-
-        if PHATE is not None:
-            algorithms.append(("PHATE", PHATE(n_components=2)))
-    except (ImportError, TypeError):
+        if sqz.PHATE is not None:
+            algorithms.append(("PHATE", sqz.PHATE(n_components=2)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import TriMap
-
-        if TriMap is not None:
-            algorithms.append(("TriMap", TriMap(n_components=2)))
-    except (ImportError, TypeError):
+        if sqz.TriMap is not None:
+            algorithms.append(("TriMap", sqz.TriMap(n_components=2)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     try:
-        from squeeze import PaCMAP
-
-        if PaCMAP is not None:
-            algorithms.append(("PaCMAP", PaCMAP(n_components=2)))
-    except (ImportError, TypeError):
+        if sqz.PaCMAP is not None:
+            algorithms.append(("PaCMAP", sqz.PaCMAP(n_components=2)))
+    except (ImportError, TypeError, AttributeError):
         pass
 
     return algorithms

@@ -17,13 +17,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.datasets import fetch_openml
 
-import squeeze
+import squeeze as sqz
 
 sns.set(context="paper", style="white")
 
 mnist = fetch_openml("mnist_784", version=1)
 
-reducer = umap.UMAP(random_state=42)
+reducer = sqz.UMAP(random_state=42)
 embedding = reducer.fit_transform(mnist.data)
 
 fig, ax = plt.subplots(figsize=(12, 10))

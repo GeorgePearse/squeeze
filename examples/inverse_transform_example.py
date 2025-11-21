@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_openml
 
-import squeeze
+import squeeze as sqz
 
 mnist = fetch_openml("Fashion-MNIST", version=1)
 
 
-trans = umap.UMAP(
+trans = sqz.UMAP(
     n_neighbors=10,
     random_state=42,
     metric="euclidean",
