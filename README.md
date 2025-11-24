@@ -13,6 +13,11 @@ Dimensionality reduction "squeezes" high-dimensional data into lower dimensions 
 - **CPU-Optimized**: No GPU required - runs anywhere
 - **Production Ready**: Scikit-learn compatible API
 
+I've used my own fork of Shinka Evolve (https://github.com/GeorgePearse/Genesis) in order to iteratively optimize the solutions 
+
+<img width="1470" height="777" alt="image" src="https://github.com/user-attachments/assets/00bfd455-93d2-4d93-853e-352fda9e1d33" />
+
+
 ## Installation
 
 ```bash
