@@ -49,7 +49,7 @@ Imagine an ant walking on a curved surface (like a rolled-up piece of paper). Is
 ### `n_neighbors`
 - **Type**: int
 - **Default**: 10
-- **Description**: Number of neighbors for k-NN graph construction
+- **Description**: Number of neighbors for k-NN graph construction. The algorithm finds the k nearest neighbors for each point.
 - **Effect**:
   - Too low: Graph may become disconnected
   - Too high: "Short-circuits" the manifold
@@ -57,6 +57,8 @@ Imagine an ant walking on a curved surface (like a rolled-up piece of paper). Is
   - Start with 10-15
   - Increase if you get disconnected graph errors
   - Decrease if manifold structure is lost
+
+> **Note**: The k-NN implementation uses a max-heap to efficiently find the k nearest neighbors, ensuring correct nearest-neighbor selection even for large datasets.
 
 ## Quick Start
 

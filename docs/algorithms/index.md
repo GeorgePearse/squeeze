@@ -7,7 +7,7 @@ Squeeze implements 9 dimensionality reduction algorithms, all with a consistent 
 | Algorithm | Type | Preserves | Speed | Scalability | Best For |
 |-----------|------|-----------|-------|-------------|----------|
 | [PCA](pca.md) | Linear | Global variance | Fastest | Excellent | Pre-processing, linear data |
-| [t-SNE](tsne.md) | Nonlinear | Local clusters | Slow | Poor | Visualization of clusters |
+| [t-SNE](tsne.md) | Nonlinear | Local clusters | Medium* | Good* | Visualization of clusters |
 | [UMAP](../how_umap_works.md) | Topological | Local + Global | Fast | Good | General purpose |
 | [MDS](mds.md) | Distance-based | Pairwise distances | Medium | Medium | Distance preservation |
 | [Isomap](isomap.md) | Manifold | Geodesic distances | Slow | Poor | Manifold recovery |
@@ -15,6 +15,8 @@ Squeeze implements 9 dimensionality reduction algorithms, all with a consistent 
 | [PHATE](phate.md) | Diffusion | Trajectories | Medium | Medium | Biological/trajectory data |
 | [TriMap](trimap.md) | Triplet-based | Local + Global | Fast | Good | Large datasets |
 | [PaCMAP](pacmap.md) | Pair-based | Local + Global | Fast | Good | Best speed/quality tradeoff |
+
+*t-SNE now supports Barnes-Hut O(n log n) approximation for large datasets and early stopping for faster convergence.
 
 ## Choosing an Algorithm
 

@@ -93,6 +93,40 @@ The "t" in t-SNE refers to the Student's t-distribution used in the low-dimensio
 - **Description**: Random seed for reproducibility
 - **Recommendations**: Set for reproducible results
 
+### `theta`
+- **Type**: float
+- **Default**: 0.5
+- **Description**: Barnes-Hut approximation parameter. Controls the accuracy/speed tradeoff for the O(n log n) gradient computation.
+- **Effect**:
+  - 0.0: Exact computation (no approximation)
+  - 0.5: Good balance of speed and accuracy (default)
+  - 1.0: Faster but less accurate
+- **Recommendations**: Use default 0.5 for most cases
+
+### `use_barnes_hut`
+- **Type**: bool or None
+- **Default**: None (auto-select)
+- **Description**: Whether to use Barnes-Hut approximation for gradient computation
+- **Effect**:
+  - `None`: Auto-selects based on dataset size (uses Barnes-Hut when n > 1000 and n_components == 2)
+  - `True`: Always use Barnes-Hut
+  - `False`: Always use exact computation
+- **Recommendations**: Let it auto-select unless you have specific requirements
+
+### `min_grad_norm`
+- **Type**: float
+- **Default**: 1e-7
+- **Description**: Minimum gradient norm for early stopping. When the gradient becomes smaller than this value, optimization stops.
+- **Effect**: Set to 0 to disable early stopping
+- **Recommendations**: Default works well; increase for faster (but potentially less optimal) results
+
+### `n_iter_without_progress`
+- **Type**: int
+- **Default**: 300
+- **Description**: Number of iterations without improvement before early stopping triggers
+- **Effect**: Lower values stop earlier, higher values allow more exploration
+- **Recommendations**: Default 300 balances convergence and computation time
+
 ## Quick Start
 
 ```python
@@ -150,14 +184,85 @@ tsne = squeeze.TSNE(perplexity=30, n_iter=1000)
 X_embedded = tsne.fit_transform(X_pca)
 ```
 
+### Using Barnes-Hut for Large Datasets
+
+```python
+import squeeze
+import numpy as np
+
+# Large dataset (10,000 points)
+X_large = np.random.randn(10000, 100)
+
+# Barnes-Hut is auto-selected for large datasets
+# Explicitly enable for smaller datasets:
+tsne = squeeze.TSNE(
+    perplexity=30,
+    theta=0.5,           # Barnes-Hut approximation parameter
+    use_barnes_hut=True, # Force Barnes-Hut even for small datasets
+    random_state=42
+)
+X_embedded = tsne.fit_transform(X_large)
+```
+
+### With Early Stopping
+
+```python
+import squeeze
+
+# Enable early stopping for faster convergence
+tsne = squeeze.TSNE(
+    perplexity=30,
+    n_iter=2000,                    # Max iterations
+    min_grad_norm=1e-7,             # Stop when gradient is small
+    n_iter_without_progress=300,    # Stop if no improvement
+    random_state=42
+)
+X_embedded = tsne.fit_transform(X)
+# May finish before 2000 iterations if converged
+```
+
+## Barnes-Hut Approximation
+
+The Barnes-Hut algorithm reduces t-SNE's gradient computation from O(n²) to O(n log n) by using a quadtree to approximate forces from distant points.
+
+### How It Works
+
+1. **Build a quadtree** of all points in the low-dimensional embedding
+2. For each point, compute forces from:
+   - **Nearby points**: Exact computation
+   - **Distant groups**: Approximate using center of mass
+3. The `theta` parameter controls the distance threshold:
+   - If `node_size / distance < theta`, use approximation
+   - Lower theta = more exact, higher theta = faster
+
+### When to Use
+
+| Dataset Size | Recommendation |
+|--------------|----------------|
+| < 1,000 | Use exact (default) |
+| 1,000 - 10,000 | Barnes-Hut recommended (auto-selected) |
+| > 10,000 | Barnes-Hut essential |
+
+## Early Stopping
+
+Early stopping monitors the gradient norm and stops optimization when:
+1. Gradient norm falls below `min_grad_norm`, OR
+2. No improvement for `n_iter_without_progress` iterations
+
+This prevents wasted computation when the embedding has converged.
+
 ## Performance Characteristics
 
-| Metric | Value |
-|--------|-------|
-| Time Complexity | O(n²) exact, O(n log n) Barnes-Hut |
-| Memory | O(n²) for distance matrix |
-| Scalability | Poor (practical limit ~10k points) |
-| Benchmark (Digits) | 12.97s |
+| Metric | Exact | Barnes-Hut |
+|--------|-------|------------|
+| Time Complexity | O(n²) | O(n log n) |
+| Memory | O(n²) | O(n) |
+| Practical Limit | ~5,000 points | ~100,000 points |
+| Accuracy | Exact | Approximate (controlled by theta) |
+
+| Benchmark | Value |
+|-----------|-------|
+| Digits Dataset (1797 points) | 12.97s |
 | Trustworthiness | 0.990 (best) |
 
 ## Strengths and Limitations

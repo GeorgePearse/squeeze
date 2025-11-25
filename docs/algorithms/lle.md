@@ -69,6 +69,18 @@ This is equivalent to finding the smallest non-zero eigenvectors of (I - W)ᵀ(I
 - **Effect**: Prevents singular matrices in weight computation
 - **Recommendations**: Usually default is fine; increase if you get numerical errors
 
+### `error_on_singular`
+- **Type**: bool
+- **Default**: False
+- **Description**: Controls behavior when weight matrices are singular
+- **Effect**:
+  - `False`: Falls back to uniform weights with a warning (default, more robust)
+  - `True`: Raises an error when singular matrices are encountered
+- **Recommendations**:
+  - Use `False` for exploratory analysis (more robust)
+  - Use `True` for production/pipelines (fail-fast behavior)
+  - If you see fallback warnings, consider increasing `reg`
+
 ## Quick Start
 
 ```python
@@ -171,11 +183,22 @@ If points collapse to similar values:
 
 ### Numerical Instability
 
-If you get numerical errors:
+If you get numerical errors or see fallback warnings:
 ```python
 # Increase regularization
 lle = squeeze.LLE(n_components=2, n_neighbors=15, reg=1e-2)
+
+# Or use strict mode to detect issues early
+lle = squeeze.LLE(n_components=2, n_neighbors=15, error_on_singular=True)
 ```
+
+### Handling Fallback Warnings
+
+If you see "Used fallback uniform weights for X points":
+1. **Increase regularization**: `reg=1e-2` or higher
+2. **Increase neighbors**: More neighbors = more stable reconstruction
+3. **Check for duplicate points**: Near-duplicate points cause singularities
+4. **Standardize data**: Ensure all features are on similar scales
 
 ## LLE vs Other Manifold Methods
 
