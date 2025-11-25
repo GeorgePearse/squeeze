@@ -154,7 +154,7 @@ mod tests {
             data[[i, 0]] = val * 2.0;      // High variance
             data[[i, 1]] = val * 0.5;      // Medium variance
             data[[i, 2]] = val * 0.1;      // Low variance
-            data[[i, 3]] = (val % 10) as f64 * 0.01; // Very low variance
+            data[[i, 3]] = ((i % 10) as f64) * 0.01; // Very low variance
             data[[i, 4]] = 0.0;            // Zero variance
         }
         data

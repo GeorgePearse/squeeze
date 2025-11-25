@@ -202,3 +202,320 @@ impl PHATE {
         pot_dist
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    fn create_two_clusters() -> Array2<f64> {
+        let mut data = Array2::zeros((40, 5));
+        // Cluster 1: points near origin
+        for i in 0..20 {
+            for j in 0..5 {
+                data[[i, j]] = (i as f64) * 0.01 + (j as f64) * 0.001;
+            }
+        }
+        // Cluster 2: points offset by 10
+        for i in 20..40 {
+            for j in 0..5 {
+                data[[i, j]] = 10.0 + (i as f64) * 0.01 + (j as f64) * 0.001;
+            }
+        }
+        data
+    }
+
+    fn create_test_distances() -> Array2<f64> {
+        // Create a simple 10x10 distance matrix
+        let mut distances = Array2::zeros((10, 10));
+        for i in 0..10 {
+            for j in 0..10 {
+                distances[[i, j]] = ((i as f64) - (j as f64)).abs();
+            }
+        }
+        distances
+    }
+
+    #[test]
+    fn test_local_sigmas_positive() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+
+        // All sigmas should be positive
+        for (i, &sigma) in sigmas.iter().enumerate() {
+            assert!(sigma > 0.0, "Sigma at index {} should be positive, got {}", i, sigma);
+        }
+    }
+
+    #[test]
+    fn test_local_sigmas_length() {
+        let phate = PHATE::new(2, 3, 5, 2.0, Some(42));
+        let distances = create_test_distances();
+
+        let sigmas = phate.compute_local_sigmas(&distances, 10);
+
+        assert_eq!(sigmas.len(), 10, "Should have sigma for each sample");
+    }
+
+    #[test]
+    fn test_affinity_matrix_symmetric() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+
+        // Affinity should be symmetric
+        for i in 0..40 {
+            for j in 0..40 {
+                assert_relative_eq!(
+                    affinity[[i, j]],
+                    affinity[[j, i]],
+                    epsilon = 1e-10
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_affinity_matrix_non_negative() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+
+        // All affinities should be non-negative
+        for &val in affinity.iter() {
+            assert!(val >= 0.0, "Affinity should be non-negative");
+        }
+    }
+
+    #[test]
+    fn test_affinity_diagonal_zero() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+
+        // Diagonal should be 0 (no self-affinity)
+        for i in 0..40 {
+            assert_eq!(affinity[[i, i]], 0.0, "Diagonal should be 0");
+        }
+    }
+
+    #[test]
+    fn test_diffusion_operator_row_sums() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+
+        let diffusion = phate.compute_diffusion_operator(&affinity, 40);
+
+        // Each row should sum to 1 (Markov matrix)
+        for i in 0..40 {
+            let row_sum: f64 = diffusion.row(i).sum();
+            assert_relative_eq!(row_sum, 1.0, epsilon = 1e-6);
+        }
+    }
+
+    #[test]
+    fn test_diffusion_operator_non_negative() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+
+        let diffusion = phate.compute_diffusion_operator(&affinity, 40);
+
+        // All values should be non-negative
+        for &val in diffusion.iter() {
+            assert!(val >= 0.0, "Diffusion operator should be non-negative");
+        }
+    }
+
+    #[test]
+    fn test_potential_distances_symmetric() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+        let diffusion = phate.compute_diffusion_operator(&affinity, 40);
+        let diffused = phate.power_matrix(&diffusion, 5, 40);
+
+        let potential = phate.compute_potential_distances(&diffused, 40);
+
+        // Potential distances should be symmetric
+        for i in 0..40 {
+            for j in 0..40 {
+                assert_relative_eq!(
+                    potential[[i, j]],
+                    potential[[j, i]],
+                    epsilon = 1e-10
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_potential_distances_diagonal_zero() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+        let diffusion = phate.compute_diffusion_operator(&affinity, 40);
+        let diffused = phate.power_matrix(&diffusion, 5, 40);
+
+        let potential = phate.compute_potential_distances(&diffused, 40);
+
+        // Diagonal should be 0
+        for i in 0..40 {
+            assert_relative_eq!(potential[[i, i]], 0.0, epsilon = 1e-10);
+        }
+    }
+
+    #[test]
+    fn test_power_matrix_identity() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let matrix = Array2::from_shape_vec((3, 3), vec![
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+        ]).unwrap();
+
+        // Identity^n = Identity
+        let powered = phate.power_matrix(&matrix, 5, 3);
+        for i in 0..3 {
+            for j in 0..3 {
+                let expected = if i == j { 1.0 } else { 0.0 };
+                assert_relative_eq!(powered[[i, j]], expected, epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_power_matrix_zero_power() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let matrix = Array2::from_shape_vec((3, 3), vec![
+            0.5, 0.3, 0.2,
+            0.1, 0.6, 0.3,
+            0.2, 0.2, 0.6,
+        ]).unwrap();
+
+        // Any matrix^0 = Identity
+        let powered = phate.power_matrix(&matrix, 0, 3);
+        for i in 0..3 {
+            for j in 0..3 {
+                let expected = if i == j { 1.0 } else { 0.0 };
+                assert_relative_eq!(powered[[i, j]], expected, epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_power_matrix_one_power() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let matrix = Array2::from_shape_vec((3, 3), vec![
+            0.5, 0.3, 0.2,
+            0.1, 0.6, 0.3,
+            0.2, 0.2, 0.6,
+        ]).unwrap();
+
+        // Matrix^1 = Matrix
+        let powered = phate.power_matrix(&matrix, 1, 3);
+        for i in 0..3 {
+            for j in 0..3 {
+                assert_relative_eq!(powered[[i, j]], matrix[[i, j]], epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_power_matrix_square() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let matrix = Array2::from_shape_vec((2, 2), vec![
+            0.5, 0.5,
+            0.5, 0.5,
+        ]).unwrap();
+
+        // For this matrix, M^2 = M (it's idempotent)
+        let squared = phate.power_matrix(&matrix, 2, 2);
+        let expected = matrix.dot(&matrix);
+
+        for i in 0..2 {
+            for j in 0..2 {
+                assert_relative_eq!(
+                    squared[[i, j]],
+                    expected[[i, j]],
+                    epsilon = 1e-10
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_potential_distances_non_negative() {
+        let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
+        let data = create_two_clusters();
+        let x_f32: Vec<Vec<f32>> = data.rows()
+            .into_iter()
+            .map(|row| row.iter().map(|&v| v as f32).collect())
+            .collect();
+        let distances = compute_distance_matrix(&x_f32);
+        let sigmas = phate.compute_local_sigmas(&distances, 40);
+        let affinity = phate.compute_affinity(&distances, &sigmas, 40);
+        let diffusion = phate.compute_diffusion_operator(&affinity, 40);
+        let diffused = phate.power_matrix(&diffusion, 5, 40);
+
+        let potential = phate.compute_potential_distances(&diffused, 40);
+
+        // All distances should be non-negative
+        for &val in potential.iter() {
+            assert!(val >= 0.0, "Potential distance should be non-negative");
+        }
+    }
+}

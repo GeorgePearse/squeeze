@@ -259,3 +259,243 @@ impl TriMap {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    fn create_test_data() -> Array2<f64> {
+        let mut data = Array2::zeros((30, 5));
+        for i in 0..30 {
+            for j in 0..5 {
+                data[[i, j]] = (i as f64) * 0.3 + (j as f64) * 0.05;
+            }
+        }
+        data
+    }
+
+    fn create_test_distances(n: usize) -> Array2<f64> {
+        let mut distances = Array2::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                distances[[i, j]] = ((i as f64) - (j as f64)).abs();
+            }
+        }
+        distances
+    }
+
+    #[test]
+    fn test_triplet_generation_not_empty() {
+        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let triplets = trimap.generate_triplets(&distances, 30);
+
+        assert!(!triplets.is_empty(), "Should generate triplets");
+    }
+
+    #[test]
+    fn test_triplet_generation_distinct_indices() {
+        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let triplets = trimap.generate_triplets(&distances, 30);
+
+        // Each triplet should have distinct indices
+        for &(anchor, pos, neg) in &triplets {
+            assert_ne!(anchor, pos, "Anchor and positive should be different");
+            assert_ne!(anchor, neg, "Anchor and negative should be different");
+            assert_ne!(pos, neg, "Positive and negative should be different");
+        }
+    }
+
+    #[test]
+    fn test_triplet_generation_valid_indices() {
+        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let triplets = trimap.generate_triplets(&distances, 30);
+
+        // All indices should be within bounds
+        for &(anchor, pos, neg) in &triplets {
+            assert!(anchor < 30, "Anchor index out of bounds");
+            assert!(pos < 30, "Positive index out of bounds");
+            assert!(neg < 30, "Negative index out of bounds");
+        }
+    }
+
+    #[test]
+    fn test_triplet_structure() {
+        // Test that triplets are structured correctly (inliers paired with outliers)
+        let trimap = TriMap::new(2, 3, 2, 0, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(20);
+
+        let triplets = trimap.generate_triplets(&distances, 20);
+
+        // Each triplet should have (anchor, positive_from_inliers, negative_from_outliers)
+        // The algorithm pairs each inlier with each outlier
+        // Expected count: n_samples * n_inliers * n_outliers = 20 * 3 * 2 = 120
+        assert_eq!(triplets.len(), 20 * 3 * 2, "Should have n_samples * n_inliers * n_outliers triplets");
+    }
+
+    #[test]
+    fn test_weights_positive() {
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+        let triplets = trimap.generate_triplets(&distances, 30);
+
+        let weights = trimap.compute_weights(&distances, &triplets);
+
+        // All weights should be positive
+        for (i, &w) in weights.iter().enumerate() {
+            assert!(w > 0.0, "Weight {} should be positive, got {}", i, w);
+        }
+    }
+
+    #[test]
+    fn test_weights_count_matches_triplets() {
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+        let triplets = trimap.generate_triplets(&distances, 30);
+
+        let weights = trimap.compute_weights(&distances, &triplets);
+
+        assert_eq!(weights.len(), triplets.len(), "Should have one weight per triplet");
+    }
+
+    #[test]
+    fn test_weights_higher_for_good_triplets() {
+        let trimap = TriMap::new(2, 5, 3, 0, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+        let triplets = trimap.generate_triplets(&distances, 30);
+
+        let weights = trimap.compute_weights(&distances, &triplets);
+
+        // Triplets with positive margin (d_neg > d_pos) should have higher weight
+        let mut good_weights = Vec::new();
+        let mut bad_weights = Vec::new();
+
+        for (idx, &(anchor, pos, neg)) in triplets.iter().enumerate() {
+            let d_pos = distances[[anchor, pos]];
+            let d_neg = distances[[anchor, neg]];
+            if d_neg > d_pos {
+                good_weights.push(weights[idx]);
+            } else {
+                bad_weights.push(weights[idx]);
+            }
+        }
+
+        if !good_weights.is_empty() && !bad_weights.is_empty() {
+            let avg_good: f64 = good_weights.iter().sum::<f64>() / good_weights.len() as f64;
+            let avg_bad: f64 = bad_weights.iter().sum::<f64>() / bad_weights.len() as f64;
+            assert!(avg_good >= avg_bad, "Good triplets should have higher average weight");
+        }
+    }
+
+    #[test]
+    fn test_initialization_shape() {
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let data = create_test_data();
+
+        let embedding = trimap.initialize_embedding(&data, 30).unwrap();
+
+        assert_eq!(embedding.shape(), &[30, 2]);
+    }
+
+    #[test]
+    fn test_initialization_reproducible() {
+        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let data = create_test_data();
+
+        let emb1 = trimap1.initialize_embedding(&data, 30).unwrap();
+        let emb2 = trimap2.initialize_embedding(&data, 30).unwrap();
+
+        for i in 0..30 {
+            for j in 0..2 {
+                assert_relative_eq!(emb1[[i, j]], emb2[[i, j]], epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_initialization_different_seeds() {
+        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(123));
+        let data = create_test_data();
+
+        let emb1 = trimap1.initialize_embedding(&data, 30).unwrap();
+        let emb2 = trimap2.initialize_embedding(&data, 30).unwrap();
+
+        // Different seeds should give different embeddings
+        let mut different = false;
+        for i in 0..30 {
+            for j in 0..2 {
+                if (emb1[[i, j]] - emb2[[i, j]]).abs() > 1e-10 {
+                    different = true;
+                    break;
+                }
+            }
+        }
+        assert!(different, "Different seeds should produce different initializations");
+    }
+
+    #[test]
+    fn test_triplet_generation_reproducible() {
+        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let triplets1 = trimap1.generate_triplets(&distances, 30);
+        let triplets2 = trimap2.generate_triplets(&distances, 30);
+
+        // With same seed, should generate same triplets
+        assert_eq!(triplets1.len(), triplets2.len());
+        for (t1, t2) in triplets1.iter().zip(triplets2.iter()) {
+            assert_eq!(t1, t2);
+        }
+    }
+
+    #[test]
+    fn test_triplet_count() {
+        let n_inliers = 5;
+        let n_outliers = 3;
+        let n_random = 2;
+        let n_samples = 30;
+        let trimap = TriMap::new(2, n_inliers, n_outliers, n_random, 100, 0.1, 50.0, Some(42));
+        let distances = create_test_distances(n_samples);
+
+        let triplets = trimap.generate_triplets(&distances, n_samples);
+
+        // Expected: for each sample, n_inliers * n_outliers structured triplets + n_random random triplets
+        let expected = n_samples * (n_inliers * n_outliers + n_random);
+        assert_eq!(triplets.len(), expected, "Expected {} triplets", expected);
+    }
+
+    #[test]
+    fn test_initialization_finite() {
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let data = create_test_data();
+
+        let embedding = trimap.initialize_embedding(&data, 30).unwrap();
+
+        // All values should be finite
+        for &val in embedding.iter() {
+            assert!(val.is_finite(), "Embedding should have finite values");
+        }
+    }
+
+    #[test]
+    fn test_initialization_scaled() {
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let data = create_test_data();
+
+        let embedding = trimap.initialize_embedding(&data, 30).unwrap();
+
+        // Embedding should have reasonable scale (not too large, not too small)
+        let max_val: f64 = embedding.iter().map(|&v| v.abs()).fold(0.0, f64::max);
+        assert!(max_val > 1e-10, "Embedding should not be all zeros");
+        assert!(max_val < 1e6, "Embedding should not have extreme values");
+    }
+}

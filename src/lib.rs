@@ -7,6 +7,7 @@ pub mod sparse_hnsw_index;
 pub mod mixed_precision;
 pub mod cache_aligned;
 pub mod barnes_hut;
+pub mod numerical;
 
 // Dimensionality reduction algorithms
 pub mod pca;

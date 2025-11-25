@@ -258,3 +258,300 @@ impl PaCMAP {
         dist_sq.sqrt()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    fn create_test_data() -> Array2<f64> {
+        let mut data = Array2::zeros((30, 5));
+        for i in 0..30 {
+            for j in 0..5 {
+                data[[i, j]] = (i as f64) * 0.5 + (j as f64) * 0.1;
+            }
+        }
+        data
+    }
+
+    fn create_test_distances(n: usize) -> Array2<f64> {
+        let mut distances = Array2::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                distances[[i, j]] = ((i as f64) - (j as f64)).abs();
+            }
+        }
+        distances
+    }
+
+    #[test]
+    fn test_generate_pairs_near_count() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (near, _, _) = pacmap.generate_pairs(&distances, 30);
+
+        // Near pairs: n_samples * n_neighbors
+        assert_eq!(near.len(), 30 * 5, "Expected {} near pairs", 30 * 5);
+    }
+
+    #[test]
+    fn test_generate_pairs_far_count() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (_, _, far) = pacmap.generate_pairs(&distances, 30);
+
+        // Far pairs: n_samples * (n_neighbors * fp_ratio)
+        let expected_far = 30 * (5.0 * 2.0) as usize;
+        assert_eq!(far.len(), expected_far, "Expected {} far pairs", expected_far);
+    }
+
+    #[test]
+    fn test_generate_pairs_near_are_nearest() {
+        let pacmap = PaCMAP::new(2, 3, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (near_pairs, _, _) = pacmap.generate_pairs(&distances, 30);
+
+        // For each point, verify near pairs are among the k-nearest
+        for i in 0..30 {
+            let pairs_for_i: Vec<_> = near_pairs
+                .iter()
+                .filter(|&&(a, _, _)| a == i)
+                .collect();
+
+            for &&(_, j, d) in &pairs_for_i {
+                // Distance should match the distance matrix
+                assert_relative_eq!(d, distances[[i, j]], epsilon = 1e-10);
+            }
+
+            // Should have exactly n_neighbors pairs per point
+            assert_eq!(pairs_for_i.len(), 3, "Each point should have {} near pairs", 3);
+        }
+    }
+
+    #[test]
+    fn test_generate_pairs_near_distances_sorted() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (near_pairs, _, _) = pacmap.generate_pairs(&distances, 30);
+
+        // For each point, check that near pairs are sorted by distance
+        for i in 0..30 {
+            let mut pairs_for_i: Vec<_> = near_pairs
+                .iter()
+                .filter(|&&(a, _, _)| a == i)
+                .map(|&(_, j, d)| d)
+                .collect();
+
+            // Since they come from the k-nearest, they should be the smallest distances
+            let mut all_distances: Vec<f64> = (0..30)
+                .filter(|&j| j != i)
+                .map(|j| distances[[i, j]])
+                .collect();
+            all_distances.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+            // The near pair distances should be among the k smallest
+            for d in &pairs_for_i {
+                assert!(all_distances[..5].contains(d) || *d <= all_distances[4] + 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_weight_schedule_phase1() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        // Phase 1: iter 0-99
+        let (w_near, w_mn, w_fp) = pacmap.get_weights(0);
+        assert_relative_eq!(w_near, 2.0, epsilon = 1e-5);
+        assert!(w_mn > 0.0);
+        assert_relative_eq!(w_fp, 1.0, epsilon = 1e-5);
+
+        // Mid phase 1
+        let (w_near, w_mn, w_fp) = pacmap.get_weights(50);
+        assert_relative_eq!(w_near, 2.0, epsilon = 1e-5);
+        assert!(w_mn > 0.0);
+        assert_relative_eq!(w_fp, 1.0, epsilon = 1e-5);
+    }
+
+    #[test]
+    fn test_weight_schedule_phase2() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        // Phase 2: iter 100-199 (transition)
+        let (w_near_start, w_mn_start, w_fp_start) = pacmap.get_weights(100);
+        let (w_near_end, w_mn_end, w_fp_end) = pacmap.get_weights(199);
+
+        // Far pair weight stays at 1.0
+        assert_relative_eq!(w_fp_start, 1.0, epsilon = 1e-5);
+        assert_relative_eq!(w_fp_end, 1.0, epsilon = 1e-5);
+
+        // Mid-near weight decreases towards 0
+        assert!(w_mn_start > w_mn_end, "Mid-near weight should decrease in phase 2");
+    }
+
+    #[test]
+    fn test_weight_schedule_phase3() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        // Phase 3: iter >= 200
+        let (w_near, w_mn, w_fp) = pacmap.get_weights(200);
+        assert_relative_eq!(w_near, 1.0, epsilon = 1e-5);
+        assert_relative_eq!(w_mn, 0.0, epsilon = 1e-5);
+        assert_relative_eq!(w_fp, 1.0, epsilon = 1e-5);
+
+        // Later in phase 3
+        let (w_near, w_mn, w_fp) = pacmap.get_weights(400);
+        assert_relative_eq!(w_near, 1.0, epsilon = 1e-5);
+        assert_relative_eq!(w_mn, 0.0, epsilon = 1e-5);
+        assert_relative_eq!(w_fp, 1.0, epsilon = 1e-5);
+    }
+
+    #[test]
+    fn test_embedding_distance_zero() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        let embedding = Array2::from_shape_vec((3, 2), vec![
+            0.0, 0.0,
+            3.0, 4.0,
+            1.0, 1.0,
+        ]).unwrap();
+
+        // Distance to self should be 0
+        let dist_self = pacmap.embedding_distance(&embedding, 0, 0);
+        assert_relative_eq!(dist_self, 0.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_embedding_distance_known_value() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        let embedding = Array2::from_shape_vec((3, 2), vec![
+            0.0, 0.0,
+            3.0, 4.0,
+            1.0, 1.0,
+        ]).unwrap();
+
+        // Distance from (0,0) to (3,4) should be 5
+        let dist = pacmap.embedding_distance(&embedding, 0, 1);
+        assert_relative_eq!(dist, 5.0, epsilon = 1e-5);
+    }
+
+    #[test]
+    fn test_embedding_distance_symmetric() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        let embedding = Array2::from_shape_vec((3, 2), vec![
+            0.0, 0.0,
+            3.0, 4.0,
+            1.0, 1.0,
+        ]).unwrap();
+
+        // Distance should be symmetric
+        assert_relative_eq!(
+            pacmap.embedding_distance(&embedding, 0, 1),
+            pacmap.embedding_distance(&embedding, 1, 0),
+            epsilon = 1e-10
+        );
+    }
+
+    #[test]
+    fn test_initialization_shape() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        let emb = pacmap.initialize_embedding(20).unwrap();
+
+        assert_eq!(emb.shape(), &[20, 2]);
+    }
+
+    #[test]
+    fn test_initialization_reproducible() {
+        let pacmap1 = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+        let pacmap2 = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+
+        let emb1 = pacmap1.initialize_embedding(20).unwrap();
+        let emb2 = pacmap2.initialize_embedding(20).unwrap();
+
+        for i in 0..20 {
+            for j in 0..2 {
+                assert_relative_eq!(emb1[[i, j]], emb2[[i, j]], epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_initialization_different_seeds() {
+        let pacmap1 = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
+        let pacmap2 = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(123));
+
+        let emb1 = pacmap1.initialize_embedding(20).unwrap();
+        let emb2 = pacmap2.initialize_embedding(20).unwrap();
+
+        // Different seeds should give different embeddings
+        let mut different = false;
+        for i in 0..20 {
+            for j in 0..2 {
+                if (emb1[[i, j]] - emb2[[i, j]]).abs() > 1e-10 {
+                    different = true;
+                    break;
+                }
+            }
+        }
+        assert!(different, "Different seeds should produce different initializations");
+    }
+
+    #[test]
+    fn test_generate_pairs_far_pairs_distinct() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (_, _, far) = pacmap.generate_pairs(&distances, 30);
+
+        // All far pairs should have distinct indices
+        for &(i, j) in &far {
+            assert_ne!(i, j, "Far pair should not be self-pair");
+        }
+    }
+
+    #[test]
+    fn test_generate_pairs_near_distinct() {
+        let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (near, _, _) = pacmap.generate_pairs(&distances, 30);
+
+        // All near pairs should have distinct indices
+        for &(i, j, _) in &near {
+            assert_ne!(i, j, "Near pair should not be self-pair");
+        }
+    }
+
+    #[test]
+    fn test_generate_pairs_reproducible() {
+        let pacmap1 = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let pacmap2 = PaCMAP::new(2, 5, 0.5, 2.0, 100, 1.0, Some(42));
+        let distances = create_test_distances(30);
+
+        let (near1, mid1, far1) = pacmap1.generate_pairs(&distances, 30);
+        let (near2, mid2, far2) = pacmap2.generate_pairs(&distances, 30);
+
+        // With same seed, should get same pairs
+        assert_eq!(near1.len(), near2.len());
+        assert_eq!(mid1.len(), mid2.len());
+        assert_eq!(far1.len(), far2.len());
+
+        for (p1, p2) in near1.iter().zip(near2.iter()) {
+            assert_eq!(p1.0, p2.0);
+            assert_eq!(p1.1, p2.1);
+            assert_relative_eq!(p1.2, p2.2, epsilon = 1e-10);
+        }
+
+        for (p1, p2) in far1.iter().zip(far2.iter()) {
+            assert_eq!(p1.0, p2.0);
+            assert_eq!(p1.1, p2.1);
+        }
+    }
+}

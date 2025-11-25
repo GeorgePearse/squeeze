@@ -381,9 +381,9 @@ mod tests {
         }
         
         // Check that row and column means are zero (property of double-centering)
-        let b_row_mean = b.mean_axis(Axis(0)).unwrap();
-        let b_col_mean = b.mean_axis(Axis(1)).unwrap();
-        
+        let b_row_mean: ndarray::Array1<f64> = b.mean_axis(Axis(0)).unwrap();
+        let b_col_mean: ndarray::Array1<f64> = b.mean_axis(Axis(1)).unwrap();
+
         for i in 0..3 {
             assert!(b_row_mean[i].abs() < 1e-10, "Row mean should be ~0");
             assert!(b_col_mean[i].abs() < 1e-10, "Column mean should be ~0");
