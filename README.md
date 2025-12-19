@@ -387,3 +387,4 @@ Squeeze builds on the excellent work of:
 - [UMAP](https://github.com/lmcinnes/umap) by Leland McInnes
 - [PyNNDescent](https://github.com/lmcinnes/pynndescent) for approximate nearest neighbors
 - The scientific Python ecosystem (NumPy, SciPy, scikit-learn, Numba)
+- https://github.com/JelmerBot/fast_plscan
