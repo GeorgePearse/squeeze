@@ -23,6 +23,36 @@ TriMap is a fast dimensionality reduction method that uses triplet constraints t
 
 TriMap asks: "For each point A, should point B be closer than point C?" It creates many such triplet comparisons and optimizes coordinates so these relationships hold. By mixing nearby neighbors (local structure) with random far points (global structure), it preserves both scales.
 
+### Visual Walkthrough
+
+A single triplet constraint looks like this:
+
+```mermaid
+graph LR
+  i((i)) -- "near" --> j((j))
+  i((i)) -- "far" --> k((k))
+```
+
+TriMap samples lots of these constraints and optimizes an embedding that satisfies them:
+
+```mermaid
+flowchart TD
+  X["Input points X"] --> N["Find nearest neighbors"]
+  N --> T["Sample triplets (i, j, k)<br/>j near i; k far from i"]
+  T --> W["Assign weights (harder triplets matter more)"]
+  W --> Y0["Initialize embedding Y"]
+  Y0 --> OPT["Optimize triplet objective"]
+  OPT --> Y["Output embedding"]
+```
+
+Local/global balance (conceptually):
+
+```mermaid
+flowchart LR
+  L["More inliers (n_inliers)"] --> L2["Sharper local neighborhoods"]
+  G["More outliers/random (n_outliers, n_random)"] --> G2["Stronger global scaffold"]
+```
+
 ### Algorithm Steps
 
 1. **Find nearest neighbors**: k-NN for each point

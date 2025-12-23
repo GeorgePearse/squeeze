@@ -24,6 +24,26 @@ PCA is the simplest and fastest dimensionality reduction technique. It finds the
 
 Imagine your data as a cloud of points in high-dimensional space. PCA finds the "longest axis" through this cloud—the direction along which points are most spread out. This becomes the first principal component. The second component is the longest axis perpendicular to the first, and so on.
 
+### Visual Walkthrough
+
+```mermaid
+flowchart TD
+  A["Input data X (n×d)"] --> B["Center (and usually scale) features"]
+  B --> C["Compute covariance or SVD"]
+  C --> D["Find principal components<br/>(eigenvectors / singular vectors)"]
+  D --> E["Keep top-k components"]
+  E --> F["Project: Z = X · W_k"]
+  F --> G["Return Z (n×k)"]
+```
+
+Explained variance answers: “How much of the total spread is captured by each component?”
+
+```mermaid
+pie title Example explained variance (toy)
+  "PC1" : 78
+  "PC2" : 22
+```
+
 ### Mathematical Foundation
 
 1. **Center the data**: Subtract the mean from each feature

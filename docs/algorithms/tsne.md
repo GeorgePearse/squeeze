@@ -26,6 +26,35 @@ t-SNE asks: "If I had to describe the neighborhood of each point using probabili
 
 The "t" in t-SNE refers to the Student's t-distribution used in the low-dimensional space, which has heavier tails than a Gaussian. This prevents the "crowding problem" where points collapse together.
 
+### Visual Walkthrough
+
+```mermaid
+flowchart LR
+  subgraph HD["High-D: convert distances → probabilities"]
+    X["Points X"] --> D["Pairwise distances<br/>(or kNN distances)"]
+    D --> P["P: Gaussian affinities<br/>(σᵢ set by perplexity)"]
+  end
+
+  subgraph LD["Low-D: convert distances → probabilities"]
+    Y["Embedding Y"] --> Q["Q: Student-t affinities<br/>(heavy tails)"]
+  end
+
+  P --> KL["Minimize KL(P || Q)"]
+  Q --> KL
+  KL -->|"gradient descent"| Y
+```
+
+Perplexity is easiest to think of as an **effective neighborhood size**:
+
+```mermaid
+flowchart TD
+  P5["Low perplexity (5–10)"] --> L1["Very local neighborhoods"]
+  P5 --> L2["Tighter, smaller clusters"]
+  P30["Medium (30–50)"] --> M1["Balanced local/global"]
+  P100["High (50–100)"] --> H1["Broader neighborhoods"]
+  P100 --> H2["More global mixing"]
+```
+
 ### Mathematical Foundation
 
 1. **Compute pairwise affinities** in high-D using Gaussian kernels:

@@ -42,6 +42,8 @@ plugins:
 
 extra_javascript:
   - https://cdn.plot.ly/plotly-2.27.0.min.js
+  - https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid.js
 
 markdown_extensions:
   - admonition
@@ -64,6 +66,7 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
@@ -79,6 +82,18 @@ nav:
       - Installation: basic_usage.md
       - How UMAP Works: how_umap_works.md
       - Reproducibility: reproducibility.md
+  - Algorithms:
+      - Overview: algorithms/index.md
+      - UMAP: algorithms/umap.md
+      - t-SNE: algorithms/tsne.md
+      - PCA: algorithms/pca.md
+      - Isomap: algorithms/isomap.md
+      - LLE: algorithms/lle.md
+      - MDS: algorithms/mds.md
+      - PHATE: algorithms/phate.md
+      - TriMap: algorithms/trimap.md
+      - PaCMAP: algorithms/pacmap.md
+      - Numerical Stability: algorithms/numerical_stability.md
   - User Guide:
       - Basic Usage: basic_usage.md
       - Parameters: parameters.md

@@ -23,6 +23,28 @@ PHATE is a diffusion-based dimensionality reduction method designed to preserve 
 
 PHATE simulates heat diffusion on your data. Imagine placing a heat source at each data point and letting heat spread to neighbors. Points that share heat (are connected by diffusion paths) end up close in the embedding. The "potential distance" captures how similarly heat spreads from different points.
 
+### Visual Walkthrough
+
+```mermaid
+flowchart TD
+  X["Input points X"] --> K["Adaptive kernel affinities K"]
+  K --> P["Row-normalize → diffusion operator P"]
+  P --> Pt["Diffuse: P^t (t steps)"]
+  Pt --> Phi["Diffusion potential: Φ_t(i)=log(P^t(i,:))"]
+  Phi --> Dist["Potential distances between Φ_t vectors"]
+  Dist --> MDS["Embed distances (MDS)"]
+  MDS --> Y["Output embedding Y"]
+```
+
+Diffusion time `t` controls how far information can travel on the graph:
+
+```mermaid
+flowchart LR
+  T1["Small t"] --> L["Very local smoothing"]
+  T5["Medium t"] --> B["Balanced"]
+  T20["Large t"] --> G["More global/trajectory emphasis<br/>(risk of oversmoothing)"]
+```
+
 ### Algorithm Steps
 
 1. **Build adaptive kernel**: Compute affinities with local bandwidth adaptation

@@ -24,6 +24,25 @@ Isomap is a manifold learning algorithm that preserves geodesic distances—the 
 
 Imagine an ant walking on a curved surface (like a rolled-up piece of paper). Isomap measures distances the way the ant would—by walking along the surface—rather than drilling through it. Then it finds a flat representation where these "walking distances" are preserved.
 
+### Visual Walkthrough
+
+Geodesic distance is approximated by **shortest paths on a kNN graph**:
+
+```mermaid
+graph LR
+  A((A)) --- B((B)) --- C((C)) --- D((D)) --- E((E))
+  A -. "Euclidean chord" .-> E
+  A -- "Shortest path (geodesic approx.)" --> B
+```
+
+```mermaid
+flowchart TD
+  X["Input points X"] --> G["Build kNN graph G"]
+  G --> Dgeo["All-pairs shortest paths<br/>(geodesic distances)"]
+  Dgeo --> MDS["Classical MDS on D_geo"]
+  MDS --> Y["Output embedding Y"]
+```
+
 ### Algorithm Steps
 
 1. **Build k-NN graph**: Connect each point to its k nearest neighbors

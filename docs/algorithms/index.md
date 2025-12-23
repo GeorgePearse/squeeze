@@ -8,7 +8,7 @@ Squeeze implements 9 dimensionality reduction algorithms, all with a consistent 
 |-----------|------|-----------|-------|-------------|----------|
 | [PCA](pca.md) | Linear | Global variance | Fastest | Excellent | Pre-processing, linear data |
 | [t-SNE](tsne.md) | Nonlinear | Local clusters | Medium* | Good* | Visualization of clusters |
-| [UMAP](../how_umap_works.md) | Topological | Local + Global | Fast | Good | General purpose |
+| [UMAP](umap.md) | Topological | Local + Global | Fast | Good | General purpose |
 | [MDS](mds.md) | Distance-based | Pairwise distances | Medium | Medium | Distance preservation |
 | [Isomap](isomap.md) | Manifold | Geodesic distances | Slow | Poor | Manifold recovery |
 | [LLE](lle.md) | Manifold | Local linearity | Medium | Medium | Smooth manifolds |
@@ -22,16 +22,22 @@ Squeeze implements 9 dimensionality reduction algorithms, all with a consistent 
 
 ### Decision Flowchart
 
-```
-Is your data linearly separable?
-├── Yes → Use PCA (fastest, most interpretable)
-└── No → Do you need to preserve global structure?
-    ├── No, local clusters matter most → Use t-SNE
-    └── Yes → Is speed critical?
-        ├── Yes → Use PaCMAP or TriMap
-        └── No → Is your data trajectory/time-series?
-            ├── Yes → Use PHATE
-            └── No → Use UMAP (best general choice)
+```mermaid
+flowchart TD
+  A["Is your data roughly linear?"] -->|Yes| PCA["PCA<br/>(fastest, interpretable)"]
+  A -->|No| B{"Do you mainly want<br/>cluster visualization?"}
+  B -->|Yes| TSNE["t-SNE<br/>(best clusters; slower)"]
+  B -->|No| C{"Need global geometry / distance<br/>preservation?"}
+  C -->|Yes| D{"Need explicit distance fidelity?"}
+  D -->|Yes| MDS["MDS<br/>(distance-based)"]
+  D -->|No| ISOMAP["Isomap<br/>(geodesic distances)"]
+  C -->|No| E{"Is the data a trajectory / progression?"}
+  E -->|Yes| PHATE["PHATE<br/>(diffusion for trajectories)"]
+  E -->|No| F{"Is speed critical?"}
+  F -->|Yes| G{"Large dataset (>100k)?"}
+  G -->|Yes| H["PaCMAP or TriMap<br/>(fast + scalable)"]
+  G -->|No| UMAP["UMAP<br/>(best general choice)"]
+  F -->|No| UMAP
 ```
 
 ### By Use Case

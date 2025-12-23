@@ -24,6 +24,29 @@ LLE is a manifold learning algorithm that preserves local linear relationships. 
 
 LLE asks: "How can I describe each point using only its neighbors?" It finds weights that reconstruct each point from its neighbors, then finds low-dimensional coordinates where the same weights still work. This preserves the local "shape" of neighborhoods.
 
+### Visual Walkthrough
+
+LLE keeps the **reconstruction weights** fixed when moving from high-D to low-D:
+
+```mermaid
+flowchart TD
+  A["Find neighbors N(i)"] --> B["Solve weights w_ij<br/>x_i ≈ Σ w_ij x_j<br/>Σ w_ij = 1"]
+  B --> C["Freeze weights W"]
+  C --> D["Find embedding Y such that<br/>y_i ≈ Σ w_ij y_j"]
+  D --> E["Return Y"]
+```
+
+One local neighborhood (toy) looks like this:
+
+```mermaid
+graph LR
+  xi((xᵢ))
+  n1((n1)) -->|"w1"| xi
+  n2((n2)) -->|"w2"| xi
+  n3((n3)) -->|"w3"| xi
+  n4((n4)) -->|"w4"| xi
+```
+
 ### Algorithm Steps
 
 1. **Find neighbors**: Identify k-nearest neighbors for each point

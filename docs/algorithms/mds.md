@@ -23,6 +23,25 @@ MDS finds a low-dimensional representation that preserves the pairwise distances
 
 Imagine you have a table of distances between cities. MDS finds coordinates on a map such that when you measure distances between the plotted cities, they match the original distance table as closely as possible.
 
+### Visual Walkthrough
+
+```mermaid
+flowchart TD
+  D["Input: pairwise distances D"] --> V{"Variant"}
+  V -->|Classical| C["Double-center D² → Gram matrix B"]
+  C --> EVD["Eigen-decomposition of B"]
+  EVD --> Yc["Coordinates from top-k components"]
+  V -->|Metric (SMACOF)| I["Initialize coordinates"]
+  I --> S["Iteratively reduce stress"]
+  S -->|converged| Ym["Final coordinates"]
+```
+
+Stress is “distance mismatch” (lower is better):
+
+```
+stress(Y) = Σ_{i<j} ( d_X(i,j) - d_Y(i,j) )²
+```
+
 ### Two Variants
 
 **Classical MDS** (metric=False):

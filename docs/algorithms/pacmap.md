@@ -28,6 +28,34 @@ PaCMAP identifies three types of relationships for each point:
 
 It then optimizes in three phases, gradually shifting focus from global to local structure.
 
+### Visual Walkthrough
+
+```mermaid
+flowchart TD
+  X["Input points X"] --> P["Sample pair sets"]
+  P --> N["Near pairs (kNN)<br/>local neighborhoods"]
+  P --> M["Mid-near pairs<br/>medium-range scaffold"]
+  P --> F["Far pairs<br/>global repulsion"]
+  N --> OPT["Optimize embedding (phased)"]
+  M --> OPT
+  F --> OPT
+  OPT --> Y["Output embedding Y"]
+```
+
+PaCMAP’s “signature” is its phase schedule:
+
+```mermaid
+gantt
+  title PaCMAP optimization phases (conceptual)
+  dateFormat  X
+  axisFormat  %L
+
+  section Emphasis
+  Phase 1: global scaffold (far + mid) :a1, 0, 100
+  Phase 2: transition (balanced)       :a2, 100, 100
+  Phase 3: local refinement (near)     :a3, 200, 250
+```
+
 ### Algorithm Steps
 
 1. **Identify pairs**:
