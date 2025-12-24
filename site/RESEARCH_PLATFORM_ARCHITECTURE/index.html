@@ -1,0 +1,3414 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Uniform Manifold Approximation and Projection">
+      
+      
+        <meta name="author" content="Leland McInnes">
+      
+      
+        <link rel="canonical" href="https://lmcinnes.github.io/umap/RESEARCH_PLATFORM_ARCHITECTURE/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../doc/logo_large.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Research Platform Architecture: Making UMAP a Research Ecosystem - UMAP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#research-platform-architecture-making-umap-a-research-ecosystem" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="UMAP" class="md-header__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UMAP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Research Platform Architecture: Making UMAP a Research Ecosystem
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="UMAP" class="md-nav__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    UMAP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_umap_works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How UMAP Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithms
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Algorithms
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/umap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/tsne/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    t-SNE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/pca/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PCA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/isomap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isomap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/lle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/mds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MDS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/phate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHATE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/trimap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TriMap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/pacmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PaCMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/numerical_stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Numerical Stability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supervised/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supervised Dimensionality Reduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clustering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clustering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inverse_transform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse Transform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sparse Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Topics
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced Topics
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../composing_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Composing Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_basic_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aligned UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_politics_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aligned UMAP - Politics Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedding_space/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding Space
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exploratory_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exploratory Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variants and Extensions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Variants and Extensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../densmap_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    densMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parametric_umap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parametric UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mutual_nn_umap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mutual Nearest Neighbors UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transform & Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform_landmarked_pumap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landmarked Parametric UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualization and Interactive
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualization and Interactive
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plotting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_viz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Visualization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outliers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Outlier Detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../document_embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document Embedding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_umap_of_text_embeddings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nomic Atlas - Text Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_visualizing_mnist_training_dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nomic Atlas - MNIST Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance & Optimization
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Performance & Optimization
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Metrics Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../precomputed_k-nn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Precomputed k-NN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation_metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference & Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference & Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scientific_papers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scientific Papers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development_roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-core-pillars" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Core Pillars
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Core Pillars">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-pillar-1-extensibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Pillar 1: Extensibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-pillar-2-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Pillar 2: Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-pillar-3-composition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Pillar 3: Composition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-pillar-4-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 Pillar 4: Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-pillar-5-community" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 Pillar 5: Community
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-architecture-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Architecture Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Architecture Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-configuration-management-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Configuration Management System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-evaluation-framework" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Evaluation Framework
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-benchmark-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Benchmark Suite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-plugin-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Plugin Registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-interactive-experimentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 Interactive Experimentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-user-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. User Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. User Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-workflow-1-scientist-analyzing-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Workflow 1: Scientist Analyzing Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-workflow-2-researcher-developing-new-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Workflow 2: Researcher Developing New Method
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-workflow-3-community-sharing-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Workflow 3: Community Sharing Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-community-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Community Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Community Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-configuration-gallery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Configuration Gallery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-benchmark-leaderboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Benchmark Leaderboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-plugin-marketplace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Plugin Marketplace
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-technical-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Technical Infrastructure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Technical Infrastructure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-cloud-benchmarking-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Cloud Benchmarking Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-documentation-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Documentation Hub
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-version-control-for-configurations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Version Control for Configurations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-success-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Success Metrics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-implementation-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Implementation Roadmap
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Implementation Roadmap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-months-4-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 (Months 4-6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-months-7-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 (Months 7-12)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-months-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 (Months 13+)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-references-inspiration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. References &amp; Inspiration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Governance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Governance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-umap-research-committee" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 UMAP Research Committee
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-plugin-curation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 Plugin Curation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93-configuration-standards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 Configuration Standards
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-long-term-vision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Long-Term Vision
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="research-platform-architecture-making-umap-a-research-ecosystem">Research Platform Architecture: Making UMAP a Research Ecosystem<a class="headerlink" href="#research-platform-architecture-making-umap-a-research-ecosystem" title="Permanent link">&para;</a></h1>
+<p><strong>Status:</strong> Research &amp; Planning Phase
+<strong>Target Release:</strong> Phase 2-3 (Ongoing)
+<strong>Priority:</strong> Critical - Defines long-term strategy</p>
+<hr />
+<h2 id="executive-summary">Executive Summary<a class="headerlink" href="#executive-summary" title="Permanent link">&para;</a></h2>
+<p>Rather than a static library, we propose making UMAP a <strong>research platform</strong> that enables:</p>
+<ol>
+<li><strong>Easy Algorithm Composition</strong>: Chain, blend, and experiment with DR methods</li>
+<li><strong>Configuration Management</strong>: Share, version, and reproduce research configurations</li>
+<li><strong>Benchmarking Framework</strong>: Built-in evaluation and comparison tools</li>
+<li><strong>Plugin Architecture</strong>: Community can add new methods easily</li>
+<li><strong>Interactive Experimentation</strong>: Jupyter notebooks, dashboards, visualizations</li>
+<li><strong>Reproducibility</strong>: Exact reproduction with versioned configs</li>
+<li><strong>Knowledge Sharing</strong>: Community configurations, papers, results</li>
+</ol>
+<p>This transforms UMAP from a tool into a collaborative research ecosystem for dimensionality reduction.</p>
+<hr />
+<h2 id="1-core-pillars">1. Core Pillars<a class="headerlink" href="#1-core-pillars" title="Permanent link">&para;</a></h2>
+<h3 id="11-pillar-1-extensibility">1.1 Pillar 1: Extensibility<a class="headerlink" href="#11-pillar-1-extensibility" title="Permanent link">&para;</a></h3>
+<p>Users should be able to:
+- Add custom DR algorithms without modifying core code
+- Extend existing algorithms with custom modifications
+- Combine multiple methods in novel ways
+- Publish and share their innovations</p>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="c1"># Example: Custom DR method as plugin</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyNovelDRMethod</span><span class="p">(</span><span class="n">DimensionalityReducer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom research algorithm.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Custom implementation</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="c1"># Custom implementation</span>
+        <span class="k">pass</span>
+
+<span class="c1"># Register in UMAP ecosystem</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">register_method</span><span class="p">(</span><span class="s2">&quot;my_novel_method&quot;</span><span class="p">,</span> <span class="n">MyNovelDRMethod</span><span class="p">)</span>
+
+<span class="c1"># Now use like any built-in method</span>
+<span class="n">reducer</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;my_novel_method&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="12-pillar-2-evaluation">1.2 Pillar 2: Evaluation<a class="headerlink" href="#12-pillar-2-evaluation" title="Permanent link">&para;</a></h3>
+<p>Every DR result should have:
+- <strong>Quality metrics</strong> (trustworthiness, continuity, etc)
+- <strong>Reproducibility</strong> (seed, version, exact hyperparameters)
+- <strong>Provenance</strong> (what data, preprocessing, parameters)
+- <strong>Comparability</strong> (benchmark against standards)</p>
+<h3 id="13-pillar-3-composition">1.3 Pillar 3: Composition<a class="headerlink" href="#13-pillar-3-composition" title="Permanent link">&para;</a></h3>
+<p>Users should be able to easily:
+- Chain methods (PCA → UMAP → densMAP)
+- Blend outputs (weighted average of t-SNE + UMAP)
+- Compare alternatives (run multiple methods, compare results)
+- Optimize combinations (AutoML for DR)</p>
+<h3 id="14-pillar-4-documentation">1.4 Pillar 4: Documentation<a class="headerlink" href="#14-pillar-4-documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Theory</strong>: Mathematical foundations</li>
+<li><strong>Tutorials</strong>: Step-by-step guides</li>
+<li><strong>API Reference</strong>: Complete documentation</li>
+<li><strong>Examples</strong>: Real-world use cases</li>
+<li><strong>Benchmarks</strong>: Published comparisons</li>
+<li><strong>Papers</strong>: Links to academic literature</li>
+</ul>
+<h3 id="15-pillar-5-community">1.5 Pillar 5: Community<a class="headerlink" href="#15-pillar-5-community" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Plugin Registry</strong>: Share custom algorithms</li>
+<li><strong>Configuration Gallery</strong>: Community-shared pipelines</li>
+<li><strong>Benchmark Leaderboards</strong>: Compare on standard datasets</li>
+<li><strong>Discussion Forum</strong>: Q&amp;A and knowledge sharing</li>
+<li><strong>Contribution Guide</strong>: How to contribute</li>
+</ul>
+<hr />
+<h2 id="2-architecture-components">2. Architecture Components<a class="headerlink" href="#2-architecture-components" title="Permanent link">&para;</a></h2>
+<h3 id="21-configuration-management-system">2.1 Configuration Management System<a class="headerlink" href="#21-configuration-management-system" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DRConfiguration</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Versioned, reproducible DR configuration.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluation_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a step to the pipeline.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="n">algorithm</span><span class="p">,</span>
+            <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export to dictionary (JSON-serializable).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+            <span class="s2">&quot;pipeline&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">,</span>
+            <span class="s2">&quot;evaluation_metrics&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluation_metrics</span><span class="p">,</span>
+            <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export to YAML format.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save to file.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">())</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DRConfiguration&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load from file.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">],</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;1.0&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pipeline&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">evaluation_metrics</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;evaluation_metrics&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">return</span> <span class="n">config</span>
+
+<span class="c1"># Example configuration file (YAML)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">name: &quot;RNA-seq Analysis Pipeline&quot;</span>
+<span class="sd">description: &quot;Optimized for single-cell RNA-seq data&quot;</span>
+<span class="sd">version: &quot;1.0&quot;</span>
+<span class="sd">timestamp: &quot;2025-11-04T10:00:00&quot;</span>
+
+<span class="sd">metadata:</span>
+<span class="sd">  author: &quot;Jane Researcher&quot;</span>
+<span class="sd">  dataset: &quot;10X PBMC 68k&quot;</span>
+<span class="sd">  tissue: &quot;peripheral blood mononuclear cells&quot;</span>
+<span class="sd">  publication: &quot;doi:10.1038/ncomms14049&quot;</span>
+
+<span class="sd">pipeline:</span>
+<span class="sd">  - name: &quot;noise_reduction&quot;</span>
+<span class="sd">    algorithm: &quot;PCA&quot;</span>
+<span class="sd">    params:</span>
+<span class="sd">      n_components: 50</span>
+<span class="sd">      whiten: true</span>
+
+<span class="sd">  - name: &quot;structure_preservation&quot;</span>
+<span class="sd">    algorithm: &quot;UMAP&quot;</span>
+<span class="sd">    params:</span>
+<span class="sd">      n_neighbors: 15</span>
+<span class="sd">      min_dist: 0.1</span>
+<span class="sd">      metric: &quot;manhattan&quot;</span>
+
+<span class="sd">  - name: &quot;density_awareness&quot;</span>
+<span class="sd">    algorithm: &quot;densMAP&quot;</span>
+<span class="sd">    params:</span>
+<span class="sd">      dens_lambda: 0.5</span>
+
+<span class="sd">evaluation_metrics:</span>
+<span class="sd">  - &quot;trustworthiness&quot;</span>
+<span class="sd">  - &quot;continuity&quot;</span>
+<span class="sd">  - &quot;local_density_preservation&quot;</span>
+
+<span class="sd">results:</span>
+<span class="sd">  trustworthiness: 0.978</span>
+<span class="sd">  continuity: 0.954</span>
+<span class="sd">  local_density_preservation: 0.831</span>
+<span class="sd">  runtime_seconds: 42.3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="22-evaluation-framework">2.2 Evaluation Framework<a class="headerlink" href="#22-evaluation-framework" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DREvaluator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Comprehensive evaluation of DR results.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_original</span><span class="p">,</span> <span class="n">X_reduced</span><span class="p">,</span> <span class="n">y_true</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span> <span class="o">=</span> <span class="n">X_original</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span> <span class="o">=</span> <span class="n">X_reduced</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="o">=</span> <span class="n">y_true</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run all standard metrics.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;trustworthiness&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trustworthiness</span><span class="p">(),</span>
+            <span class="s2">&quot;continuity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">continuity</span><span class="p">(),</span>
+            <span class="s2">&quot;local_density&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_density_preservation</span><span class="p">(),</span>
+            <span class="s2">&quot;global_structure&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_structure_preservation</span><span class="p">(),</span>
+            <span class="s2">&quot;reconstruction_error&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstruction_error</span><span class="p">(),</span>
+            <span class="s2">&quot;co_ranking_matrix&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">co_ranking_matrix_score</span><span class="p">(),</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;unsupervised_clustering&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unsupervised_clustering_score</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">trustworthiness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Preserve k nearest neighbors from original space.</span>
+
+<span class="sd">        Higher is better (1.0 = perfect).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_distances</span>
+
+        <span class="n">D_orig</span> <span class="o">=</span> <span class="n">pairwise_distances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">)</span>
+        <span class="n">D_red</span> <span class="o">=</span> <span class="n">pairwise_distances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">)</span>
+
+        <span class="c1"># Get k nearest in original space</span>
+        <span class="n">nn_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D_orig</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># Skip self</span>
+
+        <span class="c1"># Get k nearest in reduced space</span>
+        <span class="n">nn_red</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D_red</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:]</span>
+
+        <span class="c1"># Count how many original neighbors are preserved</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">nn_orig</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">nn_red</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">T</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">continuity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Neighbors in reduced space should be neighbors in original space.</span>
+
+<span class="sd">        Higher is better (1.0 = perfect).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_distances</span>
+
+        <span class="n">D_orig</span> <span class="o">=</span> <span class="n">pairwise_distances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">)</span>
+        <span class="n">D_red</span> <span class="o">=</span> <span class="n">pairwise_distances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">)</span>
+
+        <span class="n">nn_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D_orig</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:]</span>
+        <span class="n">nn_red</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D_red</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:]</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">C</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">nn_orig</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">nn_red</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">C</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">local_density_preservation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Are local density patterns preserved?</span>
+
+<span class="sd">        Compute density in k-NN neighborhoods.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NearestNeighbors</span>
+
+        <span class="n">nbrs_orig</span> <span class="o">=</span> <span class="n">NearestNeighbors</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">)</span>
+        <span class="n">nbrs_red</span> <span class="o">=</span> <span class="n">NearestNeighbors</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">)</span>
+
+        <span class="c1"># Density = 1 / mean k-NN distance</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">distances_orig</span> <span class="o">=</span> <span class="n">nbrs_orig</span><span class="o">.</span><span class="n">kneighbors</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">distances_red</span> <span class="o">=</span> <span class="n">nbrs_red</span><span class="o">.</span><span class="n">kneighbors</span><span class="p">()</span>
+
+        <span class="n">density_orig</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">distances_orig</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">density_red</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">distances_red</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Correlation of density maps</span>
+        <span class="n">correlation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">density_orig</span><span class="p">,</span> <span class="n">density_red</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">correlation</span><span class="p">)</span>  <span class="c1"># Ensure non-negative</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_structure_preservation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Do global cluster relationships survive?</span>
+
+<span class="sd">        Compute distance between cluster centers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">unique_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_true</span><span class="p">)</span>
+        <span class="n">distances_orig</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">distances_red</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label_i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unique_labels</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">label_j</span> <span class="ow">in</span> <span class="n">unique_labels</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="c1"># Center of cluster i and j</span>
+                <span class="n">center_i_orig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="o">==</span> <span class="n">label_i</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">center_j_orig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="o">==</span> <span class="n">label_j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">center_i_red</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="o">==</span> <span class="n">label_i</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">center_j_red</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">y_true</span> <span class="o">==</span> <span class="n">label_j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">distances_orig</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">center_i_orig</span> <span class="o">-</span> <span class="n">center_j_orig</span><span class="p">))</span>
+                <span class="n">distances_red</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">center_i_red</span> <span class="o">-</span> <span class="n">center_j_red</span><span class="p">))</span>
+
+        <span class="c1"># Correlation of inter-cluster distances</span>
+        <span class="n">correlation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">distances_orig</span><span class="p">,</span> <span class="n">distances_red</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">correlation</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reconstruction_error</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        How well can we reconstruct original from reduced?</span>
+
+<span class="sd">        Lower is better.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Train simple regression from reduced to original</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearRegression</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">()</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">)</span>
+        <span class="n">X_reconstructed</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">)</span>
+
+        <span class="n">mse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">X_original</span> <span class="o">-</span> <span class="n">X_reconstructed</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">mse</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">co_ranking_matrix_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute co-ranking matrix score.</span>
+
+<span class="sd">        Measures both local and global structure preservation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_distances</span>
+
+        <span class="n">D_orig</span> <span class="o">=</span> <span class="n">pairwise_distances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="p">)</span>
+        <span class="n">D_red</span> <span class="o">=</span> <span class="n">pairwise_distances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_reduced</span><span class="p">)</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_original</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="c1"># Rank neighbors</span>
+            <span class="n">idx_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D_orig</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">1</span><span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Skip self</span>
+            <span class="n">idx_red</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D_red</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">1</span><span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">idx_o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idx_orig</span><span class="p">):</span>
+                <span class="n">rank_red</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">idx_red</span> <span class="o">==</span> <span class="n">idx_o</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rank_red</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Q</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">rank_red</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Normalize</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">/</span> <span class="n">n</span>
+
+        <span class="c1"># Score: diagonal dominance</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">/</span> <span class="n">k</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Visualize metric comparison.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Dimensionality Reduction Quality Metrics&#39;</span><span class="p">)</span>
+
+        <span class="n">metrics_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">metric_name</span><span class="p">,</span> <span class="n">metric_value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">metrics_list</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">([</span><span class="s1">&#39;Score&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">metric_value</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">metric_name</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">metric_value</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric_value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">fig</span>
+
+<span class="c1"># Usage</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">DREvaluator</span><span class="p">(</span><span class="n">X_original</span><span class="p">,</span> <span class="n">X_reduced</span><span class="p">,</span> <span class="n">y_true</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate_all</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+<span class="n">evaluator</span><span class="o">.</span><span class="n">plot_metrics</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="23-benchmark-suite">2.3 Benchmark Suite<a class="headerlink" href="#23-benchmark-suite" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DRBenchmarkSuite</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Standard benchmarks for comparing DR methods.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Standard datasets</span>
+    <span class="n">STANDARD_DATASETS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mnist&quot;</span><span class="p">:</span> <span class="s2">&quot;http://yann.lecun.com/exdb/mnist/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cifar10&quot;</span><span class="p">:</span> <span class="s2">&quot;https://www.cs.toronto.edu/~kriz/cifar.html&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fashion_mnist&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/zalandoresearch/fashion-mnist&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;iris&quot;</span><span class="p">:</span> <span class="s2">&quot;sklearn.datasets.load_iris&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_curve&quot;</span><span class="p">:</span> <span class="s2">&quot;sklearn.datasets.make_s_curve&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;swiss_roll&quot;</span><span class="p">:</span> <span class="s2">&quot;sklearn.datasets.make_swiss_roll&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">=</span> <span class="n">dataset_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_dataset</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load standard benchmark dataset.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">==</span> <span class="s2">&quot;iris&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_iris</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">load_iris</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">target</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">==</span> <span class="s2">&quot;s_curve&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_s_curve</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_s_curve</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span>
+
+        <span class="c1"># ... more datasets</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">benchmark_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Benchmark a single DR method.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">reducer</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">X_reduced</span> <span class="o">=</span> <span class="n">reducer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+        <span class="n">evaluator</span> <span class="o">=</span> <span class="n">DREvaluator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">X_reduced</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate_all</span><span class="p">()</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;runtime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">elapsed</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
+            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">benchmark_all_methods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methods_to_test</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Benchmark multiple methods.&quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">methods_to_test</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">benchmark_method</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]),</span>
+                <span class="o">**</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;metrics&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span>
+        <span class="p">])</span>
+
+<span class="c1"># Usage</span>
+<span class="n">benchmark</span> <span class="o">=</span> <span class="n">DRBenchmarkSuite</span><span class="p">(</span><span class="s2">&quot;iris&quot;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">benchmark</span><span class="o">.</span><span class="n">benchmark_all_methods</span><span class="p">([</span>
+    <span class="p">(</span><span class="n">UMAP</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;n_neighbors&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}),</span>
+    <span class="p">(</span><span class="n">TSNE</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;perplexity&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">}),</span>
+    <span class="p">(</span><span class="n">PaCMAP</span><span class="p">,</span> <span class="p">{}),</span>
+<span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="24-plugin-registry">2.4 Plugin Registry<a class="headerlink" href="#24-plugin-registry" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PluginRegistry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register and discover custom DR methods.&quot;&quot;&quot;</span>
+
+    <span class="n">_registry</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_metadata</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a custom DR algorithm.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">algorithm</span><span class="p">,</span> <span class="n">DimensionalityReducer</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">algorithm</span><span class="si">}</span><span class="s2"> must inherit from DimensionalityReducer&quot;</span><span class="p">)</span>
+
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">algorithm</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_metadata</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registered &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">algorithm</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get registered algorithm.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Algorithm &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found. Available: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_all</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all registered algorithms.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">algo</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_metadata</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">algo</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create instance of registered algorithm.&quot;&quot;&quot;</span>
+        <span class="n">algorithm</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">algorithm</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c1"># Example: Register custom algorithm</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyCustomDR</span><span class="p">(</span><span class="n">DimensionalityReducer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;My novel dimensionality reduction method.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="n">PluginRegistry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="s2">&quot;my_custom_dr&quot;</span><span class="p">,</span>
+    <span class="n">MyCustomDR</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="s2">&quot;Jane Researcher&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;paper&quot;</span><span class="p">:</span> <span class="s2">&quot;https://arxiv.org/abs/...&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;novel&quot;</span><span class="p">,</span> <span class="s2">&quot;experimental&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Now available like built-in methods</span>
+<span class="n">reducer</span> <span class="o">=</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;my_custom_dr&quot;</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="25-interactive-experimentation">2.5 Interactive Experimentation<a class="headerlink" href="#25-interactive-experimentation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">InteractiveDRExplorer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Jupyter widget for interactive DR experimentation.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_dashboard</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create interactive Jupyter dashboard.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">ipywidgets</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">widgets</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span>
+
+        <span class="c1"># Method selector</span>
+        <span class="n">method_dropdown</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">(</span>
+            <span class="n">options</span><span class="o">=</span><span class="n">PluginRegistry</span><span class="o">.</span><span class="n">list_all</span><span class="p">(),</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Method:&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Parameter sliders (dynamic based on method)</span>
+        <span class="c1"># ... (simplified)</span>
+
+        <span class="c1"># Run button</span>
+        <span class="n">run_button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Run Reduction&quot;</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_run_clicked</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+            <span class="n">method_name</span> <span class="o">=</span> <span class="n">method_dropdown</span><span class="o">.</span><span class="n">value</span>
+            <span class="c1"># Get parameters</span>
+            <span class="c1"># Run reduction</span>
+            <span class="c1"># Display results</span>
+
+        <span class="n">run_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">on_run_clicked</span><span class="p">)</span>
+
+        <span class="c1"># Output area</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Output</span><span class="p">()</span>
+
+        <span class="c1"># Layout</span>
+        <span class="n">vbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">VBox</span><span class="p">([</span>
+            <span class="n">method_dropdown</span><span class="p">,</span>
+            <span class="n">run_button</span><span class="p">,</span>
+            <span class="n">output</span>
+        <span class="p">])</span>
+
+        <span class="n">display</span><span class="p">(</span><span class="n">vbox</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vbox</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">compare_methods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methods</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare multiple methods side-by-side.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">),</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">method_name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">methods</span><span class="p">):</span>
+            <span class="n">reducer</span> <span class="o">=</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">method_name</span><span class="p">)</span>
+            <span class="n">X_reduced</span> <span class="o">=</span> <span class="n">reducer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_reduced</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X_reduced</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">method_name</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Component 1&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Component 2&quot;</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">fig</span>
+</code></pre></div>
+<hr />
+<h2 id="3-user-workflows">3. User Workflows<a class="headerlink" href="#3-user-workflows" title="Permanent link">&para;</a></h2>
+<h3 id="31-workflow-1-scientist-analyzing-data">3.1 Workflow 1: Scientist Analyzing Data<a class="headerlink" href="#31-workflow-1-scientist-analyzing-data" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="c1"># Load data</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">umap</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;my_data.csv&quot;</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;my_labels.csv&quot;</span><span class="p">)</span>
+
+<span class="c1"># Use existing configuration from research paper</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s2">&quot;https://github.com/umap-community/configs/rna-seq-standard.yaml&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run pipeline</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">to_pipeline</span><span class="p">()</span>
+<span class="n">X_reduced</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="c1"># Evaluate quality</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">DREvaluator</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X_reduced</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate_all</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+
+<span class="c1"># Visualize</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_reduced</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+<span class="c1"># Save configuration for reproducibility</span>
+<span class="n">config</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">metrics</span>
+<span class="n">config</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;my_analysis.yaml&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="32-workflow-2-researcher-developing-new-method">3.2 Workflow 2: Researcher Developing New Method<a class="headerlink" href="#32-workflow-2-researcher-developing-new-method" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="c1"># Implement custom DR method</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyNovelMethod</span><span class="p">(</span><span class="n">umap</span><span class="o">.</span><span class="n">DimensionalityReducer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="o">=</span> <span class="n">n_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Your implementation</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="c1"># Your implementation</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">))</span>
+
+<span class="c1"># Register in ecosystem</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;my_novel_method&quot;</span><span class="p">,</span> <span class="n">MyNovelMethod</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="s2">&quot;John Researcher&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;paper&quot;</span><span class="p">:</span> <span class="s2">&quot;https://arxiv.org/abs/...&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;novel&quot;</span><span class="p">,</span> <span class="s2">&quot;experimental&quot;</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="c1"># Benchmark against baselines</span>
+<span class="n">benchmark</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">DRBenchmarkSuite</span><span class="p">(</span><span class="s2">&quot;iris&quot;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">benchmark</span><span class="o">.</span><span class="n">benchmark_all_methods</span><span class="p">([</span>
+    <span class="p">(</span><span class="s2">&quot;umap&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;n_neighbors&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}),</span>
+    <span class="p">(</span><span class="s2">&quot;my_novel_method&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}),</span>
+<span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+<span class="c1"># Publish to registry</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">publish_to_registry</span><span class="p">(</span><span class="n">MyNovelMethod</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="33-workflow-3-community-sharing-configuration">3.3 Workflow 3: Community Sharing Configuration<a class="headerlink" href="#33-workflow-3-community-sharing-configuration" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="c1"># Create pipeline for specific use case</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">DRPipeline</span><span class="p">([</span>
+    <span class="p">(</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span> <span class="n">PreprocessStep</span><span class="p">()),</span>
+    <span class="p">(</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">100</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">&quot;umap&quot;</span><span class="p">,</span> <span class="n">UMAP</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;manhattan&#39;</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">&quot;densmap&quot;</span><span class="p">,</span> <span class="n">densMAP</span><span class="p">()),</span>
+<span class="p">])</span>
+
+<span class="c1"># Document it</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">DRConfiguration</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Single-cell RNA-seq Standard&quot;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optimized for 10X Genomics data&quot;</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Add metadata</span>
+<span class="n">config</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;tissue&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Peripheral Blood&quot;</span>
+<span class="n">config</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;technology&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;10X Genomics&quot;</span>
+<span class="n">config</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;publication&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;doi:10.1038/...&quot;</span>
+
+<span class="c1"># Test on standard benchmark</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluate_on_standard_dataset</span><span class="p">(</span><span class="s2">&quot;pbmc_68k&quot;</span><span class="p">,</span> <span class="n">pipeline</span><span class="p">)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">metrics</span>
+
+<span class="c1"># Share with community</span>
+<span class="n">config</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;pbmc_standard_pipeline.yaml&quot;</span><span class="p">)</span>
+<span class="n">umap</span><span class="o">.</span><span class="n">share_to_community</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="c1"># Now others can use:</span>
+<span class="c1"># config = umap.load_community_config(&quot;pbmc_standard_pipeline&quot;)</span>
+</code></pre></div>
+<hr />
+<h2 id="4-community-features">4. Community Features<a class="headerlink" href="#4-community-features" title="Permanent link">&para;</a></h2>
+<h3 id="41-configuration-gallery">4.1 Configuration Gallery<a class="headerlink" href="#41-configuration-gallery" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>umap-community/configurations/
+├── biology/
+│   ├── single_cell_rna_seq_standard.yaml
+│   ├── proteomics_standard.yaml
+│   └── metabolomics_standard.yaml
+├── nlp/
+│   ├── document_embedding.yaml
+│   ├── word_embedding.yaml
+│   └── sentence_embedding.yaml
+├── images/
+│   ├── cifar10_standard.yaml
+│   └── imagenet_standard.yaml
+└── networks/
+    └── social_network_analysis.yaml
+</code></pre></div>
+<h3 id="42-benchmark-leaderboard">4.2 Benchmark Leaderboard<a class="headerlink" href="#42-benchmark-leaderboard" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>UMAP Research Platform Leaderboard
+
+Dataset: Iris
+Metric: Trustworthiness
+
+Rank | Method | Author | Score | Timestamp
+-----|--------|--------|-------|----------
+1    | UMAP+densMAP | Jane Smith | 0.989 | 2025-11-04
+2    | PaCMAP | John Doe | 0.987 | 2025-11-03
+3    | PHATE | Alice Jones | 0.985 | 2025-11-02
+</code></pre></div>
+<h3 id="43-plugin-marketplace">4.3 Plugin Marketplace<a class="headerlink" href="#43-plugin-marketplace" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>Available Plugins:
+
+✓ TimeWarpEmbedding (temporal DR)
+  Author: Research Lab X
+  Rating: ⭐⭐⭐⭐⭐ (24 ratings)
+  Downloads: 1,234
+
+✓ HyperbolicUMAP (hyperbolic space)
+  Author: Graph Theory Group
+  Rating: ⭐⭐⭐⭐ (8 ratings)
+  Downloads: 312
+
+✓ QuantumDR (quantum algorithm)
+  Author: Quantum Computing Lab
+  Rating: ⭐⭐⭐⭐⭐ (6 ratings)
+  Downloads: 89
+</code></pre></div>
+<hr />
+<h2 id="5-technical-infrastructure">5. Technical Infrastructure<a class="headerlink" href="#5-technical-infrastructure" title="Permanent link">&para;</a></h2>
+<h3 id="51-cloud-benchmarking-service">5.1 Cloud Benchmarking Service<a class="headerlink" href="#51-cloud-benchmarking-service" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>umap-benchmarks.cloud:
+├── Run benchmarks on standard datasets
+├── Compare methods automatically
+├── Generate comparison reports
+├── Track performance over time
+└── Integrate with GitHub CI/CD
+</code></pre></div>
+<h3 id="52-documentation-hub">5.2 Documentation Hub<a class="headerlink" href="#52-documentation-hub" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Text Only</span><pre><span></span><code>docs.umap-research.io:
+├── Theory &amp; Algorithms
+├── API Reference
+├── Tutorials (Jupyter)
+├── Use Case Studies
+├── Paper Summaries
+├── Video Lectures
+└── Community FAQ
+</code></pre></div>
+<h3 id="53-version-control-for-configurations">5.3 Version Control for Configurations<a class="headerlink" href="#53-version-control-for-configurations" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Python</span><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ConfigurationVersion</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Track configuration history.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">DRConfiguration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">versions</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_config</span><span class="p">:</span> <span class="n">DRConfiguration</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Record new version.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">versions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_config</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">diff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">version_b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show differences between versions.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rollback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return to previous version.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</code></pre></div>
+<hr />
+<h2 id="6-success-metrics">6. Success Metrics<a class="headerlink" href="#6-success-metrics" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Community</strong>: 100+ shared configurations</li>
+<li><strong>Plugins</strong>: 50+ community-contributed algorithms</li>
+<li><strong>Benchmarks</strong>: Leaderboards on 20+ standard datasets</li>
+<li><strong>Publications</strong>: 100+ papers using UMAP ecosystem</li>
+<li><strong>Citations</strong>: Configuration papers getting cited</li>
+<li><strong>Downloads</strong>: 10M+/month for ecosystem packages</li>
+<li><strong>Engagement</strong>: Active community forum with expert responses</li>
+</ol>
+<hr />
+<h2 id="7-implementation-roadmap">7. Implementation Roadmap<a class="headerlink" href="#7-implementation-roadmap" title="Permanent link">&para;</a></h2>
+<h3 id="phase-2-months-4-6">Phase 2 (Months 4-6)<a class="headerlink" href="#phase-2-months-4-6" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Configuration management system</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Evaluation framework</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Benchmark suite</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Plugin registry</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Documentation hub</li>
+</ul>
+<h3 id="phase-3-months-7-12">Phase 3 (Months 7-12)<a class="headerlink" href="#phase-3-months-7-12" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Interactive dashboard</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Community configurations gallery</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Cloud benchmarking</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Configuration version control</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Leaderboards</li>
+</ul>
+<h3 id="phase-4-months-13">Phase 4 (Months 13+)<a class="headerlink" href="#phase-4-months-13" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> AutoML for DR</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Mobile/web visualization</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Integration with other ecosystems</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Commercial support</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Annual conference/workshop</li>
+</ul>
+<hr />
+<h2 id="8-references-inspiration">8. References &amp; Inspiration<a class="headerlink" href="#8-references-inspiration" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>PyTorch Ecosystem</strong>: Plugin architecture, community extensions</li>
+<li><strong>scikit-learn</strong>: API design, configuration management</li>
+<li><strong>TensorFlow Hub</strong>: Model sharing, configuration versioning</li>
+<li><strong>Hugging Face</strong>: Community sharing, configuration marketplace</li>
+<li><strong>Papers with Code</strong>: Benchmarking, leaderboards</li>
+<li><strong>MLflow</strong>: Configuration management, reproducibility</li>
+<li><strong>Weights &amp; Biases</strong>: Experiment tracking, benchmarking</li>
+</ul>
+<hr />
+<h2 id="9-governance">9. Governance<a class="headerlink" href="#9-governance" title="Permanent link">&para;</a></h2>
+<h3 id="91-umap-research-committee">9.1 UMAP Research Committee<a class="headerlink" href="#91-umap-research-committee" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Core team for architectural decisions</li>
+<li>Community representatives for feedback</li>
+<li>Expert advisors for specific domains</li>
+</ul>
+<h3 id="92-plugin-curation">9.2 Plugin Curation<a class="headerlink" href="#92-plugin-curation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Manual review for first 50 plugins</li>
+<li>Automated testing for standard compliance</li>
+<li>Community voting on best plugins</li>
+<li>Badges for quality/performance</li>
+</ul>
+<h3 id="93-configuration-standards">9.3 Configuration Standards<a class="headerlink" href="#93-configuration-standards" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Minimal set of required fields</li>
+<li>Semantic versioning for configs</li>
+<li>Metadata requirements</li>
+<li>Performance reporting standards</li>
+</ul>
+<hr />
+<h2 id="10-long-term-vision">10. Long-Term Vision<a class="headerlink" href="#10-long-term-vision" title="Permanent link">&para;</a></h2>
+<p><strong>UMAP as a Research Platform</strong> transforms the library from a tool into:</p>
+<ol>
+<li><strong>Central Hub</strong> for dimensionality reduction research</li>
+<li><strong>Community Marketplace</strong> for algorithms and configurations</li>
+<li><strong>Benchmarking Standard</strong> with published comparisons</li>
+<li><strong>Educational Resource</strong> with comprehensive materials</li>
+<li><strong>Production Tool</strong> with enterprise support</li>
+</ol>
+<p>This positions UMAP to remain at the forefront of dimensionality reduction research for the next decade while building a thriving community around the field.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2017-2024 Leland McInnes
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.expand", "navigation.top", "content.code.copy", "content.tooltips", "search.suggest", "search.highlight"], "llm": null, "search": "../assets/javascripts/workers/search.js", "site_name": "UMAP", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.llm.ask": "Ask AI", "search.llm.error": "Error getting AI response", "search.llm.placeholder": "Ask a question about the documentation...", "search.llm.thinking": "AI is thinking...", "search.mode.ai": "AI", "search.mode.search": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.js"></script>
+      
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid.js"></script>
+      
+    
+  </body>
+</html>
