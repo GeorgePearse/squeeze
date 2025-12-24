@@ -1,0 +1,4627 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Uniform Manifold Approximation and Projection">
+      
+      
+        <meta name="author" content="Leland McInnes">
+      
+      
+        <link rel="canonical" href="https://lmcinnes.github.io/umap/research/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../doc/logo_large.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Dimensionality Reduction Research & Implementation Guide - UMAP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dimensionality-reduction-research-implementation-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="UMAP" class="md-header__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UMAP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dimensionality Reduction Research &amp; Implementation Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="UMAP" class="md-nav__button md-logo" aria-label="UMAP" data-md-component="logo">
+      
+  <img src="../doc/logo_large.png" alt="logo">
+
+    </a>
+    UMAP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lmcinnes/umap" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lmcinnes/umap
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_umap_works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How UMAP Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithms
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Algorithms
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/umap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/tsne/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    t-SNE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/pca/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PCA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/isomap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isomap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/lle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/mds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MDS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/phate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHATE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/trimap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TriMap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/pacmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PaCMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../algorithms/numerical_stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Numerical Stability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supervised/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supervised Dimensionality Reduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clustering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clustering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inverse_transform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse Transform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sparse Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Topics
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced Topics
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../composing_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Composing Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_basic_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aligned UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aligned_umap_politics_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aligned UMAP - Politics Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedding_space/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding Space
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exploratory_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exploratory Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variants and Extensions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Variants and Extensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../densmap_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    densMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parametric_umap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parametric UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mutual_nn_umap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mutual Nearest Neighbors UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transform & Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transform_landmarked_pumap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landmarked Parametric UMAP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualization and Interactive
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualization and Interactive
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plotting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_viz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Visualization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outliers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Outlier Detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../document_embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document Embedding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_umap_of_text_embeddings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nomic Atlas - Text Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nomic_atlas_visualizing_mnist_training_dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nomic Atlas - MNIST Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance & Optimization
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Performance & Optimization
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interactive_metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Metrics Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../precomputed_k-nn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Precomputed k-NN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation_metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference & Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference & Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scientific_papers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scientific Papers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development_roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#foundational-papers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundational Papers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Foundational Papers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#principal-component-analysis-pca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principal Component Analysis (PCA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#early-factor-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Early Factor Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multidimensional-scaling-mds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multidimensional Scaling (MDS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classical-linear-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classical Linear Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Classical Linear Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kernel-pca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kernel PCA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#independent-component-analysis-ica" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Independent Component Analysis (ICA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#non-negative-matrix-factorization-nmf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-negative Matrix Factorization (NMF)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#random-projections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Random Projections
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spectral-graph-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spectral &amp; Graph Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spectral &amp; Graph Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spectral-clustering-and-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spectral Clustering and Embedding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diffusion-maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diffusion Maps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph-Based Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-geometry-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Geometry Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local Geometry Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#isomap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isomap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locally-linear-embedding-lle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locally Linear Embedding (LLE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hessian-eigenmaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hessian Eigenmaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-tangent-space-alignment-ltsa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Tangent Space Alignment (LTSA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#laplacian-eigenmaps-tutorial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Laplacian Eigenmaps Tutorial
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distance-preservation-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distance Preservation Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Distance Preservation Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classical-mds-connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classical MDS Connections
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#probability-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probability-Based Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Probability-Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#largevis-large-scale-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LargeVis (Large-scale Visualization)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stochastic-neighbor-embedding-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stochastic Neighbor Embedding (SNE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#t-distributed-stochastic-neighbor-embedding-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        t-Distributed Stochastic Neighbor Embedding (t-SNE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#barnes-hut-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Barnes-Hut t-SNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fit-sne-fast-interpolation-based-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FIt-SNE (Fast Interpolation-based t-SNE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multicore-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multicore t-SNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opentsne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        openTSNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rapids-cuml-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RAPIDS cuML t-SNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parametric-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parametric t-SNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#perplexity-free-parametric-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Perplexity-free Parametric t-SNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#t-sne-cuda-gpu-accelerated-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        t-SNE-CUDA (GPU-Accelerated t-SNE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neuraltsne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeuralTSNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contrastive-learning-sne-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contrastive Learning SNE Variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#topology-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topology-Based Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Topology-Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#umap-uniform-manifold-approximation-and-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMAP (Uniform Manifold Approximation and Projection)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#umap-ecosystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMAP Ecosystem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UMAP Ecosystem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parametric-umap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parametric UMAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#densmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        densMAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aligned-umap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aligned UMAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#umap-supervisedsemi-supervised" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMAP Supervised/Semi-supervised
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modern-manifold-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modern Manifold Learning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Modern Manifold Learning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phate-potential-of-heat-diffusion-for-affinity-based-transition-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PHATE (Potential of Heat-diffusion for Affinity-based Transition Embedding)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trimap-large-scale-dimensionality-reduction-using-triplets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TriMap (Large-scale Dimensionality Reduction Using Triplets)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pacmap-pairwise-controlled-manifold-approximation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PaCMAP (Pairwise Controlled Manifold Approximation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#localmap-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LocalMAP (2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dreams-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DREAMS (2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#featmap-2022" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FeatMAP (2022)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deep-learning-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deep Learning Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deep Learning Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#autoencoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Autoencoders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variational-autoencoders-vae" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variational Autoencoders (VAE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deep-autoencoder-review-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deep Autoencoder Review (2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neural-odes-for-dr-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neural ODEs for DR (2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#normalizing-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalizing Flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scviscanvi-single-cell-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scVI/scANVI (Single-cell Analysis)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contrastive-learning-for-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contrastive Learning for DR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Contrastive Learning for DR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simclr-a-simple-framework-for-contrastive-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SimCLR (A Simple Framework for Contrastive Learning)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simsiam-simple-siamese-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SimSiam (Simple Siamese Networks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ncldr-nearest-neighbor-contrastive-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCLDR (Nearest-Neighbor Contrastive Learning)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#siamese-prototypical-contrastive-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siamese Prototypical Contrastive Learning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-embedding-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph Embedding Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graph Embedding Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#forceatlas2-network-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ForceAtlas2 (Network Visualization)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gnn-based-graph-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GNN-Based Graph Embedding
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accelerated-implementations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accelerated Implementations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Accelerated Implementations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rapids-cuml-umap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RAPIDS cuML UMAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rapids-cuml-spectral-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RAPIDS cuML Spectral Embedding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panorama-ml-driven-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panorama (ML-Driven DR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dimensionality-reduction-for-ann-survey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dimensionality-Reduction for ANN Survey
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-series-dimensionality-reduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time-Series Dimensionality Reduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Time-Series Dimensionality Reduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sax_cp-sax-with-change-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAX_CP (SAX with Change Points)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signal2vec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signal2Vec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spartan-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SPARTAN (2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timecluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TimeCluster
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interpretable-explainable-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpretable &amp; Explainable DR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Interpretable &amp; Explainable DR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lxdr-local-explanation-of-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LXDR (Local eXplanation of DR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpretable-discriminative-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpretable Discriminative DR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#featmap-feature-importance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FeatMAP (Feature Importance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#information-theoretic-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Information-Theoretic DR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Information-Theoretic DR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#maximally-informative-dimensions-mid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maximally Informative Dimensions (MID)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#information-theoretic-dr-approaches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Information-Theoretic DR Approaches
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#probabilistic-perspective-on-umap-and-t-sne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probabilistic Perspective on UMAP and t-SNE
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-specific-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain-Specific Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain-Specific Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#word2vecdoc2vec-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Word2Vec/Doc2Vec (Text)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bertsentence-bert-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BERT/Sentence-BERT (Text)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#single-cell-rna-seq-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single-Cell RNA-seq Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topological-data-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topological Data Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#population-genetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population Genetics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metric-learning-for-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metric Learning for DR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metric Learning for DR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hierarchical-triplet-loss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchical Triplet Loss
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tripletpca-and-contrastivepca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TripletPCA and ContrastivePCA
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Topics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Topics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onlineincremental-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Online/Incremental DR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#privacy-preserving-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Privacy-Preserving DR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quantum-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quantum DR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-papers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Papers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Papers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dimensionality-reduction-and-wasserstein-stability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dimensionality Reduction and Wasserstein Stability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convergence-guarantees-for-network-time-series" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Convergence Guarantees for Network Time Series
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#riemannian-geometric-framework" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Riemannian Geometric Framework
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geometric-viewpoint-of-manifold-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geometric Viewpoint of Manifold Learning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison-benchmark-papers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison &amp; Benchmark Papers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comparison &amp; Benchmark Papers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comprehensive-evaluation-of-dr-methods-for-transcriptomic-data-2022" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comprehensive Evaluation of DR Methods for Transcriptomic Data (2022)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comprehensive-review-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comprehensive Review (2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dimensionality-reduction-a-comparative-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dimensionality Reduction: A Comparative Review
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cytof-data-comparative-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CyTOF Data Comparative Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-series-dr-survey" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time-Series DR Survey
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manifold-learning-comparative-study" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manifold Learning Comparative Study
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-assessment-of-dr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Assessment of DR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydrmetrics-toolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pyDRMetrics Toolkit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metric-selection-bias-reduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metric Selection Bias Reduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#critical-perspective-why-you-should-not-rely-on-t-sne-umap-or-trimap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Critical Perspective: Why You Should Not Rely on t-SNE, UMAP or TriMAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Resources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Resources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Libraries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datasets-for-benchmarking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datasets for Benchmarking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-implementation-plans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future Implementation Plans
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Future Implementation Plans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-core-methods-months-1-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Core Methods (Months 1-3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-expand-ecosystem-months-4-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Expand Ecosystem (Months 4-6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-advanced-features-months-7-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Advanced Features (Months 7-12)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-enterprise-features-months-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Enterprise Features (Months 13+)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#foundational-texts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundational Texts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#survey-papers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Survey Papers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-repositories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Repositories
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dimensionality-reduction-research-implementation-guide">Dimensionality Reduction Research &amp; Implementation Guide<a class="headerlink" href="#dimensionality-reduction-research-implementation-guide" title="Permanent link">&para;</a></h1>
+<p>This page compiles a comprehensive collection of research papers on dimensionality reduction techniques. Our goal is to implement most of these methods in the UMAP ecosystem, providing a unified interface for dimensionality reduction across all major techniques.</p>
+<p><strong>Last Updated:</strong> November 2025
+<strong>Total Papers Cataloged:</strong> 150+
+<strong>Implementation Status:</strong> In Progress</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#foundational-papers">Foundational Papers (1901-2006)</a></li>
+<li><a href="#classical-linear-methods">Classical Linear Methods</a></li>
+<li><a href="#spectral--graph-methods">Spectral &amp; Graph Methods</a></li>
+<li><a href="#local-geometry-methods">Local Geometry Methods</a></li>
+<li><a href="#distance-preservation-methods">Distance Preservation Methods</a></li>
+<li><a href="#probability-based-methods">Probability-Based Methods</a></li>
+<li><a href="#topology-based-methods">Topology-Based Methods</a></li>
+<li><a href="#umap-ecosystem">UMAP Ecosystem</a></li>
+<li><a href="#modern-manifold-learning">Modern Manifold Learning</a></li>
+<li><a href="#deep-learning-methods">Deep Learning Methods</a></li>
+<li><a href="#contrastive-learning-for-dr">Contrastive Learning</a></li>
+<li><a href="#graph-embedding-methods">Graph Embedding Methods</a></li>
+<li><a href="#accelerated-implementations">Accelerated Implementations</a></li>
+<li><a href="#time-series-dimensionality-reduction">Time-Series DR</a></li>
+<li><a href="#interpretable--explainable-dr">Interpretable &amp; Explainable DR</a></li>
+<li><a href="#information-theoretic-dr">Information-Theoretic Methods</a></li>
+<li><a href="#domain-specific-methods">Domain-Specific Methods</a></li>
+<li><a href="#comparison--benchmark-papers">Comparison &amp; Benchmarks</a></li>
+<li><a href="#theoretical-papers">Theoretical Papers</a></li>
+<li><a href="#implementation-resources">Implementation Resources</a></li>
+</ol>
+<hr />
+<h2 id="foundational-papers">Foundational Papers<a class="headerlink" href="#foundational-papers" title="Permanent link">&para;</a></h2>
+<h3 id="principal-component-analysis-pca">Principal Component Analysis (PCA)<a class="headerlink" href="#principal-component-analysis-pca" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> On lines and planes of closest fit to systems of points in space
+<strong>Authors:</strong> Karl Pearson
+<strong>Year:</strong> 1901
+<strong>Publication:</strong> Philosophical Magazine, Series 6, Vol. 2, No. 11, pp. 559-572
+<strong>Description:</strong> Pearson's foundational work on finding lines and planes that best fit a set of points in p-dimensional space.
+<strong>Implementation:</strong> Scikit-learn, NumPy</p>
+<hr />
+<p><strong>Title:</strong> Analysis of a Complex of Statistical Variables Into Principal Components
+<strong>Authors:</strong> Harold Hotelling
+<strong>Year:</strong> 1933
+<strong>Publication:</strong> Journal of Educational Psychology, Vol. 24
+<strong>Description:</strong> Hotelling's algebraic approach to PCA, introducing the concept of fundamental independent variables.</p>
+<hr />
+<h3 id="early-factor-analysis">Early Factor Analysis<a class="headerlink" href="#early-factor-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> General Intelligence, Objectively Determined and Measured
+<strong>Authors:</strong> Charles Spearman
+<strong>Year:</strong> 1904
+<strong>Description:</strong> Early application of factor analysis to model human intelligence (the g-factor).</p>
+<hr />
+<h3 id="multidimensional-scaling-mds">Multidimensional Scaling (MDS)<a class="headerlink" href="#multidimensional-scaling-mds" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Multidimensional scaling: I. Theory and method
+<strong>Authors:</strong> Warren S. Torgerson
+<strong>Year:</strong> 1952
+<strong>Publication:</strong> Psychometrika, Vol. 17, pp. 401-419
+<strong>Description:</strong> Foundational paper introducing classical MDS procedures.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.manifold.MDS</code>)</p>
+<hr />
+<p><strong>Title:</strong> Nonmetric multidimensional scaling: A numerical method
+<strong>Authors:</strong> Joseph B. Kruskal
+<strong>Year:</strong> 1964
+<strong>Publication:</strong> Psychometrika
+<strong>Description:</strong> Introduced nonmetric MDS approach using monotonic relationships.</p>
+<hr />
+<h2 id="classical-linear-methods">Classical Linear Methods<a class="headerlink" href="#classical-linear-methods" title="Permanent link">&para;</a></h2>
+<h3 id="kernel-pca">Kernel PCA<a class="headerlink" href="#kernel-pca" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Nonlinear Component Analysis as a Kernel Eigenvalue Problem
+<strong>Authors:</strong> Bernhard Schölkopf, Alexander Smola, Klaus-Robert Müller
+<strong>Year:</strong> 1997
+<strong>Description:</strong> Extends PCA to nonlinear data using the kernel trick.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.decomposition.KernelPCA</code>)</p>
+<hr />
+<h3 id="independent-component-analysis-ica">Independent Component Analysis (ICA)<a class="headerlink" href="#independent-component-analysis-ica" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> FastICA Algorithm
+<strong>Authors:</strong> Aapo Hyvärinen, Erkki Oja
+<strong>Description:</strong> Separates multivariate signals into independent components.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.decomposition.FastICA</code>)</p>
+<hr />
+<h3 id="non-negative-matrix-factorization-nmf">Non-negative Matrix Factorization (NMF)<a class="headerlink" href="#non-negative-matrix-factorization-nmf" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Learning the parts of objects by non-negative matrix factorization
+<strong>Authors:</strong> Daniel D. Lee, H. Sebastian Seung
+<strong>Year:</strong> 1999
+<strong>Publication:</strong> Nature, Vol. 401, pp. 788-791
+<strong>Description:</strong> Approximates nonnegative data matrix by product of two lower-rank nonnegative matrices.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.decomposition.NMF</code>)</p>
+<hr />
+<h3 id="random-projections">Random Projections<a class="headerlink" href="#random-projections" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Johnson-Lindenstrauss Lemma and Applications
+<strong>Authors:</strong> William B. Johnson, Joram Lindenstrauss
+<strong>Year:</strong> 1984
+<strong>Description:</strong> Foundation for random projection-based dimensionality reduction.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.random_projection</code>)</p>
+<hr />
+<h2 id="spectral-graph-methods">Spectral &amp; Graph Methods<a class="headerlink" href="#spectral-graph-methods" title="Permanent link">&para;</a></h2>
+<h3 id="spectral-clustering-and-embedding">Spectral Clustering and Embedding<a class="headerlink" href="#spectral-clustering-and-embedding" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Laplacian Eigenmaps and Spectral Techniques for Embedding and Clustering
+<strong>Authors:</strong> Mikhail Belkin, Partha Niyogi
+<strong>Year:</strong> 2001
+<strong>Publication:</strong> NIPS 2001
+<strong>Description:</strong> Geometrically motivated algorithm using the graph Laplacian.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.manifold.SpectralEmbedding</code>)</p>
+<hr />
+<h3 id="diffusion-maps">Diffusion Maps<a class="headerlink" href="#diffusion-maps" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Diffusion maps
+<strong>Authors:</strong> Ronald R. Coifman, Stéphane Lafon
+<strong>Year:</strong> 2006
+<strong>Publication:</strong> Applied and Computational Harmonic Analysis
+<strong>DOI:</strong> 10.1016/j.acha.2006.04.006
+<strong>Description:</strong> Uses eigenfunctions of Markov matrices to construct diffusion maps.</p>
+<hr />
+<h3 id="graph-based-methods">Graph-Based Methods<a class="headerlink" href="#graph-based-methods" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> DeepWalk: Online Learning of Social Representations
+<strong>Authors:</strong> Bryan Perozzi, Rami Al-Rfou, Steven Skiena
+<strong>Year:</strong> 2014
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1403.6652">https://arxiv.org/abs/1403.6652</a>
+<strong>Description:</strong> Uses random walks on graphs with Word2Vec to learn node representations.</p>
+<hr />
+<p><strong>Title:</strong> node2vec: Scalable Feature Learning for Networks
+<strong>Authors:</strong> Aditya Grover, Jure Leskovec
+<strong>Year:</strong> 2016
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1607.00653">https://arxiv.org/abs/1607.00653</a>
+<strong>Description:</strong> Extends DeepWalk with biased random walks.
+<strong>Implementation:</strong> <a href="https://github.com/aditya-grover/node2vec">https://github.com/aditya-grover/node2vec</a></p>
+<hr />
+<p><strong>Title:</strong> struc2vec: Learning Node Representations from Structural Identity
+<strong>Authors:</strong> Leonardo F. R. Ribeiro, Pedro H. P. Saverese, Daniel R. Figueiredo
+<strong>Year:</strong> 2017
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1704.03165">https://arxiv.org/abs/1704.03165</a>
+<strong>Description:</strong> Models structural identity via multi-layer weighted graphs.</p>
+<hr />
+<p><strong>Title:</strong> GraphWave: Learning to Generate Networks from Continuous-Time Diffusion
+<strong>Authors:</strong> Claire Donnat, Marinka Zitnik, David Hallac, Jure Leskovec
+<strong>Year:</strong> 2018
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1810.02771">https://arxiv.org/abs/1810.02771</a>
+<strong>Description:</strong> Uses heat wavelet diffusion patterns for node embedding.</p>
+<hr />
+<p><strong>Title:</strong> Inductive Representation Learning on Large Graphs (GraphSAGE)
+<strong>Authors:</strong> William L. Hamilton, Rex Ying, Jure Leskovec
+<strong>Year:</strong> 2017
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1706.02216">https://arxiv.org/abs/1706.02216</a>
+<strong>Description:</strong> Inductive framework for generating node embeddings.
+<strong>Implementation:</strong> PyTorch Geometric</p>
+<hr />
+<h2 id="local-geometry-methods">Local Geometry Methods<a class="headerlink" href="#local-geometry-methods" title="Permanent link">&para;</a></h2>
+<h3 id="isomap">Isomap<a class="headerlink" href="#isomap" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> A Global Geometric Framework for Nonlinear Dimensionality Reduction
+<strong>Authors:</strong> Joshua B. Tenenbaum, Vin de Silva, John C. Langford
+<strong>Year:</strong> 2000
+<strong>Publication:</strong> Science, Vol. 290, No. 5500, pp. 2319-2323
+<strong>DOI:</strong> 10.1126/science.290.5500.2319
+<strong>Description:</strong> Uses geodesic distances in a neighborhood graph to extend MDS.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.manifold.Isomap</code>)</p>
+<hr />
+<h3 id="locally-linear-embedding-lle">Locally Linear Embedding (LLE)<a class="headerlink" href="#locally-linear-embedding-lle" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Nonlinear Dimensionality Reduction by Locally Linear Embedding
+<strong>Authors:</strong> Sam T. Roweis, Lawrence K. Saul
+<strong>Year:</strong> 2000
+<strong>Publication:</strong> Science, Vol. 290, No. 5500, pp. 2323-2326
+<strong>DOI:</strong> 10.1126/science.290.5500.2323
+<strong>Description:</strong> Computes neighborhood-preserving embeddings using local linear reconstructions.
+<strong>Implementation:</strong> Scikit-learn (<code>sklearn.manifold.LocallyLinearEmbedding</code>)</p>
+<hr />
+<p><strong>Title:</strong> Variants of LLE: Tutorial and Survey
+<strong>Authors:</strong> Benyamin Ghojogh, et al.
+<strong>Year:</strong> 2020
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2011.10925">https://arxiv.org/abs/2011.10925</a>
+<strong>Description:</strong> Comprehensive tutorial covering kernel LLE, inverse LLE, incremental LLE, landmark LLE, supervised LLE, and robust variants.</p>
+<hr />
+<h3 id="hessian-eigenmaps">Hessian Eigenmaps<a class="headerlink" href="#hessian-eigenmaps" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Hessian eigenmaps: New locally linear embedding techniques for high-dimensional data
+<strong>Authors:</strong> David L. Donoho, Carrie Grimes
+<strong>Year:</strong> 2003
+<strong>Publication:</strong> PNAS USA, Vol. 100, pp. 5591-5596
+<strong>Description:</strong> Modification of LLE using Hessian-based quadratic form.</p>
+<hr />
+<h3 id="local-tangent-space-alignment-ltsa">Local Tangent Space Alignment (LTSA)<a class="headerlink" href="#local-tangent-space-alignment-ltsa" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Principal Manifolds and Nonlinear Dimension Reduction via Local Tangent Space Alignment
+<strong>Authors:</strong> Zhenyue Zhang, Hongyuan Zha
+<strong>Year:</strong> 2004
+<strong>Publication:</strong> SIAM Journal on Scientific Computing, Vol. 26, No. 1, pp. 313-338
+<strong>ArXiv:</strong> cs/0212008
+<strong>Description:</strong> Preserves local geometry by aligning local tangent spaces.</p>
+<hr />
+<h3 id="laplacian-eigenmaps-tutorial">Laplacian Eigenmaps Tutorial<a class="headerlink" href="#laplacian-eigenmaps-tutorial" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> A Tutorial on Spectral Clustering
+<strong>Authors:</strong> Ulrike von Luxburg
+<strong>Year:</strong> 2007
+<strong>Publication:</strong> Statistics and Computing, Vol. 17, No. 4
+<strong>Description:</strong> Comprehensive tutorial on spectral methods including Laplacian eigenmaps.</p>
+<hr />
+<p><strong>Title:</strong> Laplacian-Based Dimensionality Reduction Methods: A Tutorial
+<strong>Authors:</strong> Benyamin Ghojogh, et al.
+<strong>Year:</strong> 2021
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2106.02154">https://arxiv.org/abs/2106.02154</a>
+<strong>Description:</strong> Tutorial covering spectral clustering, Laplacian eigenmap, LPP, graph embedding, diffusion maps.</p>
+<hr />
+<h2 id="distance-preservation-methods">Distance Preservation Methods<a class="headerlink" href="#distance-preservation-methods" title="Permanent link">&para;</a></h2>
+<h3 id="classical-mds-connections">Classical MDS Connections<a class="headerlink" href="#classical-mds-connections" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Connection between Kernel PCA and MDS
+<strong>Year:</strong> 2015+
+<strong>Link:</strong> <a href="https://link.springer.com/article/10.1023/A:1012485807823">https://link.springer.com/article/10.1023/A:1012485807823</a>
+<strong>Description:</strong> Establishes theoretical connections between kernel PCA and metric MDS.</p>
+<hr />
+<h2 id="probability-based-methods">Probability-Based Methods<a class="headerlink" href="#probability-based-methods" title="Permanent link">&para;</a></h2>
+<h3 id="largevis-large-scale-visualization">LargeVis (Large-scale Visualization)<a class="headerlink" href="#largevis-large-scale-visualization" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Visualizing Large-scale and High-dimensional Data
+<strong>Authors:</strong> Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei
+<strong>Year:</strong> 2016
+<strong>ArXiv:</strong> 1602.00370
+<strong>Publication:</strong> Proceedings of the 25<sup>th</sup> International Conference on World Wide Web (WWW 2016)
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1602.00370">https://arxiv.org/abs/1602.00370</a>
+<strong>Description:</strong> Constructs accurately approximated k-nearest neighbor graph and optimizes layout in low-dimensional space using linear time complexity. Scales to millions of high-dimensional data points with significantly reduced computational cost compared to t-SNE.
+<strong>Implementation:</strong> Official C++ implementation available on GitHub</p>
+<hr />
+<h3 id="stochastic-neighbor-embedding-sne">Stochastic Neighbor Embedding (SNE)<a class="headerlink" href="#stochastic-neighbor-embedding-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Stochastic Neighbor Embedding
+<strong>Authors:</strong> Geoffrey Hinton, Sam T. Roweis
+<strong>Year:</strong> 2002
+<strong>Publication:</strong> NIPS 2002
+<strong>Description:</strong> Probabilistic approach using Gaussian distributions and KL divergences.</p>
+<hr />
+<h3 id="t-distributed-stochastic-neighbor-embedding-t-sne">t-Distributed Stochastic Neighbor Embedding (t-SNE)<a class="headerlink" href="#t-distributed-stochastic-neighbor-embedding-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Visualizing Data using t-SNE
+<strong>Authors:</strong> Laurens van der Maaten, Geoffrey Hinton
+<strong>Year:</strong> 2008
+<strong>Publication:</strong> Journal of Machine Learning Research, Vol. 9, pp. 2579-2605
+<strong>Link:</strong> <a href="https://www.jmlr.org/papers/v9/vandermaaten08a.html">https://www.jmlr.org/papers/v9/vandermaaten08a.html</a>
+<strong>Description:</strong> t-SNE uses t-distribution in low-dimensional space, much easier to optimize than SNE.
+<strong>Implementation:</strong> Scikit-learn, RAPIDS cuML</p>
+<hr />
+<h3 id="barnes-hut-t-sne">Barnes-Hut t-SNE<a class="headerlink" href="#barnes-hut-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Accelerating t-SNE using Tree-Based Algorithms
+<strong>Authors:</strong> Laurens van der Maaten
+<strong>Year:</strong> 2014
+<strong>Publication:</strong> Journal of Machine Learning Research, Vol. 15, pp. 3221-3245
+<strong>ArXiv:</strong> 1301.3342
+<strong>Description:</strong> O(N log N) implementation using Barnes-Hut algorithm for force approximation.
+<strong>Implementation:</strong> OpenTSNE (recommended)</p>
+<hr />
+<h3 id="fit-sne-fast-interpolation-based-t-sne">FIt-SNE (Fast Interpolation-based t-SNE)<a class="headerlink" href="#fit-sne-fast-interpolation-based-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Fast interpolation-based t-SNE for improved visualization of single-cell RNA-seq data
+<strong>Authors:</strong> George C. Linderman, Manas Rachh, Jeremy G. Hoskins, Stefan Steinerberger, Yuval Kluger
+<strong>Year:</strong> 2019
+<strong>Publication:</strong> Nature Methods, Vol. 16, pp. 243-245
+<strong>Link:</strong> <a href="https://github.com/KlugerLab/FIt-SNE">https://github.com/KlugerLab/FIt-SNE</a>
+<strong>Description:</strong> FFT-based interpolation achieving O(N) scaling. Dramatically accelerates t-SNE for large datasets.</p>
+<hr />
+<h3 id="multicore-t-sne">Multicore t-SNE<a class="headerlink" href="#multicore-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Multicore t-SNE
+<strong>Authors:</strong> Dmitry Ulyanov
+<strong>Year:</strong> 2016-2020
+<strong>Link:</strong> <a href="https://github.com/DmitryUlyanov/Multicore-TSNE">https://github.com/DmitryUlyanov/Multicore-TSNE</a>
+<strong>Description:</strong> Parallel t-SNE with n_jobs parameter for multi-threaded processing.</p>
+<hr />
+<h3 id="opentsne">openTSNE<a class="headerlink" href="#opentsne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> openTSNE: A Modular Python Library for t-SNE
+<strong>Authors:</strong> Pavlin G. Poličar, Martin Stražar, Blaž Zupan
+<strong>Year:</strong> 2019+
+<strong>Link:</strong> <a href="https://opentsne.readthedocs.io/">https://opentsne.readthedocs.io/</a>
+<strong>Description:</strong> Modular implementation with latest improvements and extensible architecture.</p>
+<hr />
+<h3 id="rapids-cuml-t-sne">RAPIDS cuML t-SNE<a class="headerlink" href="#rapids-cuml-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> t-SNE with GPUs
+<strong>Authors:</strong> NVIDIA RAPIDS Team
+<strong>Year:</strong> 2019-2024
+<strong>Link:</strong> <a href="https://medium.com/rapids-ai/tsne-with-gpus-hours-to-seconds-9d9c17c941db">https://medium.com/rapids-ai/tsne-with-gpus-hours-to-seconds-9d9c17c941db</a>
+<strong>Description:</strong> GPU-accelerated t-SNE running up to 2,000x faster than scikit-learn.</p>
+<hr />
+<h3 id="parametric-t-sne">Parametric t-SNE<a class="headerlink" href="#parametric-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Learning a Parametric Embedding by Preserving Local Structure
+<strong>Authors:</strong> Laurens van der Maaten
+<strong>Year:</strong> 2009
+<strong>Publication:</strong> Proceedings of the Twelfth International Conference on Artificial Intelligence &amp; Statistics (AISTATS)
+<strong>Link:</strong> <a href="https://lvdmaaten.github.io/software/">https://lvdmaaten.github.io/software/</a>
+<strong>Description:</strong> Extends t-SNE with neural network-based parametric mapping. Enables generalization to new data points without recalculation. Uses multilayer neural network trained with t-SNE objective function.
+<strong>Implementation:</strong> Official Matlab implementation, various Python implementations available</p>
+<hr />
+<h3 id="perplexity-free-parametric-t-sne">Perplexity-free Parametric t-SNE<a class="headerlink" href="#perplexity-free-parametric-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Perplexity-free Parametric t-SNE
+<strong>Year:</strong> 2020
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1906.00297">https://arxiv.org/abs/1906.00297</a>
+<strong>Description:</strong> Improves parametric t-SNE by removing dependence on perplexity hyperparameter. Multiscale-aware variant for better global structure preservation.
+<strong>Implementation:</strong> Keras/Scikit-learn compatible (FrancescoCrecchi/Multiscale-Parametric-t-SNE)</p>
+<hr />
+<h3 id="t-sne-cuda-gpu-accelerated-t-sne">t-SNE-CUDA (GPU-Accelerated t-SNE)<a class="headerlink" href="#t-sne-cuda-gpu-accelerated-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> t-SNE-CUDA: GPU-Accelerated t-SNE and its Applications to Modern Data
+<strong>Authors:</strong> CannyLab
+<strong>Year:</strong> 2018
+<strong>ArXiv:</strong> 1807.11824
+<strong>Link:</strong> <a href="https://github.com/CannyLab/tsne-cuda">https://github.com/CannyLab/tsne-cuda</a>
+<strong>Description:</strong> GPU-accelerated t-SNE implementation using CUDA. Achieves 50-700x speedups on CIFAR-10 and MNIST. Up to 1200x faster than scikit-learn, 50x faster than Multicore-TSNE.
+<strong>Implementation:</strong> CUDA C++ with Python bindings</p>
+<hr />
+<h3 id="neuraltsne">NeuralTSNE<a class="headerlink" href="#neuraltsne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> NeuralTSNE: A Python Package for the Dimensionality Reduction of Molecular Dynamics Data Using Neural Networks
+<strong>Year:</strong> 2025
+<strong>ArXiv:</strong> 2505.16476
+<strong>Description:</strong> Modern parametric t-SNE implementation for molecular dynamics and scientific computing. Neural network-based parametric mapping for fast inference.
+<strong>Implementation:</strong> Python package</p>
+<hr />
+<h3 id="contrastive-learning-sne-variants">Contrastive Learning SNE Variants<a class="headerlink" href="#contrastive-learning-sne-variants" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Supervised SNE with Contrastive Learning
+<strong>Year:</strong> 2023
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2309.08077">https://arxiv.org/abs/2309.08077</a>
+<strong>Description:</strong> Incorporates contrastive learning framework into SNE for supervised DR.</p>
+<hr />
+<h2 id="topology-based-methods">Topology-Based Methods<a class="headerlink" href="#topology-based-methods" title="Permanent link">&para;</a></h2>
+<h3 id="umap-uniform-manifold-approximation-and-projection">UMAP (Uniform Manifold Approximation and Projection)<a class="headerlink" href="#umap-uniform-manifold-approximation-and-projection" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction
+<strong>Authors:</strong> Leland McInnes, John Healy, James Melville
+<strong>Year:</strong> 2018
+<strong>Publication:</strong> ArXiv preprint
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1802.03426">https://arxiv.org/abs/1802.03426</a>
+<strong>JOSS:</strong> <a href="https://joss.theoj.org/papers/10.21105/joss.00861">https://joss.theoj.org/papers/10.21105/joss.00861</a>
+<strong>Description:</strong> Constructed from Riemannian geometry and algebraic topology. Competitive with t-SNE but preserves more global structure.
+<strong>Implementation:</strong> umap-learn (Python), RAPIDS cuML (GPU)</p>
+<hr />
+<p><strong>Title:</strong> Nature Review Methods Primers: Uniform manifold approximation and projection
+<strong>Authors:</strong> John Healy, Leland McInnes
+<strong>Year:</strong> 2024
+<strong>Publication:</strong> Nature Reviews Methods Primers, Vol. 4, No. 82
+<strong>Link:</strong> <a href="https://doi.org/10.1038/s43586-024-00363-x">https://doi.org/10.1038/s43586-024-00363-x</a>
+<strong>Description:</strong> Comprehensive introduction and tutorial for UMAP.</p>
+<hr />
+<h2 id="umap-ecosystem">UMAP Ecosystem<a class="headerlink" href="#umap-ecosystem" title="Permanent link">&para;</a></h2>
+<h3 id="parametric-umap">Parametric UMAP<a class="headerlink" href="#parametric-umap" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Parametric UMAP Embeddings for Representation and Semisupervised Learning
+<strong>Authors:</strong> Tim Sainburg, Leland McInnes, Timothy Q. Gentner
+<strong>Year:</strong> 2021
+<strong>Publication:</strong> Neural Computation, Vol. 33, No. 11, pp. 2881-2907
+<strong>ArXiv:</strong> 2009.12981
+<strong>Link:</strong> <a href="https://direct.mit.edu/neco/article/33/11/2881/107068">https://direct.mit.edu/neco/article/33/11/2881/107068</a>
+<strong>Description:</strong> Extends UMAP with parametric optimization over neural network weights. Enables fast inference on new data.
+<strong>Implementation:</strong> umap-learn with PyTorch backend</p>
+<hr />
+<h3 id="densmap">densMAP<a class="headerlink" href="#densmap" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Density-Preserving Data Visualization Unveils Dynamic Patterns of Single-Cell Transcriptomic Variability
+<strong>Authors:</strong> Ashwin Narayan, Bonnie Berger, Hyunghoon Cho
+<strong>Year:</strong> 2021
+<strong>Publication:</strong> Nature Biotechnology, Vol. 39, pp. 765-774
+<strong>DOI:</strong> 10.1038/s41587-020-00801-7
+<strong>bioRxiv:</strong> 10.1101/2020.05.12.077776
+<strong>Description:</strong> Augments UMAP to preserve local density information.
+<strong>Implementation:</strong> umap-learn with densMAP option</p>
+<hr />
+<h3 id="aligned-umap">Aligned UMAP<a class="headerlink" href="#aligned-umap" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Aligned UMAP for Longitudinal Data
+<strong>Authors:</strong> UMAP Contributors
+<strong>Year:</strong> 2023
+<strong>Link:</strong> <a href="https://umap-learn.readthedocs.io/en/latest/aligned_umap_basic_usage.html">https://umap-learn.readthedocs.io/en/latest/aligned_umap_basic_usage.html</a>
+<strong>Description:</strong> Extension for visualizing longitudinal/time-series data by aligning multiple embeddings.
+<strong>Implementation:</strong> umap-learn</p>
+<hr />
+<h3 id="umap-supervisedsemi-supervised">UMAP Supervised/Semi-supervised<a class="headerlink" href="#umap-supervisedsemi-supervised" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> UMAP: Uniform Manifold Approximation and Projection (with supervised features)
+<strong>Authors:</strong> Leland McInnes
+<strong>Year:</strong> 2018+
+<strong>Description:</strong> UMAP supports supervised and semi-supervised modes using target vectors.
+<strong>Implementation:</strong> umap-learn with <code>y</code> parameter</p>
+<hr />
+<h2 id="modern-manifold-learning">Modern Manifold Learning<a class="headerlink" href="#modern-manifold-learning" title="Permanent link">&para;</a></h2>
+<h3 id="phate-potential-of-heat-diffusion-for-affinity-based-transition-embedding">PHATE (Potential of Heat-diffusion for Affinity-based Transition Embedding)<a class="headerlink" href="#phate-potential-of-heat-diffusion-for-affinity-based-transition-embedding" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Visualizing structure and transitions in high-dimensional biological data
+<strong>Authors:</strong> Kevin R. Moon, David van Dijk, et al.
+<strong>Year:</strong> 2019
+<strong>Publication:</strong> Nature Biotechnology, Vol. 37, pp. 1482-1492
+<strong>bioRxiv:</strong> 10.1101/120378
+<strong>Link:</strong> <a href="https://github.com/KrishnaswamyLab/PHATE">https://github.com/KrishnaswamyLab/PHATE</a>
+<strong>Description:</strong> Captures local and global structure using information-geometric distance. Naturally discovers branching structures.
+<strong>Implementation:</strong> phate (Python)</p>
+<hr />
+<h3 id="trimap-large-scale-dimensionality-reduction-using-triplets">TriMap (Large-scale Dimensionality Reduction Using Triplets)<a class="headerlink" href="#trimap-large-scale-dimensionality-reduction-using-triplets" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> TriMap: Large-scale Dimensionality Reduction Using Triplets
+<strong>Authors:</strong> Ehsan Amid, Manfred K. Warmuth
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1910.00204">https://arxiv.org/abs/1910.00204</a>
+<strong>Description:</strong> Uses triplet constraints sampled from high-dimensional space. Preserves global structure better than t-SNE/UMAP. Creates triplets predominantly from nearest neighbors with fraction of random samples for robust global structure preservation.
+<strong>Implementation:</strong> trimap (Python)</p>
+<p><strong>Note on Comparison:</strong> While TriMap excels at global structure preservation, it has trade-offs in local structure vs. global structure preservation compared to newer methods like PaCMAP.</p>
+<hr />
+<h3 id="pacmap-pairwise-controlled-manifold-approximation">PaCMAP (Pairwise Controlled Manifold Approximation)<a class="headerlink" href="#pacmap-pairwise-controlled-manifold-approximation" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Understanding How Dimension Reduction Tools Work: An Empirical Approach to Deciphering t-SNE, UMAP, TriMap, and PaCMAP
+<strong>Authors:</strong> Yingfan Wang, Haiyang Huang, Cynthia Rudin, Yaron Shaposhnik
+<strong>Year:</strong> 2021
+<strong>Publication:</strong> Journal of Machine Learning Research, Vol. 22, No. 201, pp. 1-73
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2012.04456">https://arxiv.org/abs/2012.04456</a>
+<strong>Description:</strong> Uses three kinds of pairs to dynamically capture global structure first, then refine local structure.
+<strong>Implementation:</strong> pacmap (Python)</p>
+<hr />
+<h3 id="localmap-2024">LocalMAP (2024)<a class="headerlink" href="#localmap-2024" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> LocalMAP: Locally adaptive dimensionality reduction
+<strong>Authors:</strong> Recent Development
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2412.15426">https://arxiv.org/abs/2412.15426</a>
+<strong>Description:</strong> Dynamically discovers untrustworthy graph regions, cleaning data during execution.</p>
+<hr />
+<h3 id="dreams-2024">DREAMS (2024)<a class="headerlink" href="#dreams-2024" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> DREAMS: Deep Representation Embedding for Adaptive Manifold Structure
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2508.13747">https://arxiv.org/abs/2508.13747</a>
+<strong>Description:</strong> Combines interpretability and global structure of PCA with local sensitivity of t-SNE.</p>
+<hr />
+<h3 id="featmap-2022">FeatMAP (2022)<a class="headerlink" href="#featmap-2022" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> FeatMAP: Feature-preserving Manifold Approximation and Projection
+<strong>Authors:</strong> Various
+<strong>Year:</strong> 2022
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2211.09321">https://arxiv.org/abs/2211.09321</a>
+<strong>Description:</strong> Interpretable DR preserving source features via tangent space embedding.</p>
+<hr />
+<h2 id="deep-learning-methods">Deep Learning Methods<a class="headerlink" href="#deep-learning-methods" title="Permanent link">&para;</a></h2>
+<h3 id="autoencoders">Autoencoders<a class="headerlink" href="#autoencoders" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Reducing the Dimensionality of Data with Neural Networks
+<strong>Authors:</strong> Geoffrey E. Hinton, Ruslan R. Salakhutdinov
+<strong>Year:</strong> 2006
+<strong>Publication:</strong> Science, Vol. 313, No. 5786, pp. 504-507
+<strong>DOI:</strong> 10.1126/science.1127647
+<strong>Description:</strong> Neural networks with small central layer for DR and reconstruction.
+<strong>Implementation:</strong> PyTorch, TensorFlow</p>
+<hr />
+<h3 id="variational-autoencoders-vae">Variational Autoencoders (VAE)<a class="headerlink" href="#variational-autoencoders-vae" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Auto-Encoding Variational Bayes
+<strong>Authors:</strong> Diederik P. Kingma, Max Welling
+<strong>Year:</strong> 2013
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1312.6114">https://arxiv.org/abs/1312.6114</a>
+<strong>Description:</strong> Combines autoencoders with probabilistic modeling. Learns latent distributions.
+<strong>Implementation:</strong> PyTorch, TensorFlow</p>
+<hr />
+<h3 id="deep-autoencoder-review-2025">Deep Autoencoder Review (2025)<a class="headerlink" href="#deep-autoencoder-review-2025" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> A Review of Deep Learning: Recent Advances and Prospects for Applied Deep Learning
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://link.springer.com/article/10.1007/s11831-025-10260-5">https://link.springer.com/article/10.1007/s11831-025-10260-5</a>
+<strong>Description:</strong> Comprehensive review of autoencoder architectures from basic to advanced (adversarial, convolutional, variational).</p>
+<hr />
+<h3 id="neural-odes-for-dr-2025">Neural ODEs for DR (2025)<a class="headerlink" href="#neural-odes-for-dr-2025" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Latent Neural ODEs with Learnable Kernels
+<strong>Authors:</strong> Various
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2502.08683">https://arxiv.org/abs/2502.08683</a>
+<strong>Description:</strong> Couples DR with Neural ODEs to learn PDE solution operators in reduced space.</p>
+<hr />
+<h3 id="normalizing-flows">Normalizing Flows<a class="headerlink" href="#normalizing-flows" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Normalizing Flows as Dimensionality Reduction
+<strong>Year:</strong> 2019-2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2311.01404">https://arxiv.org/abs/2311.01404</a>
+<strong>Description:</strong> Continuous-time normalizing flows using neural ODEs for invertible mappings.</p>
+<hr />
+<h3 id="scviscanvi-single-cell-analysis">scVI/scANVI (Single-cell Analysis)<a class="headerlink" href="#scviscanvi-single-cell-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Deep generative modeling for interpretable classifiers of intracellular localization
+<strong>Authors:</strong> Romain Lopez, Jeffrey Regier, et al.
+<strong>Year:</strong> 2018-2021
+<strong>Link:</strong> <a href="https://www.nature.com/articles/s41592-018-0229-2">https://www.nature.com/articles/s41592-018-0229-2</a>
+<strong>Description:</strong> Deep generative models for probabilistic single-cell analysis.
+<strong>Implementation:</strong> scvi-tools</p>
+<hr />
+<h2 id="contrastive-learning-for-dr">Contrastive Learning for DR<a class="headerlink" href="#contrastive-learning-for-dr" title="Permanent link">&para;</a></h2>
+<h3 id="simclr-a-simple-framework-for-contrastive-learning">SimCLR (A Simple Framework for Contrastive Learning)<a class="headerlink" href="#simclr-a-simple-framework-for-contrastive-learning" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> A Simple Framework for Contrastive Learning of Visual Representations
+<strong>Authors:</strong> Ting Chen, Simon Kornblith, Mohammad Norouzi, Geoffrey Hinton
+<strong>Year:</strong> 2020
+<strong>Publication:</strong> ICML 2020
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2002.05709">https://arxiv.org/abs/2002.05709</a>
+<strong>Description:</strong> Self-supervised framework maximizing similarity between augmented image pairs.
+<strong>Implementation:</strong> PyTorch, TensorFlow</p>
+<hr />
+<h3 id="simsiam-simple-siamese-networks">SimSiam (Simple Siamese Networks)<a class="headerlink" href="#simsiam-simple-siamese-networks" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Exploring Simple Siamese Representation Learning
+<strong>Authors:</strong> Facebook AI Research
+<strong>Year:</strong> 2020
+<strong>Link:</strong> <a href="https://learnopencv.com/simsiam/">https://learnopencv.com/simsiam/</a>
+<strong>Description:</strong> Self-supervised learning without negative samples using stop-gradient mechanism.</p>
+<hr />
+<h3 id="ncldr-nearest-neighbor-contrastive-learning">NCLDR (Nearest-Neighbor Contrastive Learning)<a class="headerlink" href="#ncldr-nearest-neighbor-contrastive-learning" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> NCLDR: Nearest-Neighbor Contrastive Learning with Dual Correlation Loss
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://www.sciencedirect.com/science/article/abs/pii/S0925231224006192">https://www.sciencedirect.com/science/article/abs/pii/S0925231224006192</a>
+<strong>Description:</strong> Contrastive learning framework for neighbor embedding.</p>
+<hr />
+<h3 id="siamese-prototypical-contrastive-learning">Siamese Prototypical Contrastive Learning<a class="headerlink" href="#siamese-prototypical-contrastive-learning" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Siamese Prototypical Contrastive Learning
+<strong>Year:</strong> 2022
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2208.08819">https://arxiv.org/abs/2208.08819</a>
+<strong>Description:</strong> Combines Siamese networks with prototypical learning.</p>
+<hr />
+<h2 id="graph-embedding-methods">Graph Embedding Methods<a class="headerlink" href="#graph-embedding-methods" title="Permanent link">&para;</a></h2>
+<h3 id="forceatlas2-network-visualization">ForceAtlas2 (Network Visualization)<a class="headerlink" href="#forceatlas2-network-visualization" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> ForceAtlas2: A Continuous Graph Layout Algorithm for Handy Network Visualization
+<strong>Authors:</strong> Mathieu Jacomy, Tommaso Venturini, Sebastien Heymann, Mathieu Bastian
+<strong>Year:</strong> 2014
+<strong>Publication:</strong> PLOS ONE, Vol. 9, No. 6, e98679
+<strong>DOI:</strong> 10.1371/journal.pone.0098679
+<strong>Description:</strong> Force-directed layout integrating Barnes-Hut simulation. Default in Gephi.
+<strong>Implementation:</strong> Gephi, PyVis</p>
+<hr />
+<h3 id="gnn-based-graph-embedding">GNN-Based Graph Embedding<a class="headerlink" href="#gnn-based-graph-embedding" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Recent Advances in Graph Neural Networks
+<strong>Year:</strong> 2023-2024
+<strong>Description:</strong> GNNs learn node embeddings capturing connectivity. Graph pooling methods reduce dimensionality.
+<strong>Implementation:</strong> PyTorch Geometric, DGL</p>
+<hr />
+<h2 id="accelerated-implementations">Accelerated Implementations<a class="headerlink" href="#accelerated-implementations" title="Permanent link">&para;</a></h2>
+<h3 id="rapids-cuml-umap">RAPIDS cuML UMAP<a class="headerlink" href="#rapids-cuml-umap" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> UMAP on GPU with RAPIDS cuML
+<strong>Authors:</strong> NVIDIA RAPIDS Team
+<strong>Year:</strong> 2020-2025
+<strong>Link:</strong> <a href="https://developer.nvidia.com/blog/even-faster-and-more-scalable-umap-on-the-gpu-with-rapids-cuml/">https://developer.nvidia.com/blog/even-faster-and-more-scalable-umap-on-the-gpu-with-rapids-cuml/</a>
+<strong>Description:</strong> Batched approximate nearest neighbor algorithm for UMAP. Up to 311x speedup.
+<strong>Implementation:</strong> RAPIDS cuML</p>
+<hr />
+<h3 id="rapids-cuml-spectral-embedding">RAPIDS cuML Spectral Embedding<a class="headerlink" href="#rapids-cuml-spectral-embedding" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> GPU-Accelerated Spectral Embedding
+<strong>Authors:</strong> NVIDIA RAPIDS Team
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://developer.nvidia.com/blog/nvidia-rapids-25-08/">https://developer.nvidia.com/blog/nvidia-rapids-25-08/</a>
+<strong>Description:</strong> GPU-accelerated spectral embedding using eigenvalue decomposition.</p>
+<hr />
+<h3 id="panorama-ml-driven-dr">Panorama (ML-Driven DR)<a class="headerlink" href="#panorama-ml-driven-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Panorama: ML-Driven Orthogonal Transforms for Data Compression
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2510.00566">https://arxiv.org/abs/2510.00566</a>
+<strong>Description:</strong> Data-adaptive learned orthogonal transforms. 2-30x speedup with HNSW/MRPT/Annoy.</p>
+<hr />
+<h3 id="dimensionality-reduction-for-ann-survey">Dimensionality-Reduction for ANN Survey<a class="headerlink" href="#dimensionality-reduction-for-ann-survey" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Survey of DR Techniques for Approximate Nearest Neighbor Search
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2403.13491">https://arxiv.org/abs/2403.13491</a>
+<strong>Description:</strong> Evaluates DR impact on ANN. Shows 6.3x improvement with 98% recall using DWT, ADSampling, OPQ.</p>
+<hr />
+<h2 id="time-series-dimensionality-reduction">Time-Series Dimensionality Reduction<a class="headerlink" href="#time-series-dimensionality-reduction" title="Permanent link">&para;</a></h2>
+<h3 id="sax_cp-sax-with-change-points">SAX_CP (SAX with Change Points)<a class="headerlink" href="#sax_cp-sax-with-change-points" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> SAX_CP: Novel Trend-Based SAX Reduction
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417419302568">https://www.sciencedirect.com/science/article/abs/pii/S0957417419302568</a>
+<strong>Description:</strong> Captures trends via abrupt change points, improving on standard SAX.</p>
+<hr />
+<h3 id="signal2vec">Signal2Vec<a class="headerlink" href="#signal2vec" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Signal2Vec: Time Series Embedding Representation
+<strong>Authors:</strong> Various
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://www.researchgate.net/publication/333086784">https://www.researchgate.net/publication/333086784</a>
+<strong>Description:</strong> Unsupervised framework for time-series vector space representation.</p>
+<hr />
+<h3 id="spartan-2025">SPARTAN (2025)<a class="headerlink" href="#spartan-2025" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> SPARTAN: Data-Adaptive Symbolic Time-Series Approximation
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://dl.acm.org/doi/10.1145/3725357">https://dl.acm.org/doi/10.1145/3725357</a>
+<strong>Description:</strong> Improves upon traditional SAX approaches.</p>
+<hr />
+<h3 id="timecluster">TimeCluster<a class="headerlink" href="#timecluster" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> TimeCluster: Dimension Reduction Applied to Temporal Data for Visual Analytics
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://link.springer.com/article/10.1007/s00371-019-01673-y">https://link.springer.com/article/10.1007/s00371-019-01673-y</a>
+<strong>Description:</strong> Applies DR and clustering to sliding windows of time-series.</p>
+<hr />
+<h2 id="interpretable-explainable-dr">Interpretable &amp; Explainable DR<a class="headerlink" href="#interpretable-explainable-dr" title="Permanent link">&para;</a></h2>
+<h3 id="lxdr-local-explanation-of-dr">LXDR (Local eXplanation of DR)<a class="headerlink" href="#lxdr-local-explanation-of-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> LXDR: Local eXplanation of Dimensionality Reduction
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417424009400">https://www.sciencedirect.com/science/article/abs/pii/S0957417424009400</a>
+<strong>Description:</strong> Model-agnostic technique for local interpretations of any DR method.</p>
+<hr />
+<h3 id="interpretable-discriminative-dr">Interpretable Discriminative DR<a class="headerlink" href="#interpretable-discriminative-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Interpretable Discriminative Dimensionality Reduction
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1909.09218">https://arxiv.org/abs/1909.09218</a>
+<strong>Description:</strong> Framework for interpretable DR with feature selection on manifolds.</p>
+<hr />
+<h3 id="featmap-feature-importance">FeatMAP (Feature Importance)<a class="headerlink" href="#featmap-feature-importance" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> FeatMAP: Feature-preserving Manifold Approximation
+<strong>Year:</strong> 2022
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2211.09321">https://arxiv.org/abs/2211.09321</a>
+<strong>Description:</strong> Preserves source features with local feature importance visualization.</p>
+<hr />
+<h2 id="information-theoretic-dr">Information-Theoretic DR<a class="headerlink" href="#information-theoretic-dr" title="Permanent link">&para;</a></h2>
+<h3 id="maximally-informative-dimensions-mid">Maximally Informative Dimensions (MID)<a class="headerlink" href="#maximally-informative-dimensions-mid" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Maximally Informative Dimensions
+<strong>Year:</strong> 2015
+<strong>Link:</strong> <a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004141">https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004141</a>
+<strong>Description:</strong> Information-theoretic method for encoding model dimensionality reduction.</p>
+<hr />
+<h3 id="information-theoretic-dr-approaches">Information-Theoretic DR Approaches<a class="headerlink" href="#information-theoretic-dr-approaches" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Information-theoretic Approaches to Dimensionality Reduction
+<strong>Authors:</strong> Sambriddhi Mainali, Max Garzon, et al.
+<strong>Year:</strong> 2021
+<strong>Link:</strong> <a href="https://link.springer.com/article/10.1007/s41060-021-00272-2">https://link.springer.com/article/10.1007/s41060-021-00272-2</a>
+<strong>Description:</strong> Nonlinear alternatives using mutual information and conditional entropy.</p>
+<hr />
+<h3 id="probabilistic-perspective-on-umap-and-t-sne">Probabilistic Perspective on UMAP and t-SNE<a class="headerlink" href="#probabilistic-perspective-on-umap-and-t-sne" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> A Probabilistic Perspective on UMAP and t-SNE
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2405.17412">https://arxiv.org/abs/2405.17412</a>
+<strong>Description:</strong> Recasts UMAP and t-SNE as MAP inference methods with Wishart distributions.</p>
+<hr />
+<h2 id="domain-specific-methods">Domain-Specific Methods<a class="headerlink" href="#domain-specific-methods" title="Permanent link">&para;</a></h2>
+<h3 id="word2vecdoc2vec-text">Word2Vec/Doc2Vec (Text)<a class="headerlink" href="#word2vecdoc2vec-text" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Efficient Estimation of Word Representations in Vector Space
+<strong>Authors:</strong> Tomas Mikolov, et al.
+<strong>Year:</strong> 2013
+<strong>Description:</strong> Skip-gram and CBOW for text embeddings (100-1000 dims). Doc2Vec extends to documents.
+<strong>Implementation:</strong> Gensim</p>
+<hr />
+<h3 id="bertsentence-bert-text">BERT/Sentence-BERT (Text)<a class="headerlink" href="#bertsentence-bert-text" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks
+<strong>Authors:</strong> Nils Reimers, Iryna Gurevych
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://sbert.net/">https://sbert.net/</a>
+<strong>Description:</strong> Fine-tuned BERT for efficient sentence embeddings. 768 dims → 128 dims with minimal loss.
+<strong>Implementation:</strong> sentence-transformers</p>
+<hr />
+<h3 id="single-cell-rna-seq-methods">Single-Cell RNA-seq Methods<a class="headerlink" href="#single-cell-rna-seq-methods" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Nonlinear dimensionality reduction based visualization of single-cell RNA sequencing data
+<strong>Year:</strong> 2023
+<strong>Link:</strong> <a href="https://jast.springeropen.com/articles/10.1186/s40759-023-00082-w">https://jast.springeropen.com/articles/10.1186/s40759-023-00082-w</a>
+<strong>Description:</strong> Reviews t-SNE (best accuracy) and UMAP (highest stability) for scRNA-seq visualization.</p>
+<hr />
+<p><strong>Title:</strong> Structure-preserving visualization for single-cell RNA-Seq with deep manifold transformation
+<strong>Year:</strong> 2023
+<strong>Link:</strong> <a href="https://www.nature.com/articles/s42003-023-05046-z">https://www.nature.com/articles/s42003-023-05046-z</a>
+<strong>Description:</strong> DV method preserves local/global structure while handling batch effects.</p>
+<hr />
+<p><strong>Title:</strong> DREAM: Improved VAE for scRNA-seq
+<strong>Year:</strong> 2023
+<strong>Link:</strong> <a href="https://academic.oup.com/bib/article-abstract/24/6/bbad341/7268652">https://academic.oup.com/bib/article-abstract/24/6/bbad341/7268652</a>
+<strong>Description:</strong> Combines VAE with Gaussian mixture for cell type identification.</p>
+<hr />
+<h3 id="topological-data-analysis">Topological Data Analysis<a class="headerlink" href="#topological-data-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Topological Data Analysis: Mapper, Persistence and Applications
+<strong>Description:</strong> Comprehensive tutorial on TDA including Mapper algorithm and persistent homology.
+<strong>Implementation:</strong> Kepler Mapper, ripser</p>
+<hr />
+<p><strong>Title:</strong> A Survey on Mapper Algorithm
+<strong>Authors:</strong> Various
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://www.researchgate.net/publication/390772164">https://www.researchgate.net/publication/390772164</a>
+<strong>Description:</strong> Comprehensive review of Mapper from 2007-2025 across fields.</p>
+<hr />
+<h3 id="population-genetics">Population Genetics<a class="headerlink" href="#population-genetics" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Revealing Multi-scale Population Structure in Large Cohorts
+<strong>Year:</strong> 2019
+<strong>Link:</strong> <a href="https://www.biorxiv.org/content/10.1101/423632v2">https://www.biorxiv.org/content/10.1101/423632v2</a>
+<strong>Description:</strong> Uses UMAP for population genetics visualization with novel RGB projection.</p>
+<hr />
+<h2 id="metric-learning-for-dr">Metric Learning for DR<a class="headerlink" href="#metric-learning-for-dr" title="Permanent link">&para;</a></h2>
+<h3 id="hierarchical-triplet-loss">Hierarchical Triplet Loss<a class="headerlink" href="#hierarchical-triplet-loss" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Hierarchical Triplet Loss for Metric Learning
+<strong>Year:</strong> 2018
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1810.06951">https://arxiv.org/abs/1810.06951</a>
+<strong>Description:</strong> Automatically collects informative samples via hierarchical tree. 1-18% improvement over standard triplet loss.</p>
+<hr />
+<h3 id="tripletpca-and-contrastivepca">TripletPCA and ContrastivePCA<a class="headerlink" href="#tripletpca-and-contrastivepca" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> TripletPCA and ContrastivePCA for Metric Learning
+<strong>Year:</strong> 2023
+<strong>Link:</strong> <a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417423025666">https://www.sciencedirect.com/science/article/abs/pii/S0957417423025666</a>
+<strong>Description:</strong> First attempts incorporating DR into pair-based metric learning. 10.55% average improvement.</p>
+<hr />
+<h2 id="advanced-topics">Advanced Topics<a class="headerlink" href="#advanced-topics" title="Permanent link">&para;</a></h2>
+<h3 id="onlineincremental-dr">Online/Incremental DR<a class="headerlink" href="#onlineincremental-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Xtreaming: Incremental Dimensionality Reduction
+<strong>Year:</strong> 2021
+<strong>Link:</strong> <a href="https://www.sciencedirect.com/science/article/abs/pii/S0097849321001734">https://www.sciencedirect.com/science/article/abs/pii/S0097849321001734</a>
+<strong>Description:</strong> Continuous updating for streaming data without revisiting high-dimensional data.</p>
+<hr />
+<p><strong>Title:</strong> MOSES: Memory-limited Online Subspace Estimation
+<strong>Year:</strong> 2018
+<strong>Link:</strong> <a href="https://arxiv.org/abs/1806.01304">https://arxiv.org/abs/1806.01304</a>
+<strong>Description:</strong> Single-pass subspace estimation for streaming data.</p>
+<hr />
+<h3 id="privacy-preserving-dr">Privacy-Preserving DR<a class="headerlink" href="#privacy-preserving-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Privacy-Preserving Federated DR
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://www.mdpi.com/2079-9292/14/16/3182">https://www.mdpi.com/2079-9292/14/16/3182</a>
+<strong>Description:</strong> Multi-stage DR framework for vertical federated learning.</p>
+<hr />
+<h3 id="quantum-dr">Quantum DR<a class="headerlink" href="#quantum-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Quantum Resonant Dimensionality Reduction
+<strong>Year:</strong> 2024
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2405.12625">https://arxiv.org/abs/2405.12625</a>
+<strong>Description:</strong> Novel quantum algorithm reducing ancilla qubits for quantum PCA.</p>
+<hr />
+<p><strong>Title:</strong> Quantum LDA for Dimensionality Reduction
+<strong>Year:</strong> 2021-2023
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2103.03131">https://arxiv.org/abs/2103.03131</a>
+<strong>Description:</strong> Quantum algorithm for linear discriminant analysis.</p>
+<hr />
+<h2 id="theoretical-papers">Theoretical Papers<a class="headerlink" href="#theoretical-papers" title="Permanent link">&para;</a></h2>
+<h3 id="dimensionality-reduction-and-wasserstein-stability">Dimensionality Reduction and Wasserstein Stability<a class="headerlink" href="#dimensionality-reduction-and-wasserstein-stability" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Dimensionality Reduction and Wasserstein Stability
+<strong>Year:</strong> 2022
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2203.09347">https://arxiv.org/abs/2203.09347</a>
+<strong>Publication:</strong> JMLR 2024
+<strong>Description:</strong> Stability analysis for kernel regression after dimensionality reduction.</p>
+<hr />
+<h3 id="convergence-guarantees-for-network-time-series">Convergence Guarantees for Network Time Series<a class="headerlink" href="#convergence-guarantees-for-network-time-series" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Convergence Guarantees for Network Time Series Embedding
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2501.08456">https://arxiv.org/abs/2501.08456</a>
+<strong>Description:</strong> Theoretical convergence analysis for raw stress embedding.</p>
+<hr />
+<h3 id="riemannian-geometric-framework">Riemannian Geometric Framework<a class="headerlink" href="#riemannian-geometric-framework" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Riemannian Geometric Framework for Manifold Learning
+<strong>Year:</strong> 2020
+<strong>Link:</strong> <a href="https://link.springer.com/article/10.1007/s11634-020-00426-3">https://link.springer.com/article/10.1007/s11634-020-00426-3</a>
+<strong>Description:</strong> Framework for manifold learning of non-Euclidean data.</p>
+<hr />
+<h3 id="geometric-viewpoint-of-manifold-learning">Geometric Viewpoint of Manifold Learning<a class="headerlink" href="#geometric-viewpoint-of-manifold-learning" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> A Geometric Viewpoint on Manifold Learning
+<strong>Year:</strong> 2015
+<strong>Link:</strong> <a href="https://applied-informatics-j.springeropen.com/articles/10.1186/s40535-015-0006-6">https://applied-informatics-j.springeropen.com/articles/10.1186/s40535-015-0006-6</a>
+<strong>Description:</strong> Survey with geometric perspective on ISOMAP, LLE, Laplacian eigenmaps.</p>
+<hr />
+<h2 id="comparison-benchmark-papers">Comparison &amp; Benchmark Papers<a class="headerlink" href="#comparison-benchmark-papers" title="Permanent link">&para;</a></h2>
+<h3 id="comprehensive-evaluation-of-dr-methods-for-transcriptomic-data-2022">Comprehensive Evaluation of DR Methods for Transcriptomic Data (2022)<a class="headerlink" href="#comprehensive-evaluation-of-dr-methods-for-transcriptomic-data-2022" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Towards a comprehensive evaluation of dimension reduction methods for transcriptomic data visualization
+<strong>Authors:</strong> Haiyang Huang, Yingfan Wang, Cynthia Rudin, Edward P. Browne
+<strong>Year:</strong> 2022
+<strong>Publication:</strong> Communications Biology, Vol. 5, Article 719
+<strong>DOI:</strong> 10.1038/s42003-022-03628-x
+<strong>Link:</strong> <a href="https://www.nature.com/articles/s42003-022-03628-x">https://www.nature.com/articles/s42003-022-03628-x</a>
+<strong>Description:</strong> Comprehensive evaluation framework assessing PCA, t-SNE, UMAP, TriMap, PaCMAP, ForceAtlas2, and PHATE across five criteria: local structure preservation, global structure preservation, parameter sensitivity, preprocessing sensitivity, and computational efficiency.
+<strong>Key Findings:</strong>
+- t-SNE, UMAP excel at local structure but fail at global structure
+- TriMap, PaCMAP, ForceAtlas2 preserve both local and global structure
+- PaCMAP is fastest, especially for large datasets (&gt;10,000 samples)
+- t-SNE and UMAP are highly sensitive to parameter choices</p>
+<hr />
+<h3 id="comprehensive-review-2025">Comprehensive Review (2025)<a class="headerlink" href="#comprehensive-review-2025" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Comprehensive review of dimensionality reduction algorithms
+<strong>Year:</strong> 2025
+<strong>Publication:</strong> PeerJ Computer Science
+<strong>Link:</strong> <a href="https://peerj.com/articles/cs-2254">https://peerj.com/articles/cs-2254</a>
+<strong>Description:</strong> Reviews PCA, t-SNE, UMAP, autoencoders with interpretability and fairness analysis.</p>
+<hr />
+<h3 id="dimensionality-reduction-a-comparative-review">Dimensionality Reduction: A Comparative Review<a class="headerlink" href="#dimensionality-reduction-a-comparative-review" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Dimensionality Reduction: A Comparative Review
+<strong>Authors:</strong> Laurens van der Maaten, Eric Postma, Jaap van den Herik
+<strong>Year:</strong> 2009
+<strong>Publication:</strong> Technical Report TiCC TR 2009-005
+<strong>Description:</strong> Comprehensive comparison of spectral, probabilistic, and neural methods.</p>
+<hr />
+<h3 id="cytof-data-comparative-analysis">CyTOF Data Comparative Analysis<a class="headerlink" href="#cytof-data-comparative-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Comparative analysis of dimension reduction methods for cytometry by time-of-flight data
+<strong>Year:</strong> 2023
+<strong>Publication:</strong> Nature Communications
+<strong>Volume:</strong> 14, Article 6968
+<strong>DOI:</strong> 10.1038/s41467-023-37478-w
+<strong>Description:</strong> Comprehensive benchmarking of 21 DR methods on 110 real and 425 synthetic single-cell datasets. Evaluates local structure, global structure, parameter sensitivity, and computational efficiency on cytometry data.
+<strong>Key Methods Evaluated:</strong> t-SNE, UMAP, TriMap, PaCMAP, ForceAtlas2, PHATE, and others
+<strong>Findings:</strong> All methods preserve local structure well, while only TriMap, PaCMAP, and ForceAtlas2 preserve global structure reliably.</p>
+<hr />
+<h3 id="time-series-dr-survey">Time-Series DR Survey<a class="headerlink" href="#time-series-dr-survey" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Survey on Dimensionality Reduction for Time-Series
+<strong>Year:</strong> 2023
+<strong>Publication:</strong> IEEE
+<strong>Description:</strong> 12 DR algorithms for time-series, categorized by complexity and properties.</p>
+<hr />
+<h3 id="manifold-learning-comparative-study">Manifold Learning Comparative Study<a class="headerlink" href="#manifold-learning-comparative-study" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Comparative Analysis of Manifold Learning-Based DR Methods
+<strong>Year:</strong> 2024
+<strong>Publication:</strong> MDPI Mathematics, Vol. 12, No. 15
+<strong>Link:</strong> <a href="https://mdpi.com/2227-7390/12/15/2388">https://mdpi.com/2227-7390/12/15/2388</a>
+<strong>Description:</strong> Mathematical comparison of Isomap, LLE, LE, HE, LTSA, MVU.</p>
+<hr />
+<h3 id="quality-assessment-of-dr">Quality Assessment of DR<a class="headerlink" href="#quality-assessment-of-dr" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Quality assessment of dimensionality reduction: Rank-based criteria
+<strong>Year:</strong> 2009
+<strong>Publication:</strong> Neurocomputing
+<strong>Description:</strong> Introduces trustworthiness and continuity metrics.</p>
+<hr />
+<h3 id="pydrmetrics-toolkit">pyDRMetrics Toolkit<a class="headerlink" href="#pydrmetrics-toolkit" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> pyDRMetrics - Python Toolkit for DR Quality Assessment
+<strong>Year:</strong> 2021
+<strong>Publication:</strong> Heliyon
+<strong>Description:</strong> Python toolkit for evaluation metrics (reconstruction error, distance matrix, LCMC, etc).</p>
+<hr />
+<h3 id="metric-selection-bias-reduction">Metric Selection Bias Reduction<a class="headerlink" href="#metric-selection-bias-reduction" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Metric Design != Metric Behavior: Unbiased Evaluation of DR
+<strong>Year:</strong> 2025
+<strong>Link:</strong> <a href="https://arxiv.org/abs/2507.02225">https://arxiv.org/abs/2507.02225</a>
+<strong>Description:</strong> Proposes workflow reducing bias in evaluation metric selection.</p>
+<hr />
+<h3 id="critical-perspective-why-you-should-not-rely-on-t-sne-umap-or-trimap">Critical Perspective: Why You Should Not Rely on t-SNE, UMAP or TriMAP<a class="headerlink" href="#critical-perspective-why-you-should-not-rely-on-t-sne-umap-or-trimap" title="Permanent link">&para;</a></h3>
+<p><strong>Title:</strong> Why you should not rely on t-SNE, UMAP or TriMAP
+<strong>Author:</strong> Mathias Gruber
+<strong>Publication:</strong> Towards Data Science (Medium)
+<strong>Year:</strong> 2019-2021
+<strong>Link:</strong> <a href="https://towardsdatascience.com/why-you-should-not-rely-on-t-sne-umap-or-trimap-f8f5dc333e59">https://towardsdatascience.com/why-you-should-not-rely-on-t-sne-umap-or-trimap-f8f5dc333e59</a>
+<strong>Description:</strong> Critical analysis of popular DR methods' limitations. Identifies that t-SNE and UMAP focus on local structure preservation while TriMAP focuses on global structure, creating a fundamental trade-off. Demonstrates that PaCMAP achieves better balance between local and global structure preservation while maintaining faster computational performance.
+<strong>Key Points:</strong>
+- t-SNE (69s), UMAP (24s), TriMAP (12.56s) vs. PaCMAP (8.4s)
+- PaCMAP manages local vs. global trade-off better than alternatives
+- Parameter sensitivity is often overlooked by practitioners
+- Advocates for understanding algorithm mechanics before interpretation</p>
+<hr />
+<h2 id="implementation-resources">Implementation Resources<a class="headerlink" href="#implementation-resources" title="Permanent link">&para;</a></h2>
+<h3 id="core-libraries">Core Libraries<a class="headerlink" href="#core-libraries" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Language</th>
+<th>Method</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>umap-learn</strong></td>
+<td>Python</td>
+<td>UMAP, Parametric UMAP, densMAP</td>
+<td>✅ Mature</td>
+</tr>
+<tr>
+<td><strong>scikit-learn</strong></td>
+<td>Python</td>
+<td>PCA, Isomap, LLE, t-SNE, MDS</td>
+<td>✅ Mature</td>
+</tr>
+<tr>
+<td><strong>RAPIDS cuML</strong></td>
+<td>Python/CUDA</td>
+<td>GPU-accelerated UMAP, t-SNE, PCA</td>
+<td>✅ Production</td>
+</tr>
+<tr>
+<td><strong>openTSNE</strong></td>
+<td>Python</td>
+<td>Optimized t-SNE variants</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>PHATE</strong></td>
+<td>Python</td>
+<td>PHATE algorithm</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>TriMap</strong></td>
+<td>Python</td>
+<td>TriMap algorithm</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>PaCMAP</strong></td>
+<td>Python</td>
+<td>PaCMAP algorithm</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>PyTorch</strong></td>
+<td>Python</td>
+<td>Autoencoders, VAE, Neural ODE</td>
+<td>✅ Mature</td>
+</tr>
+<tr>
+<td><strong>TensorFlow</strong></td>
+<td>Python</td>
+<td>Deep learning DR</td>
+<td>✅ Mature</td>
+</tr>
+<tr>
+<td><strong>PyTorch Geometric</strong></td>
+<td>Python</td>
+<td>Graph embedding, GNN</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>sentence-transformers</strong></td>
+<td>Python</td>
+<td>BERT embeddings</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>scvi-tools</strong></td>
+<td>Python</td>
+<td>scVI/scANVI for single-cell</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>Kepler Mapper</strong></td>
+<td>Python</td>
+<td>Topological data analysis</td>
+<td>✅ Active</td>
+</tr>
+<tr>
+<td><strong>Gephi</strong></td>
+<td>Java</td>
+<td>Network visualization</td>
+<td>✅ Mature</td>
+</tr>
+</tbody>
+</table>
+<h3 id="datasets-for-benchmarking">Datasets for Benchmarking<a class="headerlink" href="#datasets-for-benchmarking" title="Permanent link">&para;</a></h3>
+<ul>
+<li>MNIST (70,000 images, 784 dimensions)</li>
+<li>Fashion-MNIST (70,000 images, 784 dimensions)</li>
+<li>CIFAR-10 (60,000 images, 3,072 dimensions)</li>
+<li>Single-cell RNA-seq (10,000-1,000,000 cells, 20,000 genes)</li>
+<li>UCI Shuttle (43,500 samples, 8 dimensions)</li>
+<li>Word2Vec (millions of word embeddings, 300 dimensions)</li>
+<li>Single-cell benchmarks (scRNA-seq, scATAC-seq, CyTOF)</li>
+</ul>
+<h3 id="evaluation-metrics">Evaluation Metrics<a class="headerlink" href="#evaluation-metrics" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Trustworthiness:</strong> Preservation of k nearest neighbors</li>
+<li><strong>Continuity:</strong> Inverse relationship (neighbors remain neighbors)</li>
+<li><strong>LCMC:</strong> Local Correlation Integral Dimension</li>
+<li><strong>Co-ranking Matrix:</strong> Assesses local and global structure</li>
+<li><strong>Reconstruction Error:</strong> Autoencoder loss</li>
+<li><strong>Silhouette Score:</strong> Cluster cohesion</li>
+<li><strong>Davies-Bouldin Index:</strong> Cluster separation</li>
+</ul>
+<hr />
+<h2 id="future-implementation-plans">Future Implementation Plans<a class="headerlink" href="#future-implementation-plans" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-core-methods-months-1-3">Phase 1: Core Methods (Months 1-3)<a class="headerlink" href="#phase-1-core-methods-months-1-3" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Optimize HNSW-RS backend integration</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Implement GPU acceleration for all core algorithms</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add Parametric UMAP with PyTorch</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Implement densMAP variants</li>
+</ul>
+<h3 id="phase-2-expand-ecosystem-months-4-6">Phase 2: Expand Ecosystem (Months 4-6)<a class="headerlink" href="#phase-2-expand-ecosystem-months-4-6" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add PHATE, TriMap, PaCMAP</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Implement spectral methods (LE, Isomap, LLE variants)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> GPU-accelerated t-SNE improvements</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add hierarchical DR methods</li>
+</ul>
+<h3 id="phase-3-advanced-features-months-7-12">Phase 3: Advanced Features (Months 7-12)<a class="headerlink" href="#phase-3-advanced-features-months-7-12" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Deep learning methods (autoencoders, VAE, Neural ODE)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Graph embedding methods (Node2Vec, GraphSAGE)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Time-series specific methods</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Interpretable DR wrappers</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Topological data analysis integration</li>
+</ul>
+<h3 id="phase-4-enterprise-features-months-13">Phase 4: Enterprise Features (Months 13+)<a class="headerlink" href="#phase-4-enterprise-features-months-13" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Streaming/online DR</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Privacy-preserving DR (federated learning)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Multi-modal DR</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Interactive visualizations</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Quantum DR algorithms</li>
+</ul>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<h3 id="foundational-texts">Foundational Texts<a class="headerlink" href="#foundational-texts" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Manifold Learning (Choi, 2018)</li>
+<li>Deep Learning (Goodfellow et al., 2016)</li>
+<li>The Elements of Statistical Learning (Hastie et al., 2009)</li>
+</ul>
+<h3 id="survey-papers">Survey Papers<a class="headerlink" href="#survey-papers" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Dimensionality Reduction: A Comparative Review (van der Maaten et al., 2009)</li>
+<li>Manifold Learning: What, How, and Why (Annual Reviews)</li>
+<li>Deep Learning for Representation Learning (Bengio et al., 2013)</li>
+</ul>
+<h3 id="code-repositories">Code Repositories<a class="headerlink" href="#code-repositories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/lmcinnes/umap">https://github.com/lmcinnes/umap</a></li>
+<li><a href="https://github.com/scikit-learn/scikit-learn">https://github.com/scikit-learn/scikit-learn</a></li>
+<li><a href="https://github.com/KlugerLab/FIt-SNE">https://github.com/KlugerLab/FIt-SNE</a></li>
+<li><a href="https://github.com/DmitryUlyanov/Multicore-TSNE">https://github.com/DmitryUlyanov/Multicore-TSNE</a></li>
+<li><a href="https://github.com/KrishnaswamyLab/PHATE">https://github.com/KrishnaswamyLab/PHATE</a></li>
+<li><a href="https://github.com/aditya-grover/node2vec">https://github.com/aditya-grover/node2vec</a></li>
+</ul>
+<hr />
+<p><strong>Last Updated:</strong> November 2025
+<strong>Maintainers:</strong> UMAP Development Team
+<strong>Contributing:</strong> Contributions welcome! Submit papers via GitHub Issues.</p>
+<hr />
+<p><em>This research page is a living document. New papers are regularly added as they are published. For the latest papers, see the ArXiv preprint archive in dimensionality reduction and machine learning categories.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2017-2024 Leland McInnes
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.expand", "navigation.top", "content.code.copy", "content.tooltips", "search.suggest", "search.highlight"], "llm": null, "search": "../assets/javascripts/workers/search.js", "site_name": "UMAP", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.llm.ask": "Ask AI", "search.llm.error": "Error getting AI response", "search.llm.placeholder": "Ask a question about the documentation...", "search.llm.thinking": "AI is thinking...", "search.mode.ai": "AI", "search.mode.search": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.js"></script>
+      
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid.js"></script>
+      
+    
+  </body>
+</html>

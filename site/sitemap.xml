@@ -2,134 +2,202 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://lmcinnes.github.io/umap/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/HYBRID_TECHNIQUES_API/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/RESEARCH_PLATFORM_ARCHITECTURE/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/SPARSE_VECTORS_CAPABILITY/</loc>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/aligned_umap_basic_usage/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/aligned_umap_politics_demo/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/api/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/basic_usage/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/benchmarking/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/clustering/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/composing_models/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/densmap_demo/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/development_roadmap/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/document_embedding/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/embedding_space/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/evaluation_metrics/</loc>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/exploratory_analysis/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/faq/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/how_umap_works/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/interactive_metrics/</loc>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/interactive_viz/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/inverse_transform/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/mutual_nn_umap/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/nomic_atlas_umap_of_text_embeddings/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/nomic_atlas_visualizing_mnist_training_dynamics/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/outliers/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/parameters/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/parametric_umap/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/performance/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/plotting/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/precomputed_k-nn/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/release_notes/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/reproducibility/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/research/</loc>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/scientific_papers/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/sparse/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/supervised/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/transform/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
     </url>
     <url>
          <loc>https://lmcinnes.github.io/umap/transform_landmarked_pumap/</loc>
-         <lastmod>2025-11-04</lastmod>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/isomap/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/lle/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/mds/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/numerical_stability/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/pacmap/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/pca/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/phate/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/trimap/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/tsne/</loc>
+         <lastmod>2025-12-24</lastmod>
+    </url>
+    <url>
+         <loc>https://lmcinnes.github.io/umap/algorithms/umap/</loc>
+         <lastmod>2025-12-24</lastmod>
     </url>
 </urlset>
