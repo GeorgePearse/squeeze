@@ -8,15 +8,15 @@ default:
 # Install dependencies and build the Rust extension
 install:
     uv sync --extra dev --extra benchmark
-    uv run maturin develop --release
+    uv run --with maturin maturin develop --release
 
 # Build the Rust extension in release mode
 build:
-    uv run maturin develop --release
+    uv run --with maturin maturin develop --release
 
 # Build the Rust extension in debug mode (faster compilation)
 build-debug:
-    uv run maturin develop
+    uv run --with maturin maturin develop
 
 # Run the Python k-NN benchmark (compares PyNNDescent vs HNSW backends)
 benchmark:
@@ -29,14 +29,17 @@ benchmark-rust:
 
 # Run all tests
 test:
+    uv sync --extra dev
     uv run pytest squeeze/tests/ -v
 
 # Run tests with testmon (only changed tests)
 test-fast:
+    uv sync --extra dev
     uv run pytest squeeze/tests/ --testmon
 
 # Run a specific test file
 test-file FILE:
+    uv sync --extra dev
     uv run pytest {{FILE}} -v
 
 # Run linting with ruff
@@ -74,6 +77,7 @@ clean:
 
 # Watch tests and re-run on changes
 test-watch:
+    uv sync --extra dev
     uv run pytest-watch -- squeeze/tests/ -v
 
 # Run pre-commit hooks on all files
