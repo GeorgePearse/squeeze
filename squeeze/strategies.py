@@ -13,30 +13,21 @@ from typing import Any, Callable, Iterator
 from .umap_ import UMAP
 
 try:
-    from ._hnsw_backend import (
-        UMAP as RustUMAP,
-        PCA,
-        TSNE,
-        MDS,
-        Isomap,
-        LLE,
-        PHATE,
-        TriMap,
-        PaCMAP,
-    )
-
+    from . import _hnsw_backend as _rust_backend  # type: ignore[import-not-found]
     RUST_BACKEND_AVAILABLE = True
 except ImportError:
     RUST_BACKEND_AVAILABLE = False
-    RustUMAP = None
-    PCA = None
-    TSNE = None
-    MDS = None
-    Isomap = None
-    LLE = None
-    PHATE = None
-    TriMap = None
-    PaCMAP = None
+    _rust_backend = None
+
+RustUMAP = getattr(_rust_backend, "UMAP", None)
+PCA = getattr(_rust_backend, "PCA", None)
+TSNE = getattr(_rust_backend, "TSNE", None)
+MDS = getattr(_rust_backend, "MDS", None)
+Isomap = getattr(_rust_backend, "Isomap", None)
+LLE = getattr(_rust_backend, "LLE", None)
+PHATE = getattr(_rust_backend, "PHATE", None)
+TriMap = getattr(_rust_backend, "TriMap", None)
+PaCMAP = getattr(_rust_backend, "PaCMAP", None)
 
 
 @dataclass
