@@ -317,8 +317,8 @@ def spearman_distance_correlation(
         The embedded data.
 
     sample_size : int, optional
-        If provided, sample this many point pairs to compute correlation.
-        Useful for large datasets to speed up computation.
+        If provided, subsample this many points (rows) before computing the
+        correlation. Useful for large datasets to speed up computation.
 
     Returns
     -------
@@ -326,6 +326,17 @@ def spearman_distance_correlation(
         Spearman correlation between original and embedded distances.
     """
     from scipy.stats import spearmanr
+
+    X = np.asarray(X)
+    X_embedded = np.asarray(X_embedded)
+
+    # Subsample points (not pairs) for large datasets. This makes the estimate
+    # significantly more stable than sampling arbitrary point-pairs.
+    n_samples = X.shape[0]
+    if sample_size is not None and n_samples > sample_size:
+        indices = np.random.choice(n_samples, size=sample_size, replace=False)
+        X = X[indices]
+        X_embedded = X_embedded[indices]
 
     # Compute pairwise distances
     D_original = pairwise_distances(X, metric="euclidean")
@@ -337,14 +348,6 @@ def spearman_distance_correlation(
 
     original_distances = D_original[indices]
     embedded_distances = D_embedded[indices]
-
-    # If dataset is large, sample pairs
-    if sample_size is not None and len(original_distances) > sample_size:
-        sample_indices = np.random.choice(
-            len(original_distances), size=sample_size, replace=False
-        )
-        original_distances = original_distances[sample_indices]
-        embedded_distances = embedded_distances[sample_indices]
 
     # Compute Spearman correlation
     correlation, _ = spearmanr(original_distances, embedded_distances)
