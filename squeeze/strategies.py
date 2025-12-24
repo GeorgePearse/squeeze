@@ -14,6 +14,7 @@ from .umap_ import UMAP
 
 try:
     from ._hnsw_backend import (
+        UMAP as RustUMAP,
         PCA,
         TSNE,
         MDS,
@@ -27,6 +28,7 @@ try:
     RUST_BACKEND_AVAILABLE = True
 except ImportError:
     RUST_BACKEND_AVAILABLE = False
+    RustUMAP = None
     PCA = None
     TSNE = None
     MDS = None
@@ -82,6 +84,18 @@ class StrategyRegistry:
 
         if not RUST_BACKEND_AVAILABLE:
             return
+
+        # Rust UMAP (minimal core implementation)
+        if RustUMAP is not None:
+            self.register(
+                Strategy(
+                    name="umap_rust",
+                    algorithm_class=RustUMAP,
+                    default_params={"n_components": 2, "n_neighbors": 15},
+                    description="UMAP (Rust backend; dense + exact kNN)",
+                    category="nonlinear",
+                )
+            )
 
         # PCA
         self.register(

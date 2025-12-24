@@ -23,6 +23,7 @@ from .umap_ import UMAP
 # Import Rust-based algorithms
 try:
     from ._hnsw_backend import (
+        UMAP as RustUMAP,
         PCA,
         TSNE,
         MDS,
@@ -39,6 +40,7 @@ except ImportError as e:
         category=ImportWarning,
     )
     # Create dummy classes
+    RustUMAP = None
     PCA = None
     TSNE = None
     MDS = None
@@ -111,6 +113,7 @@ except PackageNotFoundError:
 __all__ = [
     # Core UMAP
     "UMAP",
+    "RustUMAP",
     "AlignedUMAP",
     "ParametricUMAP",
     # Rust-based DR algorithms
