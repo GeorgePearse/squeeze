@@ -22,31 +22,24 @@ from .umap_ import UMAP
 
 # Import Rust-based algorithms
 try:
-    from ._hnsw_backend import (
-        PCA,
-        TSNE,
-        MDS,
-        Isomap,
-        LLE,
-        PHATE,
-        TriMap,
-        PaCMAP,
-    )
+    from . import _hnsw_backend as _rust_backend  # type: ignore[import-not-found]
 except ImportError as e:
     warn(
         f"Rust backend not available: {e}. Some algorithms may not be available.",
         stacklevel=2,
         category=ImportWarning,
     )
-    # Create dummy classes
-    PCA = None
-    TSNE = None
-    MDS = None
-    Isomap = None
-    LLE = None
-    PHATE = None
-    TriMap = None
-    PaCMAP = None
+    _rust_backend = None
+
+RustUMAP = getattr(_rust_backend, "UMAP", None)
+PCA = getattr(_rust_backend, "PCA", None)
+TSNE = getattr(_rust_backend, "TSNE", None)
+MDS = getattr(_rust_backend, "MDS", None)
+Isomap = getattr(_rust_backend, "Isomap", None)
+LLE = getattr(_rust_backend, "LLE", None)
+PHATE = getattr(_rust_backend, "PHATE", None)
+TriMap = getattr(_rust_backend, "TriMap", None)
+PaCMAP = getattr(_rust_backend, "PaCMAP", None)
 
 try:
     with catch_warnings():
@@ -111,6 +104,7 @@ except PackageNotFoundError:
 __all__ = [
     # Core UMAP
     "UMAP",
+    "RustUMAP",
     "AlignedUMAP",
     "ParametricUMAP",
     # Rust-based DR algorithms
