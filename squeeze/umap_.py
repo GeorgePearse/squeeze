@@ -2246,7 +2246,12 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
             # if checking the high-dimensional distance metric, test directly on
             # input data so we don't risk violating any assumptions potentially
             # hard-coded in the metric (e.g., bounded; non-negative)
-            indices = rng.integers(0, data.shape[0], 2)
+            # sklearn's check_random_state returns a legacy RandomState which
+            # uses `randint`, while numpy's Generator uses `integers`.
+            if hasattr(rng, "integers"):
+                indices = rng.integers(0, data.shape[0], size=2)
+            else:
+                indices = rng.randint(0, data.shape[0], size=2)
             x, y = data[indices]
         else:
             # if checking the manifold distance metric, simulate some data on a
