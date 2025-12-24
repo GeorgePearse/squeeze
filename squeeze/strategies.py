@@ -28,6 +28,7 @@ LLE = getattr(_rust_backend, "LLE", None)
 PHATE = getattr(_rust_backend, "PHATE", None)
 TriMap = getattr(_rust_backend, "TriMap", None)
 PaCMAP = getattr(_rust_backend, "PaCMAP", None)
+PLSCANBackbone = getattr(_rust_backend, "PLSCANBackbone", None)
 
 
 @dataclass
@@ -193,6 +194,27 @@ class StrategyRegistry:
                 category="nonlinear",
             )
         )
+
+        # PLSCAN backbone (landmarks + scale selection + soft must-link)
+        if PLSCANBackbone is not None:
+            self.register(
+                Strategy(
+                    name="plscan_backbone",
+                    algorithm_class=PLSCANBackbone,
+                    default_params={
+                        "n_components": 2,
+                        "min_samples": 5,
+                        "rep_strategy": "high_prob",
+                        "reps_per_cluster": 1,
+                        "neighbor_scale": 1.0,
+                        "must_link_weight": 0.1,
+                        "interpolation_k": 3,
+                        "restrict_to_cluster": True,
+                    },
+                    description="PLSCAN-backed landmark spectral embedding with soft must-link regularization",
+                    category="hybrid",
+                )
+            )
 
     def register(self, strategy: Strategy) -> None:
         """Register a new strategy."""
