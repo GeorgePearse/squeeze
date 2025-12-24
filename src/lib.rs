@@ -19,6 +19,8 @@ pub mod phate;
 pub mod trimap;
 pub mod pacmap;
 pub mod umap;
+pub mod plscan;
+pub mod plscan_backbone;
 
 #[cfg(not(test))]
 #[pyo3::pymodule]
@@ -37,6 +39,8 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     m.add_class::<trimap::TriMap>()?;
     m.add_class::<pacmap::PaCMAP>()?;
     m.add_class::<umap::UMAP>()?;
+    m.add_class::<plscan::PLSCAN>()?;
+    m.add_class::<plscan_backbone::PLSCANBackbone>()?;
     
     Ok(())
 }

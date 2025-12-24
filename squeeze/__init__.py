@@ -40,6 +40,8 @@ LLE = getattr(_rust_backend, "LLE", None)
 PHATE = getattr(_rust_backend, "PHATE", None)
 TriMap = getattr(_rust_backend, "TriMap", None)
 PaCMAP = getattr(_rust_backend, "PaCMAP", None)
+PLSCAN = getattr(_rust_backend, "PLSCAN", None)
+PLSCANBackbone = getattr(_rust_backend, "PLSCANBackbone", None)
 
 try:
     with catch_warnings():
@@ -116,6 +118,8 @@ __all__ = [
     "PHATE",
     "TriMap",
     "PaCMAP",
+    "PLSCAN",
+    "PLSCANBackbone",
     # Composition utilities
     "AdaptiveDR",
     "DRPipeline",
