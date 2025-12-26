@@ -4,6 +4,12 @@ from numba import njit
 
 from squeeze import UMAP
 
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "Input-validation tests target removed Python UMAP backend",
+        allow_module_level=True,
+    )
+
 
 @pytest.fixture(scope="session")
 def all_finite_data():

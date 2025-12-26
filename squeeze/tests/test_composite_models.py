@@ -2,6 +2,12 @@ import pytest
 
 from squeeze import UMAP
 
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "Composite UMAP operators require removed Python backend",
+        allow_module_level=True,
+    )
+
 try:
     # works for sklearn>=0.22
     from sklearn.manifold import trustworthiness

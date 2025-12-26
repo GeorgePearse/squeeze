@@ -4,6 +4,13 @@ import numpy as np
 import pytest
 import scipy.sparse as sp
 
+from squeeze import UMAP
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "SparseUMAP tests target removed Python UMAP backend", allow_module_level=True
+    )
+
 from squeeze.sparse_ops import (
     SparseFormatDetector,
     SparseKNNGraph,
@@ -326,7 +333,9 @@ class TestSparseIntegration:
     def test_sparse_vs_dense_equivalence(self):
         """Test that sparse and dense give similar results."""
         # Create small test data
-        X_dense = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1]]).astype(float)
+        X_dense = np.array(
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1]]
+        ).astype(float)
         X_sparse = sp.csr_matrix(X_dense)
 
         # Compute distances both ways

@@ -12,6 +12,12 @@ from sklearn.metrics import pairwise_distances
 # verify that we can import this; potentially for later use
 from squeeze import UMAP
 
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "UMAP parameter-validation tests target removed Python backend",
+        allow_module_level=True,
+    )
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
 

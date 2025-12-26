@@ -112,7 +112,9 @@ def trustworthiness(
                 trust_sum += max(0, original_rank - k)
 
     # Normalize
-    trustworthiness_score = 1 - (2 / (n_samples * k * (2 * n_samples - 3 * k - 1))) * trust_sum
+    trustworthiness_score = (
+        1 - (2 / (n_samples * k * (2 * n_samples - 3 * k - 1))) * trust_sum
+    )
 
     return max(0, min(1, trustworthiness_score))
 
@@ -184,7 +186,9 @@ def continuity(
                 cont_sum += max(0, embedding_rank - k)
 
     # Normalize
-    continuity_score = 1 - (2 / (n_samples * k * (2 * n_samples - 3 * k - 1))) * cont_sum
+    continuity_score = (
+        1 - (2 / (n_samples * k * (2 * n_samples - 3 * k - 1))) * cont_sum
+    )
 
     return max(0, min(1, continuity_score))
 
@@ -340,8 +344,12 @@ def spearman_distance_correlation(
 
     # If dataset is large, sample pairs
     if sample_size is not None and len(original_distances) > sample_size:
-        sample_indices = np.random.choice(
-            len(original_distances), size=sample_size, replace=False
+        # Prefer deterministic sampling to reduce variance across runs.
+        rng = np.random.default_rng(42)
+        sample_indices = rng.choice(
+            len(original_distances),
+            size=sample_size,
+            replace=False,
         )
         original_distances = original_distances[sample_indices]
         embedded_distances = embedded_distances[sample_indices]

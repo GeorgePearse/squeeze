@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.pipeline import FeatureUnion, Pipeline
 
-from squeeze.umap_ import UMAP
+from squeeze import UMAP
 
 
 def test_get_feature_names_out() -> None:

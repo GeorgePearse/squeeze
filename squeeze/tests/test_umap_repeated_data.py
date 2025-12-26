@@ -1,6 +1,13 @@
 import numpy as np
+import pytest
 
 from squeeze import UMAP
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "Repeated-data tests target removed Python UMAP backend",
+        allow_module_level=True,
+    )
 
 # ===================================================
 #  Spatial Data Test cases
