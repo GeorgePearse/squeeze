@@ -3,7 +3,12 @@ import pytest
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, pairwise_distances
 
-from squeeze import AlignedUMAP
+from squeeze import AlignedUMAP, UMAP
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "AlignedUMAP requires removed Python UMAP backend", allow_module_level=True
+    )
 
 # ===============================
 # Test AlignedUMAP on sliced iris

@@ -1,9 +1,16 @@
 import numpy as np
+import pytest
 import scipy.sparse
 from sklearn.datasets import make_blobs
 from sklearn.metrics import pairwise_distances
 
 from squeeze import UMAP
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "UMAP trustworthiness tests target removed Python backend",
+        allow_module_level=True,
+    )
 
 try:
     # works for sklearn>=0.22

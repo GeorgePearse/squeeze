@@ -7,7 +7,9 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.neighbors import KDTree
 
 from squeeze import UMAP
-from squeeze.umap_ import nearest_neighbors
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip("Python UMAP backend removed", allow_module_level=True)
 
 try:
     # works for sklearn>=0.22

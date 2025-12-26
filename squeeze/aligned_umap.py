@@ -11,7 +11,15 @@ from squeeze.layouts import optimize_layout_aligned_euclidean
 from squeeze.sparse import arr_intersect as intersect1d
 from squeeze.sparse import arr_union as union1d
 from squeeze.spectral import spectral_layout
-from squeeze.umap_ import UMAP, make_epochs_per_sample
+from squeeze.umap import UMAP
+
+
+def make_epochs_per_sample(weights, n_epochs):
+    result = -1.0 * np.ones(weights.shape[0], dtype=np.float64)
+    n_samples = n_epochs * (weights / weights.max())
+    result[n_samples > 0] = float(n_epochs) / np.float64(n_samples[n_samples > 0])
+    return result
+
 
 if TYPE_CHECKING:
     import scipy.sparse
@@ -557,6 +565,11 @@ class AlignedUMAP(BaseEstimator):
         y: list[np.ndarray] | tuple[np.ndarray, ...] | np.ndarray | None = None,
         **fit_params: Any,
     ) -> AlignedUMAP:
+        if getattr(UMAP, "_BACKEND", "") == "rust":
+            raise NotImplementedError(
+                "AlignedUMAP requires the removed Python UMAP backend; "
+                "Rust-only UMAP does not yet expose the graph state needed for alignment."
+            )
         """Fit aligned UMAP on multiple related datasets.
 
         Parameters

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator
 
 # Import all algorithms
-from .umap_ import UMAP
+from .umap import UMAP
 
 try:
     from ._hnsw_backend import (

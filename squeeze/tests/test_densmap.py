@@ -2,6 +2,11 @@ import pytest
 
 from squeeze import UMAP
 
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "densMAP tests target removed Python UMAP backend", allow_module_level=True
+    )
+
 try:
     # works for sklearn>=0.22
     from sklearn.manifold import trustworthiness

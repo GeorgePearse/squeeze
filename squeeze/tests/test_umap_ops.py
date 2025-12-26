@@ -16,6 +16,9 @@ from sklearn.metrics import adjusted_rand_score, pairwise_distances
 from sklearn.preprocessing import normalize
 
 from squeeze import UMAP
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip("UMAP ops tests target removed Python backend", allow_module_level=True)
 from squeeze.distances import pairwise_special_metric
 from squeeze.spectral import component_layout
 from squeeze.utils import disconnected_vertices

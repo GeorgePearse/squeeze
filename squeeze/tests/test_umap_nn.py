@@ -4,11 +4,10 @@ from numpy.testing import assert_array_almost_equal
 from sklearn.neighbors import KDTree
 from sklearn.preprocessing import normalize
 
-from squeeze import distances as dist
-from squeeze.umap_ import (
-    nearest_neighbors,
-    smooth_knn_dist,
-)
+from squeeze import UMAP
+
+# The legacy Python UMAP backend has been removed.
+pytest.skip("Python UMAP backend removed", allow_module_level=True)
 
 # ===================================================
 #  Nearest Neighbour Test cases

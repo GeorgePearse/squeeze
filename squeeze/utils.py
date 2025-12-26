@@ -15,7 +15,7 @@ import scipy.sparse
 from sklearn.utils.validation import check_is_fitted
 
 if TYPE_CHECKING:
-    from squeeze.umap_ import UMAP
+    from squeeze.umap import UMAP
 
 
 @numba.njit(parallel=True)

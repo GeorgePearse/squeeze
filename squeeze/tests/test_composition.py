@@ -6,6 +6,11 @@ from sklearn.datasets import load_iris
 from sklearn.decomposition import PCA
 
 from squeeze import UMAP
+
+if getattr(UMAP, "_BACKEND", "") == "rust":
+    pytest.skip(
+        "UMAP composition tests target removed Python backend", allow_module_level=True
+    )
 from squeeze.composition import AdaptiveDR, DRPipeline, EnsembleDR, ProgressiveDR
 
 

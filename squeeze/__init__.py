@@ -5,7 +5,8 @@ techniques including UMAP, t-SNE, PCA, and more. All implementations are
 optimized for CPU performance with SIMD vectorization and Rust backends.
 
 Implemented algorithms:
-- UMAP: Uniform Manifold Approximation and Projection
+- UMAP: Uniform Manifold Approximation and Projection (Rust backend)
+- UMAPRust: Rust-backed UMAP implementation (internal)
 - PCA: Principal Component Analysis
 - TSNE: t-Distributed Stochastic Neighbor Embedding
 - MDS: Multidimensional Scaling
@@ -18,7 +19,7 @@ Implemented algorithms:
 
 from warnings import catch_warnings, simplefilter, warn
 
-from .umap_ import UMAP
+from .umap import UMAP
 
 # Import Rust-based algorithms
 try:
