@@ -3,32 +3,24 @@
 //! PHATE uses diffusion maps to compute potential distances, which better
 //! capture global structure than standard distances.
 
-use ndarray::{Array1, Array2, Axis};
-use ndarray_linalg::{Eigh, UPLO};
-use pyo3::prelude::*;
-use pyo3::exceptions::PyValueError;
-use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
+use ndarray::Array2;
+use ordered_float::OrderedFloat;
 use rayon::prelude::*;
 use std::collections::BinaryHeap;
-use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
-use crate::mds::{compute_distance_matrix, classical_mds};
+use crate::mds::{classical_mds, compute_distance_matrix};
+use crate::{Error, Result};
 
 /// PHATE dimensionality reduction
-#[pyclass(module = "squeeze._hnsw_backend")]
 pub struct PHATE {
     n_components: usize,
-    k: usize,           // k for k-NN
-    t: usize,           // diffusion time
-    decay: f64,         // alpha decay for kernel
-    random_state: Option<u64>,
+    k: usize,   // k for k-NN
+    t: usize,   // diffusion time
+    decay: f64, // alpha decay for kernel
+    _random_state: Option<u64>,
 }
 
-#[pymethods]
 impl PHATE {
-    #[new]
-    #[pyo3(signature = (n_components=2, k=15, t=5, decay=2.0, random_state=None))]
     pub fn new(
         n_components: usize,
         k: usize,
@@ -41,26 +33,25 @@ impl PHATE {
             k,
             t,
             decay,
-            random_state,
+            _random_state: random_state,
         }
     }
 
     /// Fit and transform data using PHATE
-    pub fn fit_transform<'py>(&self, py: Python<'py>, data: PyReadonlyArray2<f64>) 
-        -> PyResult<Bound<'py, PyArray2<f64>>> 
-    {
-        let x = data.as_array();
+    pub fn fit_transform(&self, data: &Array2<f64>) -> Result<Array2<f64>> {
+        let x = data.view();
         let n_samples = x.nrows();
 
         if self.k >= n_samples {
-            return Err(PyValueError::new_err(format!(
+            return Err(Error::InvalidParameter(format!(
                 "k ({}) must be less than n_samples ({})",
                 self.k, n_samples
             )));
         }
 
         // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
+        let x_f32: Vec<Vec<f32>> = x
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -84,32 +75,39 @@ impl PHATE {
         let potential_distances = self.compute_potential_distances(&diffused, n_samples);
 
         // Step 6: Apply MDS to potential distances
-        let embedding = classical_mds(&potential_distances, self.n_components)?;
-        Ok(embedding.into_pyarray_bound(py))
+        classical_mds(&potential_distances, self.n_components)
     }
 }
 
 impl PHATE {
     fn compute_local_sigmas(&self, distances: &Array2<f64>, n_samples: usize) -> Vec<f64> {
         // Sigma for each point is the distance to the k-th neighbor
-        (0..n_samples).into_par_iter().map(|i| {
-            let mut heap: BinaryHeap<OrderedFloat<f64>> = BinaryHeap::new();
-            
-            for j in 0..n_samples {
-                if i != j {
-                    heap.push(OrderedFloat(-distances[[i, j]]));
-                    if heap.len() > self.k {
-                        heap.pop();
+        (0..n_samples)
+            .into_par_iter()
+            .map(|i| {
+                let mut heap: BinaryHeap<OrderedFloat<f64>> = BinaryHeap::new();
+
+                for j in 0..n_samples {
+                    if i != j {
+                        heap.push(OrderedFloat(-distances[[i, j]]));
+                        if heap.len() > self.k {
+                            heap.pop();
+                        }
                     }
                 }
-            }
 
-            // Return the k-th smallest distance
-            -heap.peek().map(|v| v.into_inner()).unwrap_or(1.0)
-        }).collect()
+                // Return the k-th smallest distance
+                -heap.peek().map(|v| v.into_inner()).unwrap_or(1.0)
+            })
+            .collect()
     }
 
-    fn compute_affinity(&self, distances: &Array2<f64>, sigmas: &[f64], n_samples: usize) -> Array2<f64> {
+    fn compute_affinity(
+        &self,
+        distances: &Array2<f64>,
+        sigmas: &[f64],
+        n_samples: usize,
+    ) -> Array2<f64> {
         let mut affinity = Array2::zeros((n_samples, n_samples));
 
         for i in 0..n_samples {
@@ -240,7 +238,8 @@ mod tests {
     fn test_local_sigmas_positive() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -250,7 +249,12 @@ mod tests {
 
         // All sigmas should be positive
         for (i, &sigma) in sigmas.iter().enumerate() {
-            assert!(sigma > 0.0, "Sigma at index {} should be positive, got {}", i, sigma);
+            assert!(
+                sigma > 0.0,
+                "Sigma at index {} should be positive, got {}",
+                i,
+                sigma
+            );
         }
     }
 
@@ -268,7 +272,8 @@ mod tests {
     fn test_affinity_matrix_symmetric() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -280,11 +285,7 @@ mod tests {
         // Affinity should be symmetric
         for i in 0..40 {
             for j in 0..40 {
-                assert_relative_eq!(
-                    affinity[[i, j]],
-                    affinity[[j, i]],
-                    epsilon = 1e-10
-                );
+                assert_relative_eq!(affinity[[i, j]], affinity[[j, i]], epsilon = 1e-10);
             }
         }
     }
@@ -293,7 +294,8 @@ mod tests {
     fn test_affinity_matrix_non_negative() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -312,7 +314,8 @@ mod tests {
     fn test_affinity_diagonal_zero() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -331,7 +334,8 @@ mod tests {
     fn test_diffusion_operator_row_sums() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -352,7 +356,8 @@ mod tests {
     fn test_diffusion_operator_non_negative() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -372,7 +377,8 @@ mod tests {
     fn test_potential_distances_symmetric() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -387,11 +393,7 @@ mod tests {
         // Potential distances should be symmetric
         for i in 0..40 {
             for j in 0..40 {
-                assert_relative_eq!(
-                    potential[[i, j]],
-                    potential[[j, i]],
-                    epsilon = 1e-10
-                );
+                assert_relative_eq!(potential[[i, j]], potential[[j, i]], epsilon = 1e-10);
             }
         }
     }
@@ -400,7 +402,8 @@ mod tests {
     fn test_potential_distances_diagonal_zero() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -421,11 +424,9 @@ mod tests {
     #[test]
     fn test_power_matrix_identity() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
-        let matrix = Array2::from_shape_vec((3, 3), vec![
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0,
-        ]).unwrap();
+        let matrix =
+            Array2::from_shape_vec((3, 3), vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+                .unwrap();
 
         // Identity^n = Identity
         let powered = phate.power_matrix(&matrix, 5, 3);
@@ -440,11 +441,9 @@ mod tests {
     #[test]
     fn test_power_matrix_zero_power() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
-        let matrix = Array2::from_shape_vec((3, 3), vec![
-            0.5, 0.3, 0.2,
-            0.1, 0.6, 0.3,
-            0.2, 0.2, 0.6,
-        ]).unwrap();
+        let matrix =
+            Array2::from_shape_vec((3, 3), vec![0.5, 0.3, 0.2, 0.1, 0.6, 0.3, 0.2, 0.2, 0.6])
+                .unwrap();
 
         // Any matrix^0 = Identity
         let powered = phate.power_matrix(&matrix, 0, 3);
@@ -459,11 +458,9 @@ mod tests {
     #[test]
     fn test_power_matrix_one_power() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
-        let matrix = Array2::from_shape_vec((3, 3), vec![
-            0.5, 0.3, 0.2,
-            0.1, 0.6, 0.3,
-            0.2, 0.2, 0.6,
-        ]).unwrap();
+        let matrix =
+            Array2::from_shape_vec((3, 3), vec![0.5, 0.3, 0.2, 0.1, 0.6, 0.3, 0.2, 0.2, 0.6])
+                .unwrap();
 
         // Matrix^1 = Matrix
         let powered = phate.power_matrix(&matrix, 1, 3);
@@ -477,10 +474,7 @@ mod tests {
     #[test]
     fn test_power_matrix_square() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
-        let matrix = Array2::from_shape_vec((2, 2), vec![
-            0.5, 0.5,
-            0.5, 0.5,
-        ]).unwrap();
+        let matrix = Array2::from_shape_vec((2, 2), vec![0.5, 0.5, 0.5, 0.5]).unwrap();
 
         // For this matrix, M^2 = M (it's idempotent)
         let squared = phate.power_matrix(&matrix, 2, 2);
@@ -488,11 +482,7 @@ mod tests {
 
         for i in 0..2 {
             for j in 0..2 {
-                assert_relative_eq!(
-                    squared[[i, j]],
-                    expected[[i, j]],
-                    epsilon = 1e-10
-                );
+                assert_relative_eq!(squared[[i, j]], expected[[i, j]], epsilon = 1e-10);
             }
         }
     }
@@ -501,7 +491,8 @@ mod tests {
     fn test_potential_distances_non_negative() {
         let phate = PHATE::new(2, 5, 5, 2.0, Some(42));
         let data = create_two_clusters();
-        let x_f32: Vec<Vec<f32>> = data.rows()
+        let x_f32: Vec<Vec<f32>> = data
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();

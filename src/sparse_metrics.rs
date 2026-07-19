@@ -91,12 +91,7 @@ pub fn sparse_manhattan(
 }
 
 /// Cosine distance between two sparse vectors
-pub fn sparse_cosine(
-    a_indices: &[i32],
-    a_data: &[f32],
-    b_indices: &[i32],
-    b_data: &[f32],
-) -> f32 {
+pub fn sparse_cosine(a_indices: &[i32], a_data: &[f32], b_indices: &[i32], b_data: &[f32]) -> f32 {
     let mut dot_product = 0.0;
     let mut norm_sq_a = 0.0;
     let mut norm_sq_b = 0.0;
@@ -154,7 +149,11 @@ mod tests {
     fn test_sparse_euclidean_identical_vectors() {
         let idx = vec![0, 2, 5];
         let data = vec![1.0, 2.0, 3.0];
-        assert_relative_eq!(sparse_euclidean(&idx, &data, &idx, &data), 0.0, epsilon = 1e-6);
+        assert_relative_eq!(
+            sparse_euclidean(&idx, &data, &idx, &data),
+            0.0,
+            epsilon = 1e-6
+        );
     }
 
     #[test]
@@ -164,7 +163,7 @@ mod tests {
         let a_data = vec![3.0, 4.0]; // ||a||^2 = 9 + 16 = 25
         let b_idx = vec![1, 3];
         let b_data = vec![5.0, 12.0]; // ||b||^2 = 25 + 144 = 169
-        // Distance = sqrt(3^2 + 4^2 + 5^2 + 12^2) = sqrt(9+16+25+144) = sqrt(194)
+                                      // Distance = sqrt(3^2 + 4^2 + 5^2 + 12^2) = sqrt(9+16+25+144) = sqrt(194)
         assert_relative_eq!(
             sparse_euclidean(&a_idx, &a_data, &b_idx, &b_data),
             194.0_f32.sqrt(),
@@ -245,7 +244,11 @@ mod tests {
     fn test_sparse_manhattan_identical() {
         let idx = vec![0, 2, 5];
         let data = vec![1.0, 2.0, 3.0];
-        assert_relative_eq!(sparse_manhattan(&idx, &data, &idx, &data), 0.0, epsilon = 1e-6);
+        assert_relative_eq!(
+            sparse_manhattan(&idx, &data, &idx, &data),
+            0.0,
+            epsilon = 1e-6
+        );
     }
 
     #[test]
@@ -255,7 +258,11 @@ mod tests {
         let b_idx = vec![0, 1];
         let b_data = vec![4.0, 6.0];
         // |1-4| + |2-6| = 3 + 4 = 7
-        assert_relative_eq!(sparse_manhattan(&a_idx, &a_data, &b_idx, &b_data), 7.0, epsilon = 1e-5);
+        assert_relative_eq!(
+            sparse_manhattan(&a_idx, &a_data, &b_idx, &b_data),
+            7.0,
+            epsilon = 1e-5
+        );
     }
 
     #[test]
@@ -265,7 +272,11 @@ mod tests {
         let b_idx = vec![1];
         let b_data = vec![4.0];
         // |3-0| + |0-4| = 3 + 4 = 7
-        assert_relative_eq!(sparse_manhattan(&a_idx, &a_data, &b_idx, &b_data), 7.0, epsilon = 1e-5);
+        assert_relative_eq!(
+            sparse_manhattan(&a_idx, &a_data, &b_idx, &b_data),
+            7.0,
+            epsilon = 1e-5
+        );
     }
 
     #[test]
@@ -310,7 +321,11 @@ mod tests {
         let b_idx = vec![1];
         let b_data = vec![1.0];
         // Cosine similarity = 0, distance = 1
-        assert_relative_eq!(sparse_cosine(&a_idx, &a_data, &b_idx, &b_data), 1.0, epsilon = 1e-5);
+        assert_relative_eq!(
+            sparse_cosine(&a_idx, &a_data, &b_idx, &b_data),
+            1.0,
+            epsilon = 1e-5
+        );
     }
 
     #[test]
@@ -318,8 +333,12 @@ mod tests {
         let idx = vec![0, 1, 2];
         let a_data = vec![1.0, 2.0, 3.0];
         let b_data = vec![2.0, 4.0, 6.0]; // 2x of a
-        // Parallel vectors have cosine similarity = 1, distance = 0
-        assert_relative_eq!(sparse_cosine(&idx, &a_data, &idx, &b_data), 0.0, epsilon = 1e-5);
+                                          // Parallel vectors have cosine similarity = 1, distance = 0
+        assert_relative_eq!(
+            sparse_cosine(&idx, &a_data, &idx, &b_data),
+            0.0,
+            epsilon = 1e-5
+        );
     }
 
     #[test]
@@ -327,8 +346,12 @@ mod tests {
         let idx = vec![0, 1, 2];
         let a_data = vec![1.0, 2.0, 3.0];
         let b_data = vec![-1.0, -2.0, -3.0]; // -1x of a
-        // Anti-parallel vectors have cosine similarity = -1, distance = 2
-        assert_relative_eq!(sparse_cosine(&idx, &a_data, &idx, &b_data), 2.0, epsilon = 1e-5);
+                                             // Anti-parallel vectors have cosine similarity = -1, distance = 2
+        assert_relative_eq!(
+            sparse_cosine(&idx, &a_data, &idx, &b_data),
+            2.0,
+            epsilon = 1e-5
+        );
     }
 
     #[test]
@@ -338,7 +361,11 @@ mod tests {
         let zero_idx: Vec<i32> = vec![];
         let zero_data: Vec<f32> = vec![];
         // Distance to zero vector should be 1.0 (undefined, defaulting to max distance)
-        assert_relative_eq!(sparse_cosine(&a_idx, &a_data, &zero_idx, &zero_data), 1.0, epsilon = 1e-5);
+        assert_relative_eq!(
+            sparse_cosine(&a_idx, &a_data, &zero_idx, &zero_data),
+            1.0,
+            epsilon = 1e-5
+        );
     }
 
     #[test]
@@ -363,7 +390,11 @@ mod tests {
         let b_data = vec![-1.0, 2.0, -1.0];
 
         let dist = sparse_cosine(&a_idx, &a_data, &b_idx, &b_data);
-        assert!(dist >= 0.0 && dist <= 2.0, "Cosine distance {} out of bounds [0, 2]", dist);
+        assert!(
+            (0.0..=2.0).contains(&dist),
+            "Cosine distance {} out of bounds [0, 2]",
+            dist
+        );
     }
 
     #[test]

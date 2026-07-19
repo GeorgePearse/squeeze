@@ -3,20 +3,16 @@
 //! LLE finds a low-dimensional embedding by preserving local linear
 //! relationships between neighboring points.
 
-use ndarray::{Array1, Array2, Axis, s};
+use ndarray::{Array1, Array2};
 use ndarray_linalg::{Eigh, Solve, UPLO};
-use pyo3::prelude::*;
-use pyo3::exceptions::PyValueError;
-use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
+use ordered_float::OrderedFloat;
 use rayon::prelude::*;
 use std::collections::BinaryHeap;
-use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 use crate::mds::compute_distance_matrix;
+use crate::{Error, Result};
 
 /// Locally Linear Embedding
-#[pyclass(module = "squeeze._hnsw_backend")]
 pub struct LLE {
     n_components: usize,
     n_neighbors: usize,
@@ -25,10 +21,7 @@ pub struct LLE {
     error_on_singular: bool,
 }
 
-#[pymethods]
 impl LLE {
-    #[new]
-    #[pyo3(signature = (n_components=2, n_neighbors=12, reg=1e-3, error_on_singular=false))]
     pub fn new(n_components: usize, n_neighbors: usize, reg: f64, error_on_singular: bool) -> Self {
         Self {
             n_components,
@@ -39,22 +32,20 @@ impl LLE {
     }
 
     /// Fit and transform data using LLE
-    pub fn fit_transform<'py>(&self, py: Python<'py>, data: PyReadonlyArray2<f64>) 
-        -> PyResult<Bound<'py, PyArray2<f64>>> 
-    {
-        let x = data.as_array();
+    pub fn fit_transform(&self, data: &Array2<f64>) -> Result<Array2<f64>> {
+        let x = data.view();
         let n_samples = x.nrows();
-        let n_features = x.ncols();
 
         if self.n_neighbors >= n_samples {
-            return Err(PyValueError::new_err(format!(
+            return Err(Error::InvalidParameter(format!(
                 "n_neighbors ({}) must be less than n_samples ({})",
                 self.n_neighbors, n_samples
             )));
         }
 
         // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
+        let x_f32: Vec<Vec<f32>> = x
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -69,34 +60,40 @@ impl LLE {
         // Step 2: Compute embedding via eigendecomposition of (I-W)^T(I-W)
         let embedding = self.compute_embedding(&weights, n_samples)?;
 
-        Ok(embedding.into_pyarray_bound(py))
+        Ok(embedding)
     }
 }
 
 impl LLE {
     fn find_neighbors(&self, distances: &Array2<f64>, n_samples: usize) -> Vec<Vec<usize>> {
-        (0..n_samples).into_par_iter().map(|i| {
-            // Use a max-heap with positive distances
-            // When we pop, we remove the largest distance
-            // This keeps the k smallest distances (nearest neighbors)
-            let mut heap: BinaryHeap<(OrderedFloat<f64>, usize)> = BinaryHeap::new();
+        (0..n_samples)
+            .into_par_iter()
+            .map(|i| {
+                // Use a max-heap with positive distances
+                // When we pop, we remove the largest distance
+                // This keeps the k smallest distances (nearest neighbors)
+                let mut heap: BinaryHeap<(OrderedFloat<f64>, usize)> = BinaryHeap::new();
 
-            for j in 0..n_samples {
-                if i != j {
-                    heap.push((OrderedFloat(distances[[i, j]]), j));
-                    if heap.len() > self.n_neighbors {
-                        heap.pop(); // Remove the largest (farthest)
+                for j in 0..n_samples {
+                    if i != j {
+                        heap.push((OrderedFloat(distances[[i, j]]), j));
+                        if heap.len() > self.n_neighbors {
+                            heap.pop(); // Remove the largest (farthest)
+                        }
                     }
                 }
-            }
 
-            heap.into_iter().map(|(_, j)| j).collect()
-        }).collect()
+                heap.into_iter().map(|(_, j)| j).collect()
+            })
+            .collect()
     }
 
-    fn compute_weights(&self, x: &Array2<f64>, neighbors: &[Vec<usize>], n_samples: usize)
-        -> PyResult<Array2<f64>>
-    {
+    fn compute_weights(
+        &self,
+        x: &Array2<f64>,
+        neighbors: &[Vec<usize>],
+        n_samples: usize,
+    ) -> Result<Array2<f64>> {
         let n_features = x.ncols();
         let mut weights = Array2::zeros((n_samples, n_samples));
         let mut fallback_count = 0;
@@ -133,7 +130,7 @@ impl LLE {
                 Ok(w) => w,
                 Err(e) => {
                     if self.error_on_singular {
-                        return Err(PyValueError::new_err(format!(
+                        return Err(Error::Computation(format!(
                             "Failed to solve for weights at point {}: {}. \
                             Try increasing reg parameter or using error_on_singular=false.",
                             i, e
@@ -149,14 +146,14 @@ impl LLE {
             let w_sum: f64 = w.sum();
             if w_sum.abs() < 1e-12 {
                 if self.error_on_singular {
-                    return Err(PyValueError::new_err(format!(
+                    return Err(Error::Computation(format!(
                         "Weight sum is zero at point {}. Try increasing reg parameter.",
                         i
                     )));
                 }
                 // Fallback: uniform weights
                 fallback_count += 1;
-                for (j_idx, &j) in neighbors[i].iter().enumerate() {
+                for &j in &neighbors[i] {
                     weights[[i, j]] = 1.0 / k as f64;
                 }
             } else {
@@ -178,10 +175,10 @@ impl LLE {
         Ok(weights)
     }
 
-    fn compute_embedding(&self, weights: &Array2<f64>, n_samples: usize) -> PyResult<Array2<f64>> {
+    fn compute_embedding(&self, weights: &Array2<f64>, n_samples: usize) -> Result<Array2<f64>> {
         // Compute M = (I - W)^T (I - W)
         let mut m = Array2::zeros((n_samples, n_samples));
-        
+
         // M = I - W - W^T + W^T W
         for i in 0..n_samples {
             m[[i, i]] += 1.0;
@@ -195,8 +192,9 @@ impl LLE {
         }
 
         // Eigendecomposition - find smallest non-zero eigenvalues
-        let (eigenvalues, eigenvectors): (Array1<f64>, Array2<f64>) = m.eigh(UPLO::Upper)
-            .map_err(|e| PyValueError::new_err(format!("Eigendecomposition failed: {}", e)))?;
+        let (eigenvalues, eigenvectors): (Array1<f64>, Array2<f64>) = m
+            .eigh(UPLO::Upper)
+            .map_err(|e| Error::Computation(format!("eigendecomposition failed: {e}")))?;
 
         // Sort by eigenvalue (ascending) and skip the first (zero eigenvalue)
         let mut indices: Vec<usize> = (0..n_samples).collect();
@@ -224,12 +222,13 @@ mod tests {
     fn test_find_neighbors() {
         let lle = LLE::new(2, 2, 1e-3, false);
 
-        let distances = Array2::from_shape_vec((4, 4), vec![
-            0.0, 1.0, 2.0, 3.0,
-            1.0, 0.0, 1.0, 2.0,
-            2.0, 1.0, 0.0, 1.0,
-            3.0, 2.0, 1.0, 0.0,
-        ]).unwrap();
+        let distances = Array2::from_shape_vec(
+            (4, 4),
+            vec![
+                0.0, 1.0, 2.0, 3.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0, 0.0, 1.0, 3.0, 2.0, 1.0, 0.0,
+            ],
+        )
+        .unwrap();
 
         let neighbors = lle.find_neighbors(&distances, 4);
 
@@ -252,13 +251,14 @@ mod tests {
         let lle = LLE::new(2, 3, 1e-3, false);
 
         // More complex distance matrix
-        let distances = Array2::from_shape_vec((5, 5), vec![
-            0.0, 1.0, 5.0, 2.0, 3.0,
-            1.0, 0.0, 4.0, 3.0, 2.0,
-            5.0, 4.0, 0.0, 1.0, 2.0,
-            2.0, 3.0, 1.0, 0.0, 4.0,
-            3.0, 2.0, 2.0, 4.0, 0.0,
-        ]).unwrap();
+        let distances = Array2::from_shape_vec(
+            (5, 5),
+            vec![
+                0.0, 1.0, 5.0, 2.0, 3.0, 1.0, 0.0, 4.0, 3.0, 2.0, 5.0, 4.0, 0.0, 1.0, 2.0, 2.0,
+                3.0, 1.0, 0.0, 4.0, 3.0, 2.0, 2.0, 4.0, 0.0,
+            ],
+        )
+        .unwrap();
 
         let neighbors = lle.find_neighbors(&distances, 5);
 
@@ -274,13 +274,11 @@ mod tests {
         let lle = LLE::new(2, 3, 1e-3, false);
 
         // Simple test data
-        let x = Array2::from_shape_vec((5, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            2.0, 0.0,
-            1.0, 1.0,
-            0.0, 1.0,
-        ]).unwrap();
+        let x = Array2::from_shape_vec(
+            (5, 2),
+            vec![0.0, 0.0, 1.0, 0.0, 2.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+        )
+        .unwrap();
 
         let neighbors = vec![
             vec![1, 3, 4],
@@ -304,11 +302,9 @@ mod tests {
         let lle = LLE::new(2, 2, 1e-3, false);
 
         // Simple weight matrix
-        let weights = Array2::from_shape_vec((3, 3), vec![
-            0.0, 0.5, 0.5,
-            0.5, 0.0, 0.5,
-            0.5, 0.5, 0.0,
-        ]).unwrap();
+        let weights =
+            Array2::from_shape_vec((3, 3), vec![0.0, 0.5, 0.5, 0.5, 0.0, 0.5, 0.5, 0.5, 0.0])
+                .unwrap();
 
         let embedding = lle.compute_embedding(&weights, 3).unwrap();
 
@@ -329,21 +325,12 @@ mod tests {
 
     #[test]
     fn test_weights_non_negative() {
-        let lle = LLE::new(2, 3, 1e-1, false);  // Higher reg for stability
+        let lle = LLE::new(2, 3, 1e-1, false); // Higher reg for stability
 
-        let x = Array2::from_shape_vec((4, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            0.5, 0.5,
-            0.0, 1.0,
-        ]).unwrap();
+        let x =
+            Array2::from_shape_vec((4, 2), vec![0.0, 0.0, 1.0, 0.0, 0.5, 0.5, 0.0, 1.0]).unwrap();
 
-        let neighbors = vec![
-            vec![1, 2, 3],
-            vec![0, 2, 3],
-            vec![0, 1, 3],
-            vec![0, 1, 2],
-        ];
+        let neighbors = vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2]];
 
         let weights = lle.compute_weights(&x, &neighbors, 4).unwrap();
 

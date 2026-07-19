@@ -6,7 +6,6 @@
 /// - Scalar fallback for all other platforms
 ///
 /// Runtime CPU feature detection automatically selects the best implementation.
-
 use crate::metrics::{MetricError, MetricResult};
 
 #[cfg(target_arch = "x86_64")]
@@ -70,14 +69,15 @@ pub fn euclidean(a: &[f32], b: &[f32]) -> MetricResult<f32> {
     #[cfg(target_arch = "x86_64")]
     {
         if has_avx2() {
-            return Ok(unsafe { euclidean_avx2(a, b) });
+            Ok(unsafe { euclidean_avx2(a, b) })
+        } else {
+            Ok(euclidean_scalar(a, b))
         }
-        return Ok(euclidean_scalar(a, b));
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { euclidean_neon(a, b) });
+        Ok(unsafe { euclidean_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -172,14 +172,15 @@ pub fn manhattan(a: &[f32], b: &[f32]) -> MetricResult<f32> {
     #[cfg(target_arch = "x86_64")]
     {
         if has_avx2() {
-            return Ok(unsafe { manhattan_avx2(a, b) });
+            Ok(unsafe { manhattan_avx2(a, b) })
+        } else {
+            Ok(manhattan_scalar(a, b))
         }
-        return Ok(manhattan_scalar(a, b));
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { manhattan_neon(a, b) });
+        Ok(unsafe { manhattan_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -254,10 +255,7 @@ unsafe fn manhattan_neon(a: &[f32], b: &[f32]) -> f32 {
 /// Scalar fallback
 #[inline]
 fn manhattan_scalar(a: &[f32], b: &[f32]) -> f32 {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| (x - y).abs())
-        .sum()
+    a.iter().zip(b.iter()).map(|(x, y)| (x - y).abs()).sum()
 }
 
 // =============================================================================
@@ -272,14 +270,15 @@ pub fn cosine(a: &[f32], b: &[f32]) -> MetricResult<f32> {
     #[cfg(target_arch = "x86_64")]
     {
         if has_avx2() {
-            return Ok(unsafe { cosine_avx2(a, b) });
+            Ok(unsafe { cosine_avx2(a, b) })
+        } else {
+            Ok(cosine_scalar(a, b))
         }
-        return Ok(cosine_scalar(a, b));
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { cosine_neon(a, b) });
+        Ok(unsafe { cosine_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -295,7 +294,7 @@ unsafe fn cosine_avx2(a: &[f32], b: &[f32]) -> f32 {
     let mut dot = _mm256_setzero_ps();
     let mut norm_a = _mm256_setzero_ps();
     let mut norm_b = _mm256_setzero_ps();
-    
+
     let len = a.len();
     let chunks = len / 8;
 
@@ -303,7 +302,7 @@ unsafe fn cosine_avx2(a: &[f32], b: &[f32]) -> f32 {
         let idx = i * 8;
         let va = _mm256_loadu_ps(a.as_ptr().add(idx));
         let vb = _mm256_loadu_ps(b.as_ptr().add(idx));
-        
+
         dot = _mm256_fmadd_ps(va, vb, dot);
         norm_a = _mm256_fmadd_ps(va, va, norm_a);
         norm_b = _mm256_fmadd_ps(vb, vb, norm_b);
@@ -338,7 +337,7 @@ unsafe fn cosine_neon(a: &[f32], b: &[f32]) -> f32 {
     let mut dot = vdupq_n_f32(0.0);
     let mut norm_a = vdupq_n_f32(0.0);
     let mut norm_b = vdupq_n_f32(0.0);
-    
+
     let len = a.len();
     let chunks = len / 4;
 
@@ -346,7 +345,7 @@ unsafe fn cosine_neon(a: &[f32], b: &[f32]) -> f32 {
         let idx = i * 4;
         let va = vld1q_f32(a.as_ptr().add(idx));
         let vb = vld1q_f32(b.as_ptr().add(idx));
-        
+
         dot = vfmaq_f32(dot, va, vb);
         norm_a = vfmaq_f32(norm_a, va, va);
         norm_b = vfmaq_f32(norm_b, vb, vb);
@@ -400,16 +399,16 @@ unsafe fn horizontal_sum_avx2(v: __m256) -> f32 {
     // Extract high and low 128-bit halves
     let hi = _mm256_extractf128_ps(v, 1);
     let lo = _mm256_castps256_ps128(v);
-    
+
     // Add the two halves
     let sum128 = _mm_add_ps(hi, lo);
-    
+
     // Horizontal add within 128-bit register
     let shuf = _mm_movehdup_ps(sum128);
     let sums = _mm_add_ps(sum128, shuf);
     let shuf = _mm_movehl_ps(shuf, sums);
     let sums = _mm_add_ss(sums, shuf);
-    
+
     _mm_cvtss_f32(sums)
 }
 
@@ -426,12 +425,12 @@ mod tests {
     fn test_simd_detection() {
         // Just verify detection doesn't panic
         let _ = has_simd();
-        
+
         #[cfg(target_arch = "x86_64")]
         {
             let _ = has_avx2();
         }
-        
+
         #[cfg(target_arch = "aarch64")]
         {
             assert!(has_neon());
@@ -456,10 +455,10 @@ mod tests {
         // Test with 64 dimensions to exercise SIMD paths
         let a: Vec<f32> = (0..64).map(|i| i as f32).collect();
         let b: Vec<f32> = (0..64).map(|i| (i + 1) as f32).collect();
-        
+
         // Compute expected value
         let expected: f32 = 64.0_f32.sqrt(); // sqrt(64 * 1^2)
-        
+
         assert_relative_eq!(euclidean(&a, &b).unwrap(), expected, epsilon = 1e-5);
     }
 
@@ -474,9 +473,9 @@ mod tests {
     fn test_manhattan_simd_large() {
         let a: Vec<f32> = (0..64).map(|i| i as f32).collect();
         let b: Vec<f32> = (0..64).map(|i| (i + 1) as f32).collect();
-        
+
         let expected: f32 = 64.0; // 64 * 1
-        
+
         assert_relative_eq!(manhattan(&a, &b).unwrap(), expected, epsilon = 1e-5);
     }
 
@@ -498,11 +497,11 @@ mod tests {
         // Test with 64 dimensions
         let a: Vec<f32> = (0..64).map(|i| (i as f32).sin()).collect();
         let b: Vec<f32> = (0..64).map(|i| (i as f32).cos()).collect();
-        
+
         // Compute scalar version for comparison
         let result_simd = cosine(&a, &b).unwrap();
         let result_scalar = cosine_scalar(&a, &b);
-        
+
         assert_relative_eq!(result_simd, result_scalar, epsilon = 1e-5);
     }
 
@@ -510,7 +509,7 @@ mod tests {
     fn test_dimension_mismatch() {
         let a = vec![1.0, 2.0];
         let b = vec![1.0];
-        
+
         assert!(euclidean(&a, &b).is_err());
         assert!(manhattan(&a, &b).is_err());
         assert!(cosine(&a, &b).is_err());
@@ -522,10 +521,10 @@ mod tests {
         for len in [7, 15, 31, 63, 127] {
             let a: Vec<f32> = (0..len).map(|i| i as f32 * 0.1).collect();
             let b: Vec<f32> = (0..len).map(|i| (len - i) as f32 * 0.1).collect();
-            
+
             let simd = euclidean(&a, &b).unwrap();
             let scalar = euclidean_scalar(&a, &b);
-            
+
             assert_relative_eq!(simd, scalar, epsilon = 1e-4);
         }
     }
@@ -535,10 +534,10 @@ mod tests {
         for len in [7, 15, 31, 63, 127] {
             let a: Vec<f32> = (0..len).map(|i| i as f32 * 0.1).collect();
             let b: Vec<f32> = (0..len).map(|i| (len - i) as f32 * 0.1).collect();
-            
+
             let simd = manhattan(&a, &b).unwrap();
             let scalar = manhattan_scalar(&a, &b);
-            
+
             assert_relative_eq!(simd, scalar, epsilon = 1e-4);
         }
     }
@@ -548,10 +547,10 @@ mod tests {
         for len in [7, 15, 31, 63, 127] {
             let a: Vec<f32> = (0..len).map(|i| (i as f32 * 0.1).sin()).collect();
             let b: Vec<f32> = (0..len).map(|i| (i as f32 * 0.1).cos()).collect();
-            
+
             let simd = cosine(&a, &b).unwrap();
             let scalar = cosine_scalar(&a, &b);
-            
+
             assert_relative_eq!(simd, scalar, epsilon = 1e-4);
         }
     }
