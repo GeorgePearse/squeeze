@@ -1,8 +1,8 @@
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashSet};
 use std::f32;
-use serde::{Serialize, Deserialize};
 
 /// Represents a node in the HNSW (Hierarchical Navigable Small World) graph.
 ///
@@ -18,8 +18,8 @@ use serde::{Serialize, Deserialize};
 /// with an exponentially decreasing probability for higher layers.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Node {
-    /// Links at each level. links[0] is base layer.
-    /// links[i] contains neighbors at level i.
+    /// Links at each level. `links[0]` is the base layer.
+    /// `links[i]` contains neighbors at level `i`.
     pub links: Vec<Vec<usize>>,
 }
 
@@ -33,7 +33,11 @@ impl Node {
     }
 
     fn level(&self) -> usize {
-        if self.links.is_empty() { 0 } else { self.links.len() - 1 }
+        if self.links.is_empty() {
+            0
+        } else {
+            self.links.len() - 1
+        }
     }
 }
 
@@ -61,7 +65,9 @@ impl PartialOrd for Candidate {
 impl Ord for Candidate {
     fn cmp(&self, other: &Self) -> Ordering {
         // Reverse ordering for MinHeap so pop() gives smallest
-        other.distance.partial_cmp(&self.distance)
+        other
+            .distance
+            .partial_cmp(&self.distance)
             .unwrap_or(Ordering::Equal)
             .then_with(|| other.index.cmp(&self.index))
     }
@@ -72,17 +78,21 @@ impl Ord for Candidate {
 struct MaxDistCandidate(Candidate);
 
 impl PartialEq for MaxDistCandidate {
-    fn eq(&self, other: &Self) -> bool { self.0.eq(&other.0) }
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
 }
 impl Eq for MaxDistCandidate {}
 impl PartialOrd for MaxDistCandidate {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.0.distance.partial_cmp(&other.0.distance)
+        Some(self.cmp(other))
     }
 }
 impl Ord for MaxDistCandidate {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.0.distance.partial_cmp(&other.0.distance)
+        self.0
+            .distance
+            .partial_cmp(&other.0.distance)
             .unwrap_or(Ordering::Equal)
     }
 }
@@ -141,29 +151,35 @@ pub enum PruneStrategy {
 pub struct Hnsw {
     /// Graph nodes. Index corresponds to external data index.
     pub nodes: Vec<Node>,
-    
+
     /// Entry point to the graph (node index with max level)
     pub entry_point: Option<usize>,
-    
+
     /// Parameters
     pub m: usize,
     pub m_max: usize,
     pub m_max0: usize,
     pub ef_construction: usize,
     pub level_mult: f64,
-    
+
     /// Pruning strategy for neighbor selection
     pub prune_strategy: PruneStrategy,
-    
+
     /// RNG state (simple usage for now)
     pub _rng_seed: u64,
 }
 
 impl Hnsw {
     pub fn new(m: usize, ef_construction: usize, capacity: usize, rng_seed: u64) -> Self {
-        Self::with_prune_strategy(m, ef_construction, capacity, rng_seed, PruneStrategy::Simple)
+        Self::with_prune_strategy(
+            m,
+            ef_construction,
+            capacity,
+            rng_seed,
+            PruneStrategy::Simple,
+        )
     }
-    
+
     /// Create a new HNSW index with a specific pruning strategy
     pub fn with_prune_strategy(
         m: usize,
@@ -175,7 +191,7 @@ impl Hnsw {
         let m_max = m;
         let m_max0 = m * 2;
         let level_mult = 1.0 / (m as f64).ln();
-        
+
         Self {
             nodes: Vec::with_capacity(capacity),
             entry_point: None,
@@ -188,16 +204,16 @@ impl Hnsw {
             _rng_seed: rng_seed,
         }
     }
-    
+
     fn get_random_level(&mut self) -> usize {
-        let mut rng = rand::rng(); 
+        let mut rng = rand::rng();
         let r: f64 = rng.random();
         let level_float = -r.ln() * self.level_mult;
         level_float.floor() as usize
     }
-    
+
     // ... (rest of implementation is identical, just need to ensure it's all there)
-    
+
     /// Inserts a new node into the HNSW graph.
     ///
     /// This is the core construction algorithm. It:
@@ -234,16 +250,17 @@ impl Hnsw {
     /// # Panics
     ///
     /// May panic if `item_idx` is extremely large (memory allocation failure).
-    pub fn insert<F>(&mut self, item_idx: usize, dist_fn: &F) 
-    where F: Fn(usize, usize) -> f32 
+    pub fn insert<F>(&mut self, item_idx: usize, dist_fn: &F)
+    where
+        F: Fn(usize, usize) -> f32,
     {
         let level = self.get_random_level();
         let mut new_node = Node::new(level);
-        
+
         if item_idx >= self.nodes.len() {
-            self.nodes.resize(item_idx + 1, Node::new(0)); 
+            self.nodes.resize(item_idx + 1, Node::new(0));
         }
-        
+
         let entry_point = match self.entry_point {
             Some(ep) => ep,
             None => {
@@ -252,18 +269,20 @@ impl Hnsw {
                 return;
             }
         };
-        
+
         let max_level = self.nodes[entry_point].level();
         let mut curr_obj = entry_point;
         let mut curr_dist = dist_fn(item_idx, curr_obj);
-        
+
         for l in (level + 1..=max_level).rev() {
             let mut changed = true;
             while changed {
                 changed = false;
                 let current_node = &self.nodes[curr_obj];
-                if l >= current_node.links.len() { break; }
-                
+                if l >= current_node.links.len() {
+                    break;
+                }
+
                 for &neighbor_idx in &current_node.links[l] {
                     let d = dist_fn(item_idx, neighbor_idx);
                     if d < curr_dist {
@@ -274,122 +293,149 @@ impl Hnsw {
                 }
             }
         }
-        
-        let mut ep = curr_obj; 
-        
+
+        let mut ep = curr_obj;
+
         for l in (0..=std::cmp::min(level, max_level)).rev() {
             let candidates = self.search_layer(ep, item_idx, self.ef_construction, l, dist_fn);
-            
+
             if let Some(c) = candidates.peek() {
-                ep = c.index; 
+                ep = c.index;
             }
 
             let m_allowed = if l == 0 { self.m_max0 } else { self.m_max };
             let selected = self.select_neighbors(&candidates, m_allowed, dist_fn);
-            
+
             new_node.links[l] = selected.clone();
-            
+
             for &neighbor_idx in &selected {
                 let mut neighbor_links = self.nodes[neighbor_idx].links[l].clone();
                 neighbor_links.push(item_idx);
-                
+
                 let m_neigh_allowed = if l == 0 { self.m_max0 } else { self.m_max };
                 if neighbor_links.len() > m_neigh_allowed {
-                    neighbor_links = self.prune_connections(neighbor_idx, &neighbor_links, m_neigh_allowed, dist_fn);
+                    neighbor_links = self.prune_connections(
+                        neighbor_idx,
+                        &neighbor_links,
+                        m_neigh_allowed,
+                        dist_fn,
+                    );
                 }
-                
+
                 self.nodes[neighbor_idx].links[l] = neighbor_links;
             }
         }
-        
+
         self.nodes[item_idx] = new_node;
-        
+
         if level > max_level {
             self.entry_point = Some(item_idx);
         }
     }
-    
-    fn search_layer<F>(&self, entry_point: usize, query_idx: usize, ef: usize, level: usize, dist_fn: &F) 
-        -> BinaryHeap<Candidate> 
-    where F: Fn(usize, usize) -> f32
+
+    fn search_layer<F>(
+        &self,
+        entry_point: usize,
+        query_idx: usize,
+        ef: usize,
+        level: usize,
+        dist_fn: &F,
+    ) -> BinaryHeap<Candidate>
+    where
+        F: Fn(usize, usize) -> f32,
     {
         let mut visited = HashSet::new();
         let d_ep = dist_fn(query_idx, entry_point);
         visited.insert(entry_point);
-        
-        let mut c_heap = BinaryHeap::new(); 
-        c_heap.push(Candidate { index: entry_point, distance: d_ep });
-        
+
+        let mut c_heap = BinaryHeap::new();
+        c_heap.push(Candidate {
+            index: entry_point,
+            distance: d_ep,
+        });
+
         let mut w_heap = BinaryHeap::new();
-        w_heap.push(MaxDistCandidate(Candidate { index: entry_point, distance: d_ep }));
-        
-        while let Some(c) = c_heap.pop() { 
-            let f = w_heap.peek().unwrap(); 
-            
+        w_heap.push(MaxDistCandidate(Candidate {
+            index: entry_point,
+            distance: d_ep,
+        }));
+
+        while let Some(c) = c_heap.pop() {
+            let f = w_heap.peek().unwrap();
+
             if c.distance > f.0.distance {
-                break; 
+                break;
             }
-            
+
             let c_node = &self.nodes[c.index];
-            if level >= c_node.links.len() { continue; }
-            
+            if level >= c_node.links.len() {
+                continue;
+            }
+
             for &neighbor_idx in &c_node.links[level] {
                 if !visited.contains(&neighbor_idx) {
                     visited.insert(neighbor_idx);
-                    
+
                     let d = dist_fn(query_idx, neighbor_idx);
                     let f_curr = w_heap.peek().unwrap();
-                    
+
                     if d < f_curr.0.distance || w_heap.len() < ef {
-                        let cand = Candidate { index: neighbor_idx, distance: d };
+                        let cand = Candidate {
+                            index: neighbor_idx,
+                            distance: d,
+                        };
                         c_heap.push(cand);
                         w_heap.push(MaxDistCandidate(cand));
-                        
+
                         if w_heap.len() > ef {
-                            w_heap.pop(); 
+                            w_heap.pop();
                         }
                     }
                 }
             }
         }
-        
+
         let mut result = BinaryHeap::new();
         for wrapper in w_heap {
             result.push(wrapper.0);
         }
         result
     }
-    
+
     /// Simple neighbor selection: keep M nearest neighbors
     fn select_neighbors_simple(candidates: &BinaryHeap<Candidate>, m: usize) -> Vec<usize> {
         let mut sorted: Vec<_> = candidates.iter().copied().collect();
-        sorted.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap_or(Ordering::Equal));
+        sorted.sort_by(|a, b| {
+            a.distance
+                .partial_cmp(&b.distance)
+                .unwrap_or(Ordering::Equal)
+        });
         sorted.into_iter().take(m).map(|c| c.index).collect()
     }
-    
+
     /// RobustPrune: diversity-aware neighbor selection
-    /// 
+    ///
     /// Implements the RobustPrune heuristic from NSG/DiskANN papers.
     /// Instead of greedily selecting the M nearest neighbors, this ensures
     /// diversity by only adding neighbors that are sufficiently distant from
     /// already selected neighbors.
-    /// 
+    ///
     /// # Algorithm
-    /// 
+    ///
     /// For each candidate c (sorted by distance to query):
     ///   - If |selected| >= M: stop
     ///   - Check diversity: for all already selected neighbors s:
     ///     - If distance(c, s) <= alpha * distance(c, query): too similar, skip
     ///   - If diverse: add c to selected
-    /// 
+    ///
     /// # Parameters
-    /// 
+    ///
     /// - `alpha`: Diversity threshold (typically 1.0-1.2)
     ///   - Higher alpha = more diversity required
     ///   - Lower alpha = more similar to simple selection
-    /// 
+    ///
     /// # Impact
-    /// 
+    ///
     /// - Prevents local clustering
     /// - Improves graph connectivity
     /// - Better long-range connections
@@ -406,23 +452,27 @@ impl Hnsw {
         if candidates.is_empty() {
             return Vec::new();
         }
-        
+
         // Sort candidates by distance (closest first)
         let mut sorted: Vec<_> = candidates.iter().copied().collect();
-        sorted.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap_or(Ordering::Equal));
-        
+        sorted.sort_by(|a, b| {
+            a.distance
+                .partial_cmp(&b.distance)
+                .unwrap_or(Ordering::Equal)
+        });
+
         let mut selected = Vec::with_capacity(m);
-        
+
         for candidate in sorted.iter() {
             if selected.len() >= m {
                 break;
             }
-            
+
             // Check diversity: is this candidate sufficiently different from already selected?
             let mut diverse = true;
             for &selected_idx in &selected {
                 let dist_to_selected = dist_fn(candidate.index, selected_idx);
-                
+
                 // If candidate is too close to an already selected neighbor, skip it
                 // alpha * candidate.distance is the diversity threshold
                 if dist_to_selected <= alpha * candidate.distance {
@@ -430,12 +480,12 @@ impl Hnsw {
                     break;
                 }
             }
-            
+
             if diverse {
                 selected.push(candidate.index);
             }
         }
-        
+
         // If we didn't get enough diverse neighbors, fill with closest remaining
         // This ensures we always have M neighbors if M candidates are available
         if selected.len() < m && sorted.len() > selected.len() {
@@ -448,10 +498,10 @@ impl Hnsw {
                 }
             }
         }
-        
+
         selected
     }
-    
+
     /// Select neighbors using the configured pruning strategy
     fn select_neighbors<F>(
         &self,
@@ -469,7 +519,7 @@ impl Hnsw {
             }
         }
     }
-    
+
     fn prune_connections<F>(
         &self,
         node_idx: usize,
@@ -483,12 +533,15 @@ impl Hnsw {
         let mut candidates: BinaryHeap<Candidate> = BinaryHeap::new();
         for &neigh in neighbors {
             let d = dist_fn(node_idx, neigh);
-            candidates.push(Candidate { index: neigh, distance: d });
+            candidates.push(Candidate {
+                index: neigh,
+                distance: d,
+            });
         }
-        
+
         self.select_neighbors(&candidates, m_max, dist_fn)
     }
-    
+
     /// Searches the HNSW graph for approximate nearest neighbors.
     ///
     /// Performs a hierarchical greedy search starting from the highest layer
@@ -525,24 +578,35 @@ impl Hnsw {
     ///     println!("Neighbor {} at distance {}", node_idx, distance);
     /// }
     /// ```
-    pub fn search<F>(&self, _query_obj: Option<usize>, _k: usize, ef: usize, dist_to_query: F) -> Vec<(usize, f32)>
-    where F: Fn(usize) -> f32
+    pub fn search<F>(
+        &self,
+        _query_obj: Option<usize>,
+        _k: usize,
+        ef: usize,
+        dist_to_query: F,
+    ) -> Vec<(usize, f32)>
+    where
+        F: Fn(usize) -> f32,
     {
-        if self.entry_point.is_none() { return Vec::new(); }
+        if self.entry_point.is_none() {
+            return Vec::new();
+        }
         let entry_point = self.entry_point.unwrap();
-        
+
         let mut curr_obj = entry_point;
         let mut curr_dist = dist_to_query(curr_obj);
-        
+
         let max_level = self.nodes[entry_point].level();
-        
+
         for l in (1..=max_level).rev() {
             let mut changed = true;
             while changed {
                 changed = false;
                 let current_node = &self.nodes[curr_obj];
-                if l >= current_node.links.len() { break; }
-                
+                if l >= current_node.links.len() {
+                    break;
+                }
+
                 for &neighbor_idx in &current_node.links[l] {
                     let d = dist_to_query(neighbor_idx);
                     if d < curr_dist {
@@ -553,30 +617,43 @@ impl Hnsw {
                 }
             }
         }
-        
+
         let mut visited = HashSet::new();
         let mut c_heap = BinaryHeap::new();
         let mut w_heap = BinaryHeap::new();
-        
+
         visited.insert(curr_obj);
-        c_heap.push(Candidate { index: curr_obj, distance: curr_dist });
-        w_heap.push(MaxDistCandidate(Candidate { index: curr_obj, distance: curr_dist }));
-        
+        c_heap.push(Candidate {
+            index: curr_obj,
+            distance: curr_dist,
+        });
+        w_heap.push(MaxDistCandidate(Candidate {
+            index: curr_obj,
+            distance: curr_dist,
+        }));
+
         while let Some(c) = c_heap.pop() {
             let f = w_heap.peek().unwrap();
-            if c.distance > f.0.distance { break; }
-            
+            if c.distance > f.0.distance {
+                break;
+            }
+
             let c_node = &self.nodes[c.index];
-            if c_node.links.is_empty() { continue; }
-            
+            if c_node.links.is_empty() {
+                continue;
+            }
+
             for &neighbor_idx in &c_node.links[0] {
                 if !visited.contains(&neighbor_idx) {
                     visited.insert(neighbor_idx);
                     let d = dist_to_query(neighbor_idx);
                     let f_curr = w_heap.peek().unwrap();
-                    
+
                     if d < f_curr.0.distance || w_heap.len() < ef {
-                        let cand = Candidate { index: neighbor_idx, distance: d };
+                        let cand = Candidate {
+                            index: neighbor_idx,
+                            distance: d,
+                        };
                         c_heap.push(cand);
                         w_heap.push(MaxDistCandidate(cand));
                         if w_heap.len() > ef {
@@ -586,8 +663,11 @@ impl Hnsw {
                 }
             }
         }
-        
-        let mut result_vec: Vec<_> = w_heap.into_iter().map(|w| (w.0.index, w.0.distance)).collect();
+
+        let mut result_vec: Vec<_> = w_heap
+            .into_iter()
+            .map(|w| (w.0.index, w.0.distance))
+            .collect();
         result_vec.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
         result_vec
     }
@@ -601,44 +681,44 @@ mod tests {
     fn test_hnsw_simple_1d() {
         let data: Vec<f32> = (0..10).map(|x| x as f32).collect();
         let dist_fn = |i: usize, j: usize| (data[i] - data[j]).abs();
-        
+
         let mut hnsw = Hnsw::new(2, 10, 10, 12345);
-        
+
         for i in 0..10 {
             hnsw.insert(i, &dist_fn);
         }
-        
+
         let query_val = 4.1;
         let dist_query = |i: usize| (data[i] - query_val).abs();
-        
+
         let results = hnsw.search(None, 3, 10, dist_query);
-        
+
         assert_eq!(results[0].0, 4);
         assert!((results[0].1 - 0.1).abs() < 0.001);
-        
+
         assert_eq!(results[1].0, 5);
-        
+
         assert_eq!(results[2].0, 3);
     }
-    
+
     #[test]
     fn test_hnsw_reproducibility() {
         // Test that same seed gives same results
         let data: Vec<f32> = (0..20).map(|x| (x as f32) * 0.5).collect();
         let dist_fn = |i: usize, j: usize| (data[i] - data[j]).abs();
-        
+
         let mut hnsw1 = Hnsw::new(4, 20, 20, 42);
         let mut hnsw2 = Hnsw::new(4, 20, 20, 42);
-        
+
         for i in 0..20 {
             hnsw1.insert(i, &dist_fn);
             hnsw2.insert(i, &dist_fn);
         }
-        
+
         let dist_query = |i: usize| data[i].abs();
         let results1 = hnsw1.search(None, 5, 20, dist_query);
         let results2 = hnsw2.search(None, 5, 20, dist_query);
-        
+
         assert_eq!(results1, results2);
     }
 }

@@ -1,40 +1,54 @@
-pub mod metrics;
-pub mod metrics_simd;
-pub mod sparse_metrics;
-pub mod hnsw_algo;
-pub mod hnsw_index;
-pub mod sparse_hnsw_index;
-pub mod mixed_precision;
-pub mod cache_aligned;
-pub mod barnes_hut;
-pub mod numerical;
+//! CPU-optimized dimensionality reduction algorithms.
+//!
+//! The public API is intentionally split into algorithms, nearest-neighbor
+//! infrastructure, and reusable numerical primitives.
 
-// Dimensionality reduction algorithms
-pub mod pca;
-pub mod tsne;
-pub mod mds;
-pub mod isomap;
-pub mod lle;
-pub mod phate;
-pub mod trimap;
-pub mod pacmap;
+mod barnes_hut;
+mod hnsw_algo;
+mod isomap;
+mod lle;
+mod mds;
+mod metrics;
+mod metrics_simd;
+mod pacmap;
+mod pca;
+mod phate;
+mod sparse_metrics;
+mod trimap;
+mod tsne;
 
-#[cfg(not(test))]
-#[pyo3::pymodule]
-fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> pyo3::PyResult<()> {
-    // HNSW index classes
-    m.add_class::<hnsw_index::HnswIndex>()?;
-    m.add_class::<sparse_hnsw_index::SparseHnswIndex>()?;
-    
-    // Dimensionality reduction algorithms
-    m.add_class::<pca::PCA>()?;
-    m.add_class::<tsne::TSNE>()?;
-    m.add_class::<mds::MDS>()?;
-    m.add_class::<isomap::Isomap>()?;
-    m.add_class::<lle::LLE>()?;
-    m.add_class::<phate::PHATE>()?;
-    m.add_class::<trimap::TriMap>()?;
-    m.add_class::<pacmap::PaCMAP>()?;
-    
-    Ok(())
+pub mod error;
+
+/// Dimensionality-reduction algorithms.
+pub mod algorithms {
+    pub use crate::isomap::Isomap;
+    pub use crate::lle::LLE;
+    pub use crate::mds::MDS;
+    pub use crate::pacmap::PaCMAP;
+    pub use crate::pca::PCA;
+    pub use crate::phate::PHATE;
+    pub use crate::trimap::TriMap;
+    pub use crate::tsne::TSNE;
 }
+
+/// Approximate nearest-neighbor infrastructure shared by the algorithms.
+pub mod neighbors {
+    pub use crate::hnsw_algo::{Hnsw, Node, PruneStrategy};
+}
+
+/// Distance functions and other reusable numerical building blocks.
+pub mod distance {
+    pub use crate::metrics::{
+        chebyshev, cosine, euclidean, hamming, manhattan, minkowski, MetricError, MetricResult,
+    };
+    #[cfg(target_arch = "x86_64")]
+    pub use crate::metrics_simd::has_avx2;
+    #[cfg(target_arch = "aarch64")]
+    pub use crate::metrics_simd::has_neon;
+    pub use crate::metrics_simd::{
+        cosine as cosine_simd, euclidean as euclidean_simd, has_simd, manhattan as manhattan_simd,
+    };
+    pub use crate::sparse_metrics::{sparse_cosine, sparse_euclidean, sparse_manhattan};
+}
+
+pub use error::{Error, Result};

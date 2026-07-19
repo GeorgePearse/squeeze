@@ -7,20 +7,17 @@
 //! This implementation supports Barnes-Hut approximation for O(n log n) gradient
 //! computation on large datasets.
 
-use ndarray::{Array1, Array2, Axis};
-use pyo3::prelude::*;
-use pyo3::exceptions::PyValueError;
-use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
+use ndarray::{Array2, Axis};
 use rand::prelude::*;
 use rand::SeedableRng;
 use rand_distr::Normal;
 use rayon::prelude::*;
 
-use crate::metrics_simd;
 use crate::barnes_hut::QuadTreeNode;
+use crate::metrics_simd;
+use crate::{Error, Result};
 
 /// t-SNE dimensionality reduction
-#[pyclass(module = "squeeze._hnsw_backend")]
 pub struct TSNE {
     n_components: usize,
     perplexity: f64,
@@ -38,10 +35,8 @@ pub struct TSNE {
     n_iter_without_progress: usize,
 }
 
-#[pymethods]
 impl TSNE {
-    #[new]
-    #[pyo3(signature = (n_components=2, perplexity=30.0, learning_rate=200.0, n_iter=1000, early_exaggeration=12.0, random_state=None, theta=0.5, use_barnes_hut=None, min_grad_norm=1e-7, n_iter_without_progress=300))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         n_components: usize,
         perplexity: f64,
@@ -69,22 +64,22 @@ impl TSNE {
     }
 
     /// Fit and transform data using t-SNE
-    pub fn fit_transform<'py>(&self, py: Python<'py>, data: PyReadonlyArray2<f64>)
-        -> PyResult<Bound<'py, PyArray2<f64>>>
-    {
-        let x = data.as_array();
+    pub fn fit_transform(&self, data: &Array2<f64>) -> Result<Array2<f64>> {
+        let x = data.view();
         let n_samples = x.nrows();
-        let n_features = x.ncols();
 
         if n_samples < 4 {
-            return Err(PyValueError::new_err("t-SNE requires at least 4 samples"));
+            return Err(Error::InvalidParameter(
+                "t-SNE requires at least four samples".into(),
+            ));
         }
 
         // Determine whether to use Barnes-Hut
         let use_bh = self.should_use_barnes_hut(n_samples);
 
         // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
+        let x_f32: Vec<Vec<f32>> = x
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -139,8 +134,8 @@ impl TSNE {
 
             // Compute gradient norm for early stopping (skip during early exaggeration phase)
             if iter >= 250 && self.min_grad_norm > 0.0 {
-                let grad_norm: f64 = grad.iter().map(|&v| v * v).sum::<f64>().sqrt()
-                    / (n_samples as f64).sqrt();
+                let grad_norm: f64 =
+                    grad.iter().map(|&v| v * v).sum::<f64>().sqrt() / (n_samples as f64).sqrt();
 
                 // Check for early stopping based on gradient norm
                 if grad_norm < self.min_grad_norm {
@@ -189,7 +184,7 @@ impl TSNE {
             }
         }
 
-        Ok(y.into_pyarray_bound(py))
+        Ok(y)
     }
 }
 
@@ -238,35 +233,38 @@ impl TSNE {
         //          = -4/Z * Σ_j [(1 + ||y_i - y_j||²)^(-2) * (y_i - y_j)]
 
         // Parallel computation
-        let grad_rows: Vec<[f64; 2]> = (0..n).into_par_iter().map(|i| {
-            let point = [y[[i, 0]], y[[i, 1]]];
-            let mut grad_i = [0.0, 0.0];
+        let grad_rows: Vec<[f64; 2]> = (0..n)
+            .into_par_iter()
+            .map(|i| {
+                let point = [y[[i, 0]], y[[i, 1]]];
+                let mut grad_i = [0.0, 0.0];
 
-            // Attractive forces (exact, since P is sparse-ish)
-            for j in 0..n {
-                if i != j && p[[i, j]] > 1e-12 {
-                    let dx = y[[i, 0]] - y[[j, 0]];
-                    let dy = y[[i, 1]] - y[[j, 1]];
-                    let dist_sq = dx * dx + dy * dy;
-                    let kernel = 1.0 / (1.0 + dist_sq);
+                // Attractive forces (exact, since P is sparse-ish)
+                for j in 0..n {
+                    if i != j && p[[i, j]] > 1e-12 {
+                        let dx = y[[i, 0]] - y[[j, 0]];
+                        let dy = y[[i, 1]] - y[[j, 1]];
+                        let dist_sq = dx * dx + dy * dy;
+                        let kernel = 1.0 / (1.0 + dist_sq);
 
-                    grad_i[0] += 4.0 * p[[i, j]] * kernel * dx;
-                    grad_i[1] += 4.0 * p[[i, j]] * kernel * dy;
+                        grad_i[0] += 4.0 * p[[i, j]] * kernel * dx;
+                        grad_i[1] += 4.0 * p[[i, j]] * kernel * dy;
+                    }
                 }
-            }
 
-            // Repulsive forces (approximated using Barnes-Hut)
-            let rep_force = tree.compute_non_edge_forces(&point, self.theta, i);
-            // The tree returns forces in the form: Σ (1/(1+d²))² * (com - point) = Σ (1+d²)^(-2) * (y_j - y_i)
-            // The repulsive gradient is: -4/Z * Σ (1+d²)^(-2) * (y_i - y_j)
-            //                          = -4/Z * Σ (1+d²)^(-2) * (-(y_j - y_i))
-            //                          = 4/Z * Σ (1+d²)^(-2) * (y_j - y_i)
-            //                          = 4/Z * tree_force
-            grad_i[0] += 4.0 * rep_force[0] / z;
-            grad_i[1] += 4.0 * rep_force[1] / z;
+                // Repulsive forces (approximated using Barnes-Hut)
+                let rep_force = tree.compute_non_edge_forces(&point, self.theta, i);
+                // The tree returns forces in the form: Σ (1/(1+d²))² * (com - point) = Σ (1+d²)^(-2) * (y_j - y_i)
+                // The repulsive gradient is: -4/Z * Σ (1+d²)^(-2) * (y_i - y_j)
+                //                          = -4/Z * Σ (1+d²)^(-2) * (-(y_j - y_i))
+                //                          = 4/Z * Σ (1+d²)^(-2) * (y_j - y_i)
+                //                          = 4/Z * tree_force
+                grad_i[0] += 4.0 * rep_force[0] / z;
+                grad_i[1] += 4.0 * rep_force[1] / z;
 
-            grad_i
-        }).collect();
+                grad_i
+            })
+            .collect();
 
         // Assemble gradient matrix
         for (i, g) in grad_rows.into_iter().enumerate() {
@@ -300,10 +298,8 @@ impl TSNE {
         // Recurse into children
         if let Some(ref children) = node.children {
             let mut contrib = 0.0;
-            for child in children.iter() {
-                if let Some(ref child_node) = child {
-                    contrib += self.compute_z_contribution(child_node, point, point_idx);
-                }
+            for child_node in children.iter().flatten() {
+                contrib += self.compute_z_contribution(child_node, point, point_idx);
             }
             return contrib;
         }
@@ -321,16 +317,19 @@ impl TSNE {
         let mut distances = Array2::zeros((n, n));
 
         // Parallel distance computation
-        let dists: Vec<Vec<f64>> = (0..n).into_par_iter().map(|i| {
-            let mut row = vec![0.0; n];
-            for j in 0..n {
-                if i != j {
-                    let d = metrics_simd::euclidean(&data[i], &data[j]).unwrap_or(0.0) as f64;
-                    row[j] = d * d; // Squared distance
+        let dists: Vec<Vec<f64>> = (0..n)
+            .into_par_iter()
+            .map(|i| {
+                let mut row = vec![0.0; n];
+                for j in 0..n {
+                    if i != j {
+                        let d = metrics_simd::euclidean(&data[i], &data[j]).unwrap_or(0.0) as f64;
+                        row[j] = d * d; // Squared distance
+                    }
                 }
-            }
-            row
-        }).collect();
+                row
+            })
+            .collect();
 
         for (i, row) in dists.into_iter().enumerate() {
             for (j, d) in row.into_iter().enumerate() {
@@ -341,61 +340,76 @@ impl TSNE {
         distances
     }
 
-    fn compute_joint_probabilities(&self, distances: &Array2<f64>, n_samples: usize) -> Array2<f64> {
+    fn compute_joint_probabilities(
+        &self,
+        distances: &Array2<f64>,
+        n_samples: usize,
+    ) -> Array2<f64> {
         let target_entropy = (self.perplexity).ln();
-        
+
         // Parallel computation of conditional probabilities P(j|i)
-        let p_rows: Vec<Vec<f64>> = (0..n_samples).into_par_iter().map(|i| {
-            let mut p_row = vec![0.0; n_samples];
-            let mut beta = 1.0; // 1 / (2 * sigma^2)
-            let mut beta_min = f64::NEG_INFINITY;
-            let mut beta_max = f64::INFINITY;
+        let p_rows: Vec<Vec<f64>> = (0..n_samples)
+            .into_par_iter()
+            .map(|i| {
+                let mut p_row = vec![0.0; n_samples];
+                let mut beta = 1.0; // 1 / (2 * sigma^2)
+                let mut beta_min = f64::NEG_INFINITY;
+                let mut beta_max = f64::INFINITY;
 
-            // Binary search for sigma that gives target perplexity
-            for _ in 0..50 {
-                // Compute P(j|i) for current beta
-                let mut sum_p = 0.0;
-                for j in 0..n_samples {
-                    if i != j {
-                        let pij = (-beta * distances[[i, j]]).exp();
-                        p_row[j] = pij;
-                        sum_p += pij;
+                // Binary search for sigma that gives target perplexity
+                for _ in 0..50 {
+                    // Compute P(j|i) for current beta
+                    let mut sum_p = 0.0;
+                    for (j, probability) in p_row.iter_mut().enumerate() {
+                        if i != j {
+                            let pij = (-beta * distances[[i, j]]).exp();
+                            *probability = pij;
+                            sum_p += pij;
+                        }
+                    }
+
+                    // Normalize
+                    if sum_p > 1e-10 {
+                        for probability in &mut p_row {
+                            *probability /= sum_p;
+                        }
+                    }
+
+                    // Compute entropy
+                    let mut entropy = 0.0;
+                    for &probability in &p_row {
+                        if probability > 1e-10 {
+                            entropy -= probability * probability.ln();
+                        }
+                    }
+
+                    // Adjust beta based on entropy
+                    let entropy_diff = entropy - target_entropy;
+                    if entropy_diff.abs() < 1e-5 {
+                        break;
+                    }
+
+                    if entropy_diff > 0.0 {
+                        beta_min = beta;
+                        beta = if beta_max.is_infinite() {
+                            beta * 2.0
+                        } else {
+                            (beta + beta_max) / 2.0
+                        };
+                    } else {
+                        beta_max = beta;
+                        beta = if beta_min.is_infinite() {
+                            beta / 2.0
+                        } else {
+                            (beta + beta_min) / 2.0
+                        };
                     }
                 }
 
-                // Normalize
-                if sum_p > 1e-10 {
-                    for j in 0..n_samples {
-                        p_row[j] /= sum_p;
-                    }
-                }
+                p_row
+            })
+            .collect();
 
-                // Compute entropy
-                let mut entropy = 0.0;
-                for j in 0..n_samples {
-                    if p_row[j] > 1e-10 {
-                        entropy -= p_row[j] * p_row[j].ln();
-                    }
-                }
-
-                // Adjust beta based on entropy
-                let entropy_diff = entropy - target_entropy;
-                if entropy_diff.abs() < 1e-5 {
-                    break;
-                }
-
-                if entropy_diff > 0.0 {
-                    beta_min = beta;
-                    beta = if beta_max.is_infinite() { beta * 2.0 } else { (beta + beta_max) / 2.0 };
-                } else {
-                    beta_max = beta;
-                    beta = if beta_min.is_infinite() { beta / 2.0 } else { (beta + beta_min) / 2.0 };
-                }
-            }
-            
-            p_row
-        }).collect();
-        
         // Assemble P matrix from parallel results
         let mut p = Array2::zeros((n_samples, n_samples));
         for (i, row) in p_rows.into_iter().enumerate() {
@@ -451,33 +465,36 @@ impl TSNE {
 
     fn compute_gradient(&self, p: &Array2<f64>, q: &Array2<f64>, y: &Array2<f64>) -> Array2<f64> {
         let n = y.nrows();
-        
+
         // Compute (P - Q) * kernel
         let pq = p - q;
-        
-        // Parallel gradient computation - each thread computes gradients for a subset of points
-        let grad_rows: Vec<Vec<f64>> = (0..n).into_par_iter().map(|i| {
-            let mut grad_row = vec![0.0; self.n_components];
-            
-            for j in 0..n {
-                if i != j {
-                    let mut dist_sq = 0.0;
-                    for k in 0..self.n_components {
-                        let diff = y[[i, k]] - y[[j, k]];
-                        dist_sq += diff * diff;
-                    }
-                    let kernel = 1.0 / (1.0 + dist_sq);
-                    let mult = 4.0 * pq[[i, j]] * kernel;
 
-                    for k in 0..self.n_components {
-                        grad_row[k] += mult * (y[[i, k]] - y[[j, k]]);
+        // Parallel gradient computation - each thread computes gradients for a subset of points
+        let grad_rows: Vec<Vec<f64>> = (0..n)
+            .into_par_iter()
+            .map(|i| {
+                let mut grad_row = vec![0.0; self.n_components];
+
+                for j in 0..n {
+                    if i != j {
+                        let mut dist_sq = 0.0;
+                        for k in 0..self.n_components {
+                            let diff = y[[i, k]] - y[[j, k]];
+                            dist_sq += diff * diff;
+                        }
+                        let kernel = 1.0 / (1.0 + dist_sq);
+                        let mult = 4.0 * pq[[i, j]] * kernel;
+
+                        for k in 0..self.n_components {
+                            grad_row[k] += mult * (y[[i, k]] - y[[j, k]]);
+                        }
                     }
                 }
-            }
-            
-            grad_row
-        }).collect();
-        
+
+                grad_row
+            })
+            .collect();
+
         // Assemble the gradient matrix from parallel results
         let mut grad = Array2::zeros((n, self.n_components));
         for (i, row) in grad_rows.into_iter().enumerate() {
@@ -496,10 +513,26 @@ mod tests {
     use approx::assert_relative_eq;
 
     /// Helper to create TSNE with default parameters
-    fn create_tsne(n_components: usize, perplexity: f64, learning_rate: f64,
-                   n_iter: usize, early_exaggeration: f64, random_state: Option<u64>) -> TSNE {
-        TSNE::new(n_components, perplexity, learning_rate, n_iter, early_exaggeration,
-                  random_state, 0.5, None, 1e-7, 300)
+    fn create_tsne(
+        n_components: usize,
+        perplexity: f64,
+        learning_rate: f64,
+        n_iter: usize,
+        early_exaggeration: f64,
+        random_state: Option<u64>,
+    ) -> TSNE {
+        TSNE::new(
+            n_components,
+            perplexity,
+            learning_rate,
+            n_iter,
+            early_exaggeration,
+            random_state,
+            0.5,
+            None,
+            1e-7,
+            300,
+        )
     }
 
     fn create_two_clusters() -> Vec<Vec<f32>> {
@@ -507,16 +540,16 @@ mod tests {
         // Cluster 1 around origin
         for i in 0..20 {
             let mut point = vec![0.0; 10];
-            for j in 0..10 {
-                point[j] = (i as f32) * 0.01 + (j as f32) * 0.001;
+            for (j, value) in point.iter_mut().enumerate() {
+                *value = (i as f32) * 0.01 + (j as f32) * 0.001;
             }
             data.push(point);
         }
         // Cluster 2 offset by 10
         for i in 0..20 {
             let mut point = vec![10.0; 10];
-            for j in 0..10 {
-                point[j] = 10.0 + (i as f32) * 0.01 + (j as f32) * 0.001;
+            for (j, value) in point.iter_mut().enumerate() {
+                *value = 10.0 + (i as f32) * 0.01 + (j as f32) * 0.001;
             }
             data.push(point);
         }
@@ -617,23 +650,16 @@ mod tests {
         let tsne = create_tsne(2, 5.0, 200.0, 100, 12.0, Some(42));
 
         // Simple test case
-        let p = Array2::from_shape_vec((3, 3), vec![
-            0.0, 0.3, 0.2,
-            0.3, 0.0, 0.2,
-            0.2, 0.2, 0.0,
-        ]).unwrap();
+        let p = Array2::from_shape_vec((3, 3), vec![0.0, 0.3, 0.2, 0.3, 0.0, 0.2, 0.2, 0.2, 0.0])
+            .unwrap();
 
-        let q = Array2::from_shape_vec((3, 3), vec![
-            0.0, 0.25, 0.25,
-            0.25, 0.0, 0.25,
-            0.25, 0.25, 0.0,
-        ]).unwrap();
+        let q = Array2::from_shape_vec(
+            (3, 3),
+            vec![0.0, 0.25, 0.25, 0.25, 0.0, 0.25, 0.25, 0.25, 0.0],
+        )
+        .unwrap();
 
-        let y = Array2::from_shape_vec((3, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            0.5, 0.866,
-        ]).unwrap();
+        let y = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 1.0, 0.0, 0.5, 0.866]).unwrap();
 
         let grad = tsne.compute_gradient(&p, &q, &y);
 
@@ -650,17 +676,21 @@ mod tests {
         let tsne = create_tsne(2, 5.0, 200.0, 100, 12.0, Some(42));
 
         // Test that binary search finds reasonable sigmas
-        let distances = Array2::from_shape_vec((3, 3), vec![
-            0.0, 1.0, 4.0,
-            1.0, 0.0, 1.0,
-            4.0, 1.0, 0.0,
-        ]).unwrap();
+        let distances =
+            Array2::from_shape_vec((3, 3), vec![0.0, 1.0, 4.0, 1.0, 0.0, 1.0, 4.0, 1.0, 0.0])
+                .unwrap();
 
         let p = tsne.compute_joint_probabilities(&distances, 3);
 
         // Check that closer points have higher probability
-        assert!(p[[0, 1]] > p[[0, 2]], "Closer points should have higher probability");
-        assert!(p[[1, 0]] > p[[2, 0]], "Closer points should have higher probability");
+        assert!(
+            p[[0, 1]] > p[[0, 2]],
+            "Closer points should have higher probability"
+        );
+        assert!(
+            p[[1, 0]] > p[[2, 0]],
+            "Closer points should have higher probability"
+        );
     }
 
     #[test]
@@ -695,7 +725,18 @@ mod tests {
         assert!(tsne.should_use_barnes_hut(100)); // Even for small n
 
         // Explicit false
-        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, Some(false), 1e-7, 300);
+        let tsne = TSNE::new(
+            2,
+            30.0,
+            200.0,
+            1000,
+            12.0,
+            None,
+            0.5,
+            Some(false),
+            1e-7,
+            300,
+        );
         assert!(!tsne.should_use_barnes_hut(5000)); // Even for large n
     }
 
@@ -716,7 +757,18 @@ mod tests {
 
     #[test]
     fn test_barnes_hut_gradient_shape() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            0.5,
+            Some(true),
+            1e-7,
+            300,
+        );
 
         // Create test P matrix and embedding
         let n = 10;
@@ -736,7 +788,18 @@ mod tests {
 
     #[test]
     fn test_barnes_hut_gradient_nonzero() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            0.5,
+            Some(true),
+            1e-7,
+            300,
+        );
 
         // Create a non-uniform P matrix
         let n = 5;
@@ -747,13 +810,11 @@ mod tests {
         p[[2, 1]] = 0.1;
 
         // Create a scattered embedding
-        let y = Array2::from_shape_vec((n, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            2.0, 1.0,
-            0.0, 2.0,
-            -1.0, 1.0,
-        ]).unwrap();
+        let y = Array2::from_shape_vec(
+            (n, 2),
+            vec![0.0, 0.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0, -1.0, 1.0],
+        )
+        .unwrap();
 
         let grad = tsne.compute_gradient_barnes_hut(&p, &y);
 
@@ -766,8 +827,30 @@ mod tests {
     fn test_barnes_hut_vs_exact_similar() {
         // With theta=0, Barnes-Hut should give similar results to exact
         // (not identical due to tree structure but should be close)
-        let tsne_exact = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.0, Some(false), 1e-7, 300);
-        let tsne_bh = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.1, Some(true), 1e-7, 300);
+        let tsne_exact = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            0.0,
+            Some(false),
+            1e-7,
+            300,
+        );
+        let tsne_bh = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            0.1,
+            Some(true),
+            1e-7,
+            300,
+        );
 
         // Create small test case
         let n = 5;
@@ -779,13 +862,11 @@ mod tests {
         let sum: f64 = p.iter().sum();
         p /= sum;
 
-        let y = Array2::from_shape_vec((n, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            0.5, 0.866,
-            -0.5, 0.866,
-            0.0, -1.0,
-        ]).unwrap();
+        let y = Array2::from_shape_vec(
+            (n, 2),
+            vec![0.0, 0.0, 1.0, 0.0, 0.5, 0.866, -0.5, 0.866, 0.0, -1.0],
+        )
+        .unwrap();
 
         let q = tsne_exact.compute_q(&y);
         let grad_exact = tsne_exact.compute_gradient(&p, &q, &y);
@@ -799,9 +880,14 @@ mod tests {
                 // Check direction agreement or both near zero
                 if exact.abs() > 0.01 && bh.abs() > 0.01 {
                     // Same sign
-                    assert!(exact * bh >= 0.0,
+                    assert!(
+                        exact * bh >= 0.0,
                         "Gradient direction mismatch at ({}, {}): exact={}, bh={}",
-                        i, j, exact, bh);
+                        i,
+                        j,
+                        exact,
+                        bh
+                    );
                 }
             }
         }
@@ -809,14 +895,21 @@ mod tests {
 
     #[test]
     fn test_z_contribution_positive() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            0.5,
+            Some(true),
+            1e-7,
+            300,
+        );
 
-        let y = Array2::from_shape_vec((4, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            0.0, 1.0,
-            1.0, 1.0,
-        ]).unwrap();
+        let y =
+            Array2::from_shape_vec((4, 2), vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]).unwrap();
 
         let tree = QuadTreeNode::build(&y);
 
@@ -831,8 +924,30 @@ mod tests {
     #[test]
     fn test_theta_effect_on_approximation() {
         // Higher theta = more approximation = faster but less accurate
-        let tsne_low_theta = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.1, Some(true), 1e-7, 300);
-        let tsne_high_theta = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 1.0, Some(true), 1e-7, 300);
+        let tsne_low_theta = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            0.1,
+            Some(true),
+            1e-7,
+            300,
+        );
+        let tsne_high_theta = TSNE::new(
+            2,
+            5.0,
+            200.0,
+            100,
+            12.0,
+            Some(42),
+            1.0,
+            Some(true),
+            1e-7,
+            300,
+        );
 
         let n = 20;
         let mut y = Array2::zeros((n, 2));
@@ -851,8 +966,12 @@ mod tests {
         assert!(z_low > 0.0);
         assert!(z_high > 0.0);
         // Both approximations should be in the same order of magnitude
-        assert!((z_low - z_high).abs() / z_low < 0.5,
-            "Z contributions should be similar: {} vs {}", z_low, z_high);
+        assert!(
+            (z_low - z_high).abs() / z_low < 0.5,
+            "Z contributions should be similar: {} vs {}",
+            z_low,
+            z_high
+        );
     }
 
     // ============== Early stopping tests ==============
@@ -874,15 +993,11 @@ mod tests {
     #[test]
     fn test_gradient_norm_computation() {
         // Test that gradient norm is computed correctly
-        let grad = Array2::from_shape_vec((3, 2), vec![
-            3.0, 0.0,
-            0.0, 4.0,
-            0.0, 0.0,
-        ]).unwrap();
+        let grad = Array2::from_shape_vec((3, 2), vec![3.0, 0.0, 0.0, 4.0, 0.0, 0.0]).unwrap();
 
         let n_samples = 3;
-        let grad_norm: f64 = grad.iter().map(|&v| v * v).sum::<f64>().sqrt()
-            / (n_samples as f64).sqrt();
+        let grad_norm: f64 =
+            grad.iter().map(|&v| v * v).sum::<f64>().sqrt() / (n_samples as f64).sqrt();
 
         // ||grad|| = sqrt(9 + 16) = 5, normalized = 5/sqrt(3) ≈ 2.887
         assert_relative_eq!(grad_norm, 5.0 / (3.0_f64).sqrt(), epsilon = 1e-6);

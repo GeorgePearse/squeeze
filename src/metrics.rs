@@ -50,10 +50,7 @@ pub fn euclidean(a: &[f32], b: &[f32]) -> MetricResult<f32> {
 /// sum(|x_i - y_i|)
 pub fn manhattan(a: &[f32], b: &[f32]) -> MetricResult<f32> {
     ensure_same_length(a, b)?;
-    Ok(a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| (x - y).abs())
-        .sum())
+    Ok(a.iter().zip(b.iter()).map(|(x, y)| (x - y).abs()).sum())
 }
 
 /// Cosine distance (1 - cosine similarity)
@@ -114,10 +111,7 @@ pub fn minkowski(a: &[f32], b: &[f32], p: f32) -> MetricResult<f32> {
 /// Note: This is approximate for floating-point values.
 pub fn hamming(a: &[f32], b: &[f32]) -> MetricResult<f32> {
     ensure_same_length(a, b)?;
-    Ok(a.iter()
-        .zip(b.iter())
-        .filter(|(x, y)| x != y)
-        .count() as f32)
+    Ok(a.iter().zip(b.iter()).filter(|(x, y)| x != y).count() as f32)
 }
 
 #[cfg(test)]
