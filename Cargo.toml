@@ -17,7 +17,7 @@ extension-module = ["pyo3/extension-module"]
 pyo3 = { version = "0.21", features = ["abi3-py39"] }
 numpy = "0.21"
 ndarray = "0.15"
-ndarray-linalg = { version = "0.16", features = ["openblas-static"] }
+ndarray-linalg = { version = "0.16", features = ["openblas-system"] }
 rayon = "1.8"
 thiserror = "1.0"
 parking_lot = "0.12"

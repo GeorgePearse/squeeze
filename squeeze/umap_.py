@@ -21,6 +21,15 @@ except ImportError:
     from sklearn.externals import joblib
 
 import numba
+try:
+    from .exact_knn import EXACT_AUTO_MAX_SAMPLES, SUPPORTED_METRICS as EXACT_SUPPORTED_METRICS, ExactKnnIndexWrapper
+
+    _EXACT_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    EXACT_AUTO_MAX_SAMPLES = 0
+    EXACT_SUPPORTED_METRICS = set()
+    ExactKnnIndexWrapper = None
+    _EXACT_AVAILABLE = False
 import numpy as np
 import scipy.sparse
 import scipy.sparse.csgraph
@@ -252,7 +261,7 @@ def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1
     return result, rho
 
 
-def _get_nn_backend(metric, sparse_data, use_hnsw=None):
+def _get_nn_backend(metric, sparse_data, use_hnsw=None, n_samples=None):
     """Determine which nearest neighbor backend to use.
 
     Parameters
@@ -274,6 +283,27 @@ def _get_nn_backend(metric, sparse_data, use_hnsw=None):
     """
     # Force PyNNDescent if requested
     if use_hnsw is False:
+        return NNDescent
+
+    # Exact brute-force backend: requested explicitly with use_hnsw="exact", or chosen
+    # automatically for dense data up to EXACT_AUTO_MAX_SAMPLES rows when the metric is one
+    # it supports. Graph indexes lose most of a large-k neighbourhood in high dimensions
+    # (65% recall at k=200, d=1280 for the HNSW backend); the exact product does not.
+    exact_ok = (not sparse_data) and metric in EXACT_SUPPORTED_METRICS and _EXACT_AVAILABLE
+    if use_hnsw == "exact":
+        if not exact_ok:
+            warn(
+                f"Exact k-NN backend requested but not usable for metric={metric!r}, sparse={sparse_data}; "
+                "falling back to the approximate backend",
+                stacklevel=2,
+            )
+        else:
+            return ExactKnnIndexWrapper
+    elif use_hnsw is None:
+        if exact_ok and n_samples is not None and n_samples <= EXACT_AUTO_MAX_SAMPLES:
+            return ExactKnnIndexWrapper
+        # Above the exact threshold "auto" keeps PyNNDescent: the HNSW backend's recall at
+        # large k in high dimensions is not good enough to be a silent default.
         return NNDescent
 
     # Check if HNSW backend is available
@@ -404,12 +434,16 @@ def nearest_neighbors(
         sparse_data = scipy.sparse.issparse(X)
         if use_hnsw is not None:
             use_hnsw_backend = use_hnsw
+        elif use_pynndescent is False:
+            use_hnsw_backend = True
         else:
-            use_hnsw_backend = (
-                not use_pynndescent if use_pynndescent is not None else None
-            )
+            # None reaches _get_nn_backend as "auto": exact for dense data up to
+            # EXACT_AUTO_MAX_SAMPLES rows, otherwise the PyNNDescent default. The old
+            # derivation turned the default use_pynndescent=True into use_hnsw=False here,
+            # which made every UMAP() call bypass the selector.
+            use_hnsw_backend = None
 
-        NNBackend = _get_nn_backend(metric, sparse_data, use_hnsw=use_hnsw_backend)
+        NNBackend = _get_nn_backend(metric, sparse_data, use_hnsw=use_hnsw_backend, n_samples=X.shape[0])
 
         # Pass HNSW-specific parameters if using HNSW backend
         backend_kwargs = {

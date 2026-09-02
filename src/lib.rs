@@ -3,6 +3,7 @@ pub mod metrics_simd;
 pub mod sparse_metrics;
 pub mod hnsw_algo;
 pub mod hnsw_index;
+pub mod exact_knn;
 pub mod sparse_hnsw_index;
 pub mod mixed_precision;
 pub mod cache_aligned;
@@ -25,6 +26,7 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     // HNSW index classes
     m.add_class::<hnsw_index::HnswIndex>()?;
     m.add_class::<sparse_hnsw_index::SparseHnswIndex>()?;
+    m.add_class::<exact_knn::ExactKnnIndex>()?;
     
     // Dimensionality reduction algorithms
     m.add_class::<pca::PCA>()?;
