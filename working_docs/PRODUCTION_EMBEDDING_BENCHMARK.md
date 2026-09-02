@@ -50,8 +50,24 @@ sgemm), which is exactly the part the Rust version parallelises.
 `EXACT_AUTO_MAX_SAMPLES` (250k) rows with a cosine/euclidean metric; `use_hnsw="exact"`
 forces it, `use_hnsw=True/False` keep the old behaviour.
 
-At 150k rows, k-NN stage on 16 cores: PyNNDescent 202 s (recall 0.999), numpy prototype
-360 s (recall 1.0). The Rust backend's number goes here once measured.
+Measured (16 cores, uncontended):
+
+| k-NN stage, k=200 | deka 4,621 rows | autoclear_ewaste 149,534 rows |
+| --- | --- | --- |
+| squeeze HNSW (defaults) | 22.2 s, recall 0.654 | not run |
+| PyNNDescent | 36.7 s (incl. JIT), recall 0.9999 | 202 s, recall 0.999 |
+| numpy prototype (argpartition single-threaded) | 1.7 s, recall 1.0 | 360 s, recall 1.0 |
+| **ExactKnnIndex (Rust)** | **0.23 s**, recall 1.0 | not run, projected ~240 s |
+
+The Rust index reaches ~117 GFLOP/s through `matrixmultiply`; OpenBLAS sgemm on the same
+box does 280-450 GFLOP/s. The obvious next step is to route the block product through
+`cblas_sgemm` (enable ndarray's `blas` feature; `openblas-src` is already linked via
+`ndarray-linalg`) with one multi-threaded BLAS call per block and rayon only over the
+per-row selection, which projects to ~130-160 s at 150k rows. Not done: the production
+decision moved to GPU (cuML UMAP, 14 s at 150k rows on an L40S), so CPU work stopped here.
+
+Trap when timing from Python: `import squeeze` pulls in pynndescent/numba and costs
+~20 s of JIT on first import. Keep it outside the timer.
 
 ## Not in scope of this note
 
