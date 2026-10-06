@@ -1,4 +1,4 @@
-"""Reproducible Digits-only comparison of additive Rust graph embeddings.
+"""Reproducible Digits / Fashion-MNIST comparison of additive Rust graph embeddings.
 
 Run from the repository root with ``python -m scripts.benchmark_neighbors``.
 Timing includes the complete fit_transform; quality evaluation is outside timing.
@@ -20,13 +20,13 @@ from pathlib import Path
 
 import numpy as np
 from scipy.stats import spearmanr
-from sklearn.datasets import load_digits
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, Isomap, SpectralEmbedding, trustworthiness
 from sklearn.metrics import pairwise_distances
 from threadpoolctl import threadpool_info, threadpool_limits
 
 import squeeze
+from scripts.benchmark_datasets import load_benchmark_data
 from squeeze import _hnsw_backend
 
 
@@ -113,6 +113,13 @@ def score(
 def main() -> None:  # noqa: PLR0915 - sequential experiment protocol
     """Run warmed, interleaved comparisons and persist every result or failure."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dataset",
+        choices=["digits", "fashion-mnist"],
+        default="digits",
+    )
+    parser.add_argument("--samples", type=int, help="Fashion-MNIST count; default 2000")
+    parser.add_argument("--cache-dir", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seeds", type=int, nargs="+", default=[17, 29, 53])
     parser.add_argument(
@@ -138,7 +145,11 @@ def main() -> None:  # noqa: PLR0915 - sequential experiment protocol
     if unknown:
         parser.error(f"Unknown methods: {sorted(unknown)}")
     args.output.mkdir(parents=True, exist_ok=True)
-    data, labels = load_digits(return_X_y=True)
+    data, labels, dataset_metadata = load_benchmark_data(
+        args.dataset,
+        args.samples,
+        cache_dir=args.cache_dir,
+    )
     data = np.ascontiguousarray(data, dtype=np.float64)
     distance = pairwise_distances(data)
     np.fill_diagonal(distance, np.inf)
@@ -156,9 +167,10 @@ def main() -> None:  # noqa: PLR0915 - sequential experiment protocol
         root / "uv.lock",
         *sorted((root / "squeeze").glob("*.py")),
         Path(__file__),
+        Path(__file__).with_name("benchmark_datasets.py"),
     ]
     metadata = {
-        "dataset": "sklearn Digits, raw pixels, 1797 x 64; no labels used in fitting",
+        "dataset": dataset_metadata,
         "data_sha256": hashlib.sha256(data.tobytes()).hexdigest(),
         "base_commit": subprocess.check_output(  # noqa: S603 - fixed read-only git arguments
             [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],

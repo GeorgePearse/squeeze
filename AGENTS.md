@@ -45,14 +45,14 @@ Every task should follow a structured workflow to ensure code quality, traceabil
 
 **GPU Implementation Policy:** We are **NOT pursuing GPU implementations** (CUDA/Metal/OpenCL) for this project. The focus is on CPU-based optimizations including SIMD vectorization, improved algorithms (RobustPrune), and better caching strategies. Any roadmap items or documentation mentioning GPU acceleration should be considered **out of scope** and de-prioritized.
 
-**Benchmark Dataset Policy:** For all benchmarking and performance testing, use **ONLY the sklearn Digits dataset** (`sklearn.datasets.load_digits`). This provides a consistent baseline across all optimizations:
+**Benchmark Dataset Policy:** For all benchmarking and performance testing, use **sklearn Digits by default** (`sklearn.datasets.load_digits`). This provides a consistent baseline across all optimizations:
 - 1,797 samples
 - 64 features (8×8 pixel images)
 - 10 classes (digits 0-9)
 - Sufficient size to show SIMD benefits
 - Fast enough for rapid iteration
 
-Do not use larger datasets (MNIST, etc.) or synthetic datasets for standard benchmarking. This keeps results comparable and testing fast.
+Fashion-MNIST is also supported at George's explicit request. Use the official test split with a fixed, balanced 2,000-image sample by default; record sample indices, checksums and seed, and keep its results separate from Digits. Larger samples are opt-in because several algorithms are quadratic. Do not add other datasets or synthetic performance benchmarks without a request.
 
 **Multi-Algorithm Focus:** When implementing features or optimizations, consider how they might benefit multiple DR algorithms:
 - Distance computations → shared across UMAP, t-SNE, Isomap

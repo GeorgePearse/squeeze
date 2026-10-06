@@ -76,8 +76,9 @@ iteration and does not guarantee eigensolver convergence on disconnected graphs.
 
 See the [reproducible benchmark report](working_docs/neighbor_benchmarks/README.md)
 for measured tradeoffs, raw results, and an offline HTML embedding explorer.
-The older tables below label neighbor overlap as “trustworthiness”; the new
-comparison reports overlap and sklearn rank-based trustworthiness separately.
+The refreshed heatmaps report neighbor overlap and sklearn rank-based
+trustworthiness separately. The historical hybrid results below retain the older
+overlap metric.
 
 ### Development toolchain
 
@@ -90,7 +91,7 @@ On Debian/Ubuntu with Rust installed:
 
 ```bash
 sudo apt-get install libopenblas-dev libssl-dev gfortran pkg-config
-uv sync --frozen --extra dev --no-install-project
+uv sync --frozen --extra dev --extra benchmark --no-install-project
 uv run --no-sync maturin develop --release --features extension-module,ndarray-linalg/openblas-system
 just test-neighbors
 just benchmark-neighbors
@@ -98,7 +99,7 @@ just benchmark-neighbors
 
 ## Supported Algorithms
 
-All algorithms are implemented in **Rust** for maximum performance. See the [Algorithm Guide](docs/algorithms/index.md) for detailed documentation on each algorithm.
+Squeeze combines Python and CPU-optimized Rust implementations. See the [Algorithm Guide](docs/algorithms/index.md) for detailed documentation on each algorithm.
 
 | Algorithm | Status | Description | Docs |
 |-----------|--------|-------------|------|
@@ -111,6 +112,8 @@ All algorithms are implemented in **Rust** for maximum performance. See the [Alg
 | **PHATE** | ✅ Implemented | Potential of Heat-diffusion for Affinity-based Trajectory Embedding | [Guide](docs/algorithms/phate.md) |
 | **TriMap** | ✅ Implemented | Large-scale Dimensionality Reduction Using Triplets | [Guide](docs/algorithms/trimap.md) |
 | **PaCMAP** | ✅ Implemented | Pairwise Controlled Manifold Approximation | [Guide](docs/algorithms/pacmap.md) |
+| **NeighborMap** | Experimental | Sampled neighbor layout with PCA or spectral initialization | [Benchmarks](working_docs/heatmap_refresh/README.md) |
+| **SpectralMap** | Experimental | Approximate sparse spectral embedding | [Benchmarks](working_docs/heatmap_refresh/README.md) |
 
 ### Choosing an Algorithm
 
@@ -120,50 +123,72 @@ All algorithms are implemented in **Rust** for maximum performance. See the [Alg
 | Cluster visualization | t-SNE, UMAP | Best local structure |
 | Large datasets (>100k) | PaCMAP, TriMap | Fast, scalable |
 | Biological trajectories | PHATE | Designed for this |
-| Best speed/quality | PaCMAP | 0.13s, 0.978 trustworthiness |
+| Experimental speed/quality | NeighborMap | See the measured tradeoffs below |
 
 ## Benchmark Results
 
-All algorithms benchmarked on the sklearn Digits dataset (1,797 samples, 64 features):
+The default comparison uses sklearn Digits (1,797 samples, 64 raw pixel features).
+Both new Rust algorithms are included below. All rows were refitted with seed 42,
+one full-data warmup, and one thread per library. Timings exclude metric scoring.
 
 ### Algorithm vs Metrics Heatmap
 
-![Metrics Heatmap](metrics_heatmap.png)
+![Algorithm vs Metrics Heatmap including NeighborMap and SpectralMap](metrics_heatmap.png)
 
-*Green = best performance, Red = worst performance (relative within each metric)*
+*Colors compare algorithms within each metric; green is better. Runtime is
+lower-is-better, using a reversed log scale. Cell labels show raw values.*
+
+Trustworthiness now uses sklearn's rank-based definition. Neighbor recall is
+reported separately; the older heatmap mislabeled overlap as trustworthiness.
+See the [methodology and reproduction commands](working_docs/heatmap_refresh/README.md)
+and [raw CSV](metrics_results.csv).
 
 ### Metrics Comparison Table
 
-| Algorithm | Trust. k=15 | Spearman | Global | Silhouette | Classif. Acc | Time |
-|-----------|:-----------:|:--------:|:------:|:----------:|:------------:|:----:|
-| **t-SNE** | 0.59 | 0.41 | 0.63 | 0.65 | 0.97 | 24.2s |
-| **UMAP** | 0.51 | 0.36 | 0.62 | **0.78** | **0.98** | 9.2s |
-| **PaCMAP** | 0.48 | 0.24 | 0.30 | 0.71 | 0.97 | **0.2s** |
-| **MDS** | 0.20 | **0.73** | **0.83** | 0.39 | 0.72 | 10.6s |
-| **PHATE** | 0.16 | 0.55 | 0.79 | 0.40 | 0.61 | 7.4s |
-| **PCA** | 0.15 | 0.58 | 0.82 | 0.39 | 0.61 | **<0.01s** |
-| **Isomap** | 0.09 | 0.29 | 0.55 | 0.39 | 0.41 | 6.3s |
-| **LLE** | 0.02 | -0.03 | 0.05 | 0.32 | 0.13 | 13.7s |
-| **TriMap** | 0.01 | -0.06 | 0.05 | 0.33 | 0.09 | 0.6s |
+| Algorithm | Trust. k15 | Neighbor recall k15 | Spearman | Silhouette | Transductive acc. | Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| **UMAP** | 0.987 | 0.522 | 0.371 | 0.763 | 0.974 | 2.23 |
+| **PCA** | 0.829 | 0.151 | 0.582 | 0.392 | 0.610 | 0.00099 |
+| **t-SNE** | 0.989 | 0.593 | 0.401 | 0.636 | 0.974 | 21.4 |
+| **MDS** | 0.896 | 0.196 | 0.734 | 0.390 | 0.715 | 9.8 |
+| **Isomap** | 0.839 | 0.214 | 0.553 | 0.451 | 0.705 | 43.1 |
+| **LLE** | 0.760 | 0.132 | 0.203 | 0.495 | 0.606 | 13.5 |
+| **PHATE** | 0.828 | 0.158 | 0.553 | 0.400 | 0.608 | 8.14 |
+| **TriMap** | 0.503 | 0.008 | -0.047 | 0.317 | 0.105 | 0.951 |
+| **PaCMAP** | 0.981 | 0.484 | 0.277 | 0.687 | 0.962 | 0.519 |
+| **NeighborMap** | 0.986 | 0.535 | 0.518 | 0.717 | 0.983 | 0.277 |
+| **SpectralMap** | 0.916 | 0.217 | 0.364 | 0.610 | 0.922 | 0.117 |
 
-**Legend:**
-- **Trust. k=15**: Trustworthiness - local neighborhood preservation (higher = better)
-- **Spearman**: Distance correlation - global structure preservation (higher = better)
-- **Global**: Inter-cluster distance preservation (higher = better)
-- **Silhouette**: Cluster separation quality (higher = better)
-- **Classif. Acc**: 5-fold CV classification accuracy (higher = better)
+Classification accuracy is five-fold RandomForest evaluation on embeddings
+fitted to **all** samples, so it is transductive rather than held-out embedding
+performance. Silhouette uses KMeans clusters. Labels do not enter embedding fits.
+This single-seed snapshot complements the earlier
+[three-seed Digits comparison](working_docs/neighbor_benchmarks/README.md).
 
-### Overall Rankings
+### Fashion-MNIST
 
-| Rank | Algorithm | Best For |
-|:----:|-----------|----------|
-| 1 | **t-SNE** | Local structure, cluster visualization |
-| 2 | **UMAP** | Balanced local/global, fast |
-| 3 | **MDS** | Global structure preservation |
-| 4 | **PaCMAP** | Speed + quality tradeoff |
-| 5 | **PHATE** | Biological trajectories |
+[Fashion-MNIST](https://github.com/zalandoresearch/fashion-mnist) is also available:
+2,000 images from the official test split, balanced at 200 per class with a fixed
+sampling seed. Each image contributes 784 raw pixel features. Downloaded files
+are checksummed and cached; sample indices are saved for reproducibility.
+
+![Fashion-MNIST Algorithm vs Metrics Heatmap](working_docs/heatmap_refresh/fashion-mnist/metrics_heatmap.png)
+
+[Raw Fashion-MNIST results](working_docs/heatmap_refresh/fashion-mnist/metrics_results.csv)
+· [Sampling and evaluation protocol](working_docs/heatmap_refresh/README.md)
+
+```bash
+uv run --no-sync python benchmark_metrics_heatmap.py --dataset fashion-mnist --samples 2000
+```
+
+`--samples` is configurable up to the 10,000-image test split. Larger samples
+increase the cost of quadratic algorithms. The repeated-seed benchmark and its
+HTML report also accept `--dataset fashion-mnist`; see the protocol link above.
 
 ### Hybrid Techniques
+
+These historical results use neighbor overlap in the “Trust. k=15” column;
+they were not rerun as part of the heatmap refresh.
 
 Intelligent combinations of algorithms can outperform individual methods:
 

@@ -19,6 +19,8 @@ def main() -> None:
     parser.add_argument("directory", type=Path)
     args = parser.parse_args()
     results = json.loads((args.directory / "results.json").read_text())
+    dataset = results["metadata"]["dataset"]
+    dataset_name = dataset["name"] if isinstance(dataset, dict) else "Digits"
     methods = sorted({row["method"] for row in results["runs"]})
     summary = []
     keys = ["seconds", "trustworthiness_15", "neighbor_recall_15", "distance_spearman"]
@@ -64,7 +66,7 @@ def main() -> None:
         xscale="log",
         xlabel="Full fit_transform seconds (log scale; lower is faster)",
         ylabel="sklearn trustworthiness at k=15 (higher is better)",
-        title="Digits: speed / local quality — median and full seed range",
+        title=f"{dataset_name}: speed / local quality — median and full seed range",
     )
     axis.grid(alpha=0.2)
     axis.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize=8)

@@ -2,13 +2,13 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Squeeze — Digits embedding experiments</title>
+<title>Squeeze — embedding experiments</title>
 <style>
 body{font:16px system-ui,sans-serif;color:#172823;background:#f6f9f7;margin:30px auto;padding:0 20px;max-width:1200px}h1{font-size:32px}p{max-width:85ch;line-height:1.6}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #d7e1db}th{background:#e5eee8}select{font:inherit;padding:8px;max-width:100%}canvas{display:block;width:100%;max-width:900px;background:white;border:1px solid #d7e1db;margin:20px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}section{overflow:auto}small{color:#52685d}details{margin:24px 0}
 </style>
 <h1>Squeeze: Rust embedding experiments</h1>
-<p>1,797 handwritten digits, 64 raw pixel features, CPU only. Runtime includes graph construction, initialization and layout. Labels only color these plots. Values are medians with full seed ranges; repeated seeds are not independent datasets.</p>
-<p>Trustworthiness uses scikit-learn's rank-based definition. Neighbor recall measures overlap and is reported separately. These results establish tradeoffs on Digits, not a universal winner.</p>
+<p><span id="dataset-description">1,797 handwritten digits, 64 raw pixel features, CPU only.</span> Runtime includes graph construction, initialization and layout. Labels stratify Fashion-MNIST sampling and color the plots; no labels enter fitting. Values are medians with full seed ranges; repeated seeds are not independent datasets.</p>
+<p>Trustworthiness uses scikit-learn's rank-based definition. Neighbor recall measures overlap and is reported separately. These results establish tradeoffs on the selected dataset, not a universal winner.</p>
 <section><table><thead><tr><th>Method</th><th>Fits</th><th>Seconds ↓</th><th>Trustworthiness k15 ↑</th><th>Neighbor recall k15 ↑</th><th>Distance Spearman ↑</th></tr></thead><tbody id="summary"></tbody></table></section>
 <h2>Inspect an embedding</h2>
 <label for="embedding">Method and seed </label><select id="embedding"></select>
@@ -19,6 +19,8 @@ body{font:16px system-ui,sans-serif;color:#172823;background:#f6f9f7;margin:30px
 <script id="data" type="application/json">__BENCHMARK_JSON__</script>
 <script>
 const data=JSON.parse(document.getElementById('data').textContent);
+const dataset=data.results.metadata.dataset;
+if(typeof dataset==='object'){document.getElementById('dataset-description').textContent=`${dataset.name}: ${dataset.samples.toLocaleString()} samples, ${dataset.features} raw pixel features, CPU only.`;}
 const colors=['#0072b2','#d55e00','#009e73','#cc79a7','#e69f00','#56b4e9','#222222','#8d6c19','#6d39ba','#ee6677'];
 const fmt=v=>v ? `${v.median.toFixed(4)} [${v.min.toFixed(4)}, ${v.max.toFixed(4)}]` : 'Unavailable';
 for(const row of data.summary){const tr=document.createElement('tr');for(const value of [row.method,row.successful_runs,...['seconds','trustworthiness_15','neighbor_recall_15','distance_spearman'].map(k=>fmt(row[k]))]){const td=document.createElement('td');td.textContent=value;tr.append(td)}document.getElementById('summary').append(tr)}
@@ -26,7 +28,7 @@ const select=document.getElementById('embedding');
 for(const key of Object.keys(data.points).filter(k=>k!=='labels').sort()){const option=document.createElement('option');option.value=key;option.textContent=key.replace('__',' · seed ');select.append(option)}
 function draw(){const points=data.points[select.value];if(!points)return;const canvas=document.getElementById('scatter'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]),xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);const scale=Math.min(920/(xmax-xmin||1),620/(ymax-ymin||1));for(let i=0;i<points.length;i++){const x=500+(points[i][0]-(xmin+xmax)/2)*scale,y=350-(points[i][1]-(ymin+ymax)/2)*scale;ctx.fillStyle=colors[data.points.labels[i]];ctx.globalAlpha=.75;ctx.beginPath();ctx.arc(x,y,2.8,0,2*Math.PI);ctx.fill()}ctx.globalAlpha=1;const [method,seed]=select.value.split('__');const run=data.results.runs.find(r=>r.method===method&&r.seed===Number(seed));document.getElementById('metrics').textContent=`Fit: ${run.seconds.toFixed(4)} s · Trustworthiness k15: ${run.trustworthiness_15.toFixed(4)} · Neighbor recall: ${run.neighbor_recall_15.toFixed(4)} · Spearman: ${run.distance_spearman?.toFixed(4)??'undefined'}`}
 select.addEventListener('change',draw);draw();
-for(let i=0;i<10;i++){const label=document.createElement('span');label.textContent=`● ${i}  `;label.style.color=colors[i];document.getElementById('legend').append(label)}
+for(let i=0;i<10;i++){const label=document.createElement('span');label.textContent=`● ${dataset.class_names?.[i]??i}  `;label.style.color=colors[i];document.getElementById('legend').append(label)}
 document.getElementById('metadata').textContent=JSON.stringify(data.results.metadata,null,2);
 document.getElementById('runs').textContent=JSON.stringify(data.results.runs,null,2);
 </script>
