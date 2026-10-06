@@ -9,6 +9,9 @@
 
 use crate::metrics::{MetricError, MetricResult};
 
+mod squared;
+pub use squared::squared_euclidean;
+
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 

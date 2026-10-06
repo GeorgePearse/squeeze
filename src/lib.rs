@@ -18,6 +18,7 @@ pub mod lle;
 pub mod phate;
 pub mod trimap;
 pub mod pacmap;
+pub mod neighbor_map;
 
 #[cfg(not(test))]
 #[pyo3::pymodule]
@@ -35,6 +36,8 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     m.add_class::<phate::PHATE>()?;
     m.add_class::<trimap::TriMap>()?;
     m.add_class::<pacmap::PaCMAP>()?;
+    m.add_class::<neighbor_map::NeighborMap>()?;
+    m.add_class::<neighbor_map::SpectralMap>()?;
     
     Ok(())
 }

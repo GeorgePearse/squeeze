@@ -23,14 +23,14 @@ from .umap_ import UMAP
 # Import Rust-based algorithms
 try:
     from ._hnsw_backend import (
-        PCA,
-        TSNE,
-        MDS,
-        Isomap,
         LLE,
+        MDS,
+        PCA,
         PHATE,
-        TriMap,
+        TSNE,
+        Isomap,
         PaCMAP,
+        TriMap,
     )
 except ImportError as e:
     warn(
@@ -49,6 +49,13 @@ except ImportError as e:
     PaCMAP = None
 
 try:
+    from ._hnsw_backend import NeighborMap, SpectralMap
+except ImportError:
+    # Older compiled extensions can still provide the established algorithms.
+    NeighborMap = None
+    SpectralMap = None
+
+try:
     with catch_warnings():
         simplefilter("ignore")
         from .parametric_umap import ParametricUMAP
@@ -63,6 +70,7 @@ except ImportError:
         """Dummy ParametricUMAP class for when Tensorflow is not installed."""
 
         def __init__(self, **_kwds: object) -> None:
+            """Explain the missing optional dependency."""
             warn(
                 "The squeeze.parametric_umap package requires Tensorflow > 2.0 "
                 "to be installed.",
@@ -98,9 +106,9 @@ from .strategies import (
     STRATEGIES,
     Strategy,
     StrategyRegistry,
+    create_reducer,
     get_strategy,
     list_strategies,
-    create_reducer,
 )
 
 try:
@@ -108,7 +116,7 @@ try:
 except PackageNotFoundError:
     __version__ = "0.1-dev"
 
-__all__ = [
+__all__ = [  # noqa: RUF022 - grouped by API category
     # Core UMAP
     "UMAP",
     "AlignedUMAP",
@@ -122,6 +130,8 @@ __all__ = [
     "PHATE",
     "TriMap",
     "PaCMAP",
+    "NeighborMap",
+    "SpectralMap",
     # Composition utilities
     "AdaptiveDR",
     "DRPipeline",

@@ -1,0 +1,11 @@
+# Numerical stack used for the saved local measurements (Python 3.10.17).
+# Install in a separate uv venv when reproducing these exact dependency versions.
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.6.1
+numba==0.61.2
+pynndescent==0.5.13
+tqdm==4.70.1
+threadpoolctl==3.6.0
+matplotlib==3.10.1
+maturin==1.9.6

@@ -1,4 +1,4 @@
-name: Performance Benchmarks
+name: Rust graph embeddings
 
 on:
   push:
@@ -11,14 +11,13 @@ permissions:
   contents: read
 
 jobs:
-  benchmark:
-    name: Digits comparison
+  neighbor-map:
     runs-on: ubuntu-latest
     env:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       NUMBA_NUM_THREADS: '1'
-      RAYON_NUM_THREADS: '1'
+      RAYON_NUM_THREADS: '2'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v10.2.0
@@ -31,17 +30,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev libssl-dev gfortran pkg-config
       - name: Install locked Python dependencies
         run: uv sync --frozen --extra dev --no-install-project
-      - name: Build release extension
+      - name: Build release extension against system OpenBLAS
         run: uv run --no-sync maturin develop --release --features extension-module,ndarray-linalg/openblas-system
-      - name: Compare algorithms on Digits
+      - name: Test Rust graph and distance kernels
         run: |
-          uv run --no-sync python -m scripts.benchmark_neighbors --output benchmark-artifacts
-          uv run --no-sync python -m scripts.report_neighbors benchmark-artifacts
-      - name: Require successful benchmark fits
-        run: |
-          uv run --no-sync python -c 'import json; r = json.load(open("benchmark-artifacts/results.json")); assert all(x["status"] == "ok" for x in r["runs"]), "Benchmark failures are recorded in results.json"'
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: digits-embedding-results
-          path: benchmark-artifacts/
+          cargo test --release --lib --features ndarray-linalg/openblas-system neighbor_map::tests
+          cargo test --release --lib --features ndarray-linalg/openblas-system metrics_simd::squared::tests
+      - name: Test Python embedding contracts
+        run: uv run --no-sync pytest squeeze/tests/test_neighbor_map.py squeeze/tests/test_neighbor_benchmark.py
