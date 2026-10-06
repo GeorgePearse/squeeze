@@ -86,11 +86,11 @@ pre-commit-install:
 
 # Build documentation
 docs:
-    uv run mkdocs build
+    .venv-docs/bin/mkdocs build --strict
 
 # Serve documentation locally
 docs-serve:
-    uv run mkdocs serve
+    .venv-docs/bin/mkdocs serve
 
 # Run cargo tests for Rust code
 test-rust:

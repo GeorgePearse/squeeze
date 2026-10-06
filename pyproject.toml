@@ -61,7 +61,7 @@ plot = [
 parametric = ["tensorflow >= 2.1"]
 tbb = ["tbb >= 2019.0"]
 test = ["pytest", "pytest-testmon", "pytest-watch"]
-benchmark = ["matplotlib"]
+benchmark = ["matplotlib", "pandas"]
 dev = ["maturin>=1.4,<2.0", "pytest", "pytest-testmon", "pytest-watch", "matplotlib", "ruff", "pre-commit"]
 
 [tool.setuptools]

@@ -6,18 +6,25 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      dataset:
+        description: Benchmark dataset
+        type: choice
+        options: [digits, fashion-mnist]
+        default: digits
 
 permissions:
   contents: read
 
 jobs:
   benchmark:
-    name: Digits comparison
+    name: Dataset comparison
     runs-on: ubuntu-latest
     env:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       NUMBA_NUM_THREADS: '1'
+      BENCHMARK_DATASET: ${{ inputs.dataset || 'digits' }}
       RAYON_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v4
@@ -30,12 +37,12 @@ jobs:
       - name: Install BLAS build dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev libssl-dev gfortran pkg-config
       - name: Install locked Python dependencies
-        run: uv sync --frozen --extra dev --no-install-project
+        run: uv sync --frozen --extra dev --extra benchmark --no-install-project
       - name: Build release extension
         run: uv run --no-sync maturin develop --release --features extension-module,ndarray-linalg/openblas-system
-      - name: Compare algorithms on Digits
+      - name: Compare algorithms on the selected dataset
         run: |
-          uv run --no-sync python -m scripts.benchmark_neighbors --output benchmark-artifacts
+          uv run --no-sync python -m scripts.benchmark_neighbors --dataset "$BENCHMARK_DATASET" --output benchmark-artifacts
           uv run --no-sync python -m scripts.report_neighbors benchmark-artifacts
       - name: Require successful benchmark fits
         run: |
@@ -43,5 +50,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: digits-embedding-results
+          name: embedding-results-${{ env.BENCHMARK_DATASET }}
           path: benchmark-artifacts/

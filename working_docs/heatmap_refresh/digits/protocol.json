@@ -1,0 +1,18 @@
+{
+  "dataset": {
+    "name": "sklearn Digits",
+    "split": "all",
+    "samples": 1797,
+    "features": 64,
+    "preprocessing": "raw pixels as float64; no scaling or PCA",
+    "data_sha256": "20def7f70a702f0af9732fbba4375e147a7d54fe70d8c45569b8e7c1c7010c10",
+    "labels_sha256": "a3c91c262eddcf7ba8f0e37507c30284493c9b20412ffe4af30d536401f7ba21"
+  },
+  "seed": 42,
+  "warmup": "one full-data fit per algorithm, excluded",
+  "threads": 1,
+  "umap_epochs": 200,
+  "neighbor_map_epochs": 160,
+  "spectral_map_iterations": 128,
+  "classification": "5-fold RandomForest on full-data embeddings; transductive, not held-out embedding evaluation"
+}

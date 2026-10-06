@@ -29,7 +29,7 @@ jobs:
       - name: Install BLAS build dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev libssl-dev gfortran pkg-config
       - name: Install locked Python dependencies
-        run: uv sync --frozen --extra dev --no-install-project
+        run: uv sync --frozen --extra dev --extra benchmark --no-install-project
       - name: Build release extension against system OpenBLAS
         run: uv run --no-sync maturin develop --release --features extension-module,ndarray-linalg/openblas-system
       - name: Test Rust graph and distance kernels
@@ -37,4 +37,6 @@ jobs:
           cargo test --release --lib --features ndarray-linalg/openblas-system neighbor_map::tests
           cargo test --release --lib --features ndarray-linalg/openblas-system metrics_simd::squared::tests
       - name: Test Python embedding contracts
-        run: uv run --no-sync pytest squeeze/tests/test_neighbor_map.py squeeze/tests/test_neighbor_benchmark.py
+        run: uv run --no-sync pytest squeeze/tests/test_neighbor_map.py squeeze/tests/test_neighbor_benchmark.py squeeze/tests/test_benchmark_datasets.py
+      - name: Verify documentation examples and API contracts
+        run: uv run --no-sync python scripts/check_docs.py

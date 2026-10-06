@@ -1,134 +1,98 @@
+site_name: Squeeze
+site_description: CPU dimensionality reduction in Python and Rust, with reproducible benchmarks.
+site_author: George Pearse
+site_url: https://georgepearse.github.io/squeeze/
+repo_url: https://github.com/GeorgePearse/squeeze
+repo_name: GeorgePearse/squeeze
+edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
-
-site_name: UMAP
-site_description: Uniform Manifold Approximation and Projection
-site_author: Leland McInnes
-site_url: https://lmcinnes.github.io/umap/
-repo_url: https://github.com/lmcinnes/umap
-repo_name: lmcinnes/umap
-edit_uri: edit/master/doc/
-copyright: Copyright &copy; 2017-2024 Leland McInnes
+strict: true
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
 
 theme:
   name: material
-  logo: doc/logo_large.png
-  favicon: doc/logo_large.png
+  font: false
+  icon:
+    logo: material/vector-polyline
   features:
-    - navigation.instant
-    - navigation.expand
+    - navigation.sections
     - navigation.top
+    - navigation.footer
     - content.code.copy
-    - content.tooltips
+    - content.action.edit
     - search.suggest
     - search.highlight
   palette:
     - scheme: default
+      primary: teal
+      accent: teal
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-night
         name: Switch to dark mode
-      primary: indigo
-      accent: indigo
     - scheme: slate
+      primary: teal
+      accent: lime
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-sunny
         name: Switch to light mode
-      primary: indigo
-      accent: indigo
 
 plugins:
-  - search:
-      lang: en
-
-extra_javascript:
-  - https://cdn.plot.ly/plotly-2.27.0.min.js
-  - https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
-  - javascripts/mermaid.js
-
+  - search
+extra_css:
+  - stylesheets/squeeze.css
 markdown_extensions:
   - admonition
-  - pymdownx.arithmatex
-  - pymdownx.betterem:
-      smart_enable: all
-  - pymdownx.caret
-  - pymdownx.critic
-  - pymdownx.details
-  - pymdownx.emoji
-  - pymdownx.highlight:
-      use_pygments: true
-      auto_title: true
-  - pymdownx.inlinehilite
-  - pymdownx.keys
-  - pymdownx.magiclink
-  - pymdownx.mark
-  - pymdownx.smartsymbols
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - pymdownx.tilde
+  - attr_list
   - tables
   - toc:
       permalink: true
-  - md_in_html
-  - attr_list
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
 
 nav:
-  - Home: index.md
-  - Getting Started:
-      - Installation: basic_usage.md
-      - How UMAP Works: how_umap_works.md
-      - Reproducibility: reproducibility.md
+  - Squeeze: index.md
+  - Start:
+      - Installation: installation.md
+      - Quick start: basic_usage.md
+      - Data and preprocessing: data.md
   - Algorithms:
-      - Overview: algorithms/index.md
+      - Choose an algorithm: algorithms/index.md
+      - PCA: algorithms/pca.md
       - UMAP: algorithms/umap.md
       - t-SNE: algorithms/tsne.md
-      - PCA: algorithms/pca.md
+      - MDS: algorithms/mds.md
       - Isomap: algorithms/isomap.md
       - LLE: algorithms/lle.md
-      - MDS: algorithms/mds.md
       - PHATE: algorithms/phate.md
       - TriMap: algorithms/trimap.md
       - PaCMAP: algorithms/pacmap.md
-      - Numerical Stability: algorithms/numerical_stability.md
-  - User Guide:
-      - Basic Usage: basic_usage.md
+      - NeighborMap: algorithms/neighbor-map.md
+      - SpectralMap: algorithms/spectral-map.md
+      - UMAP variants: algorithms/variants.md
+  - Use Squeeze:
       - Parameters: parameters.md
-      - Supervised Dimensionality Reduction: supervised.md
-      - Clustering: clustering.md
-      - Inverse Transform: inverse_transform.md
-      - Sparse Data: sparse.md
-  - Advanced Topics:
-      - Composing Models: composing_models.md
-      - Aligned UMAP: aligned_umap_basic_usage.md
-      - Aligned UMAP - Politics Demo: aligned_umap_politics_demo.md
-      - Embedding Space: embedding_space.md
-      - Exploratory Analysis: exploratory_analysis.md
-  - Variants and Extensions:
-      - densMAP: densmap_demo.md
-      - Parametric UMAP: parametric_umap.md
-      - Mutual Nearest Neighbors UMAP: mutual_nn_umap.md
-      - Transform & Inference: transform.md
-      - Landmarked Parametric UMAP: transform_landmarked_pumap.md
-  - Visualization and Interactive:
-      - Plotting: plotting.md
-      - Interactive Visualization: interactive_viz.md
-      - Outlier Detection: outliers.md
-      - Document Embedding: document_embedding.md
-      - Nomic Atlas - Text Embeddings: nomic_atlas_umap_of_text_embeddings.md
-      - Nomic Atlas - MNIST Training: nomic_atlas_visualizing_mnist_training_dynamics.md
-  - Performance & Optimization:
-      - Performance: performance.md
-      - Benchmarking: benchmarking.md
-      - Interactive Metrics Comparison: interactive_metrics.md
-      - Precomputed k-NN: precomputed_k-nn.md
-      - Evaluation Metrics: evaluation_metrics.md
-  - Reference & Support:
-      - API Reference: api.md
-      - FAQ: faq.md
-      - Scientific Papers: scientific_papers.md
-      - Release Notes: release_notes.md
-      - Development Roadmap: development_roadmap.md
+      - Transform new data: transform.md
+      - Streaming: streaming.md
+      - Composition: composing_models.md
+      - Strategy registry: strategies.md
+      - Plotting and reports: plotting.md
+  - Measure:
+      - Benchmark results: benchmarking.md
+      - Datasets: datasets.md
+      - Metric definitions: evaluation_metrics.md
+      - Reproducibility: reproducibility.md
+      - CPU performance: performance.md
+  - Reference:
+      - Python API: api.md
+      - Troubleshooting: troubleshooting.md
+      - Contributing: contributing.md
+      - Credits: credits.md
