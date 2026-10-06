@@ -41,3 +41,7 @@ dist
 
 /target
 umap/_hnsw_backend.abi3.so
+
+# Local documentation build
+.venv-docs/
+site/

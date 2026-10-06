@@ -1,7 +1,2 @@
-sphinx>=1.8
-sphinx_gallery
-matplotlib
-pillow
-sphinx_rtd_theme
-numpydoc
-scipy
+mkdocs==1.6.1
+mkdocs-material==9.6.23

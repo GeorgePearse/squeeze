@@ -1,129 +1,58 @@
 # Squeeze
 
-**High-performance dimensionality reduction for Python**
+CPU dimensionality reduction for Python, with UMAP, ten Rust reducers, and
+reproducible comparisons on Digits and Fashion-MNIST.
 
-Squeeze is a fast, CPU-optimized library for dimensionality reduction techniques including UMAP, t-SNE, PCA, and more. Built with a Rust backend and SIMD vectorization for maximum performance.
+**[Documentation](https://georgepearse.github.io/squeeze/)** ·
+[Installation](docs/installation.md) · [Algorithm guide](docs/algorithms/index.md) ·
+[API reference](docs/api.md)
 
-## Why Squeeze?
+Squeeze is an alpha research library. UMAP uses Python/Numba with optional Rust
+neighbor search. The other core methods use the compiled Rust extension.
+NeighborMap and SpectralMap are experimental additions; existing methods remain
+available. APIs differ: UMAP and PCA support fitted transforms, while the other
+Rust reducers primarily expose `fit_transform`.
 
-Dimensionality reduction "squeezes" high-dimensional data into lower dimensions while preserving structure. Squeeze provides:
+## Build from source
 
-- **Multiple Algorithms**: UMAP today, t-SNE, PCA, Isomap, and more coming soon
-- **Fast**: 27x faster k-NN construction than PyNNDescent via HNSW with SIMD
-- **CPU-Optimized**: No GPU required - runs anywhere
-- **Production Ready**: Scikit-learn compatible API
-
-I've used my own fork of Shinka Evolve (https://github.com/GeorgePearse/Genesis) in order to iteratively optimize the solutions
-
-<img width="1470" height="777" alt="image" src="https://github.com/user-attachments/assets/00bfd455-93d2-4d93-853e-352fda9e1d33" />
-
-
-## Installation
+Use Python 3.10, Rust, and **uv 0.12.23**. On Debian/Ubuntu:
 
 ```bash
-pip install squeeze
+sudo apt-get install libopenblas-dev libssl-dev gfortran pkg-config
+git clone https://github.com/GeorgePearse/squeeze.git
+cd squeeze
+uv sync --frozen --extra dev --extra benchmark --no-install-project
+uv run --no-sync maturin develop --release --features extension-module,ndarray-linalg/openblas-system
 ```
 
-Or with uv (recommended):
-
-```bash
-uv pip install squeeze
-```
-
-## Quick Start
-
-```python
-import squeeze
-from sklearn.datasets import load_digits
-
-digits = load_digits()
-
-# UMAP embedding
-umap_embedding = squeeze.UMAP(n_neighbors=15, min_dist=0.1).fit_transform(digits.data)
-
-# t-SNE embedding
-tsne_embedding = squeeze.TSNE(perplexity=30, n_iter=1000).fit_transform(digits.data)
-
-# PCA embedding
-pca_embedding = squeeze.PCA(n_components=2).fit_transform(digits.data)
-
-# All algorithms share a consistent API: fit_transform(X)
-```
-
-## Experimental Rust graph embeddings
-
-`NeighborMap` and `SpectralMap` are additive, CPU-only options for 2D Euclidean
-embeddings. Existing algorithms remain available.
+## Quick start
 
 ```python
 import numpy as np
 from sklearn.datasets import load_digits
-from squeeze import NeighborMap, SpectralMap
+from squeeze import NeighborMap, PCA
 
 X = np.asarray(load_digits().data, dtype=np.float64)
-y = NeighborMap(n_neighbors=15, n_epochs=160, init="pca", random_state=42).fit_transform(X)
-# Alternative approximate spectral embedding:
-y_spectral = SpectralMap(n_neighbors=15, n_iter=128, random_state=42).fit_transform(X)
+linear = PCA(n_components=2).fit_transform(X)
+embedding = NeighborMap(n_neighbors=15, n_epochs=160, random_state=42).fit_transform(X)
+assert embedding.shape == (1797, 2)
 ```
 
-Both require a rebuilt extension and a finite, dense float64 matrix with at
-least three samples; `1 <= n_neighbors < n_samples`. NeighborMap also accepts
-`init="spectral"`, `negative_samples=5`, and `learning_rate=1.0`. These experimental
-classes expose `fit_transform` only, not an out-of-sample `transform` or the full
-sklearn estimator interface. Graph search is exact and quadratic in sample count;
-these are not yet large-data replacements. SpectralMap uses fixed-budget block
-iteration and does not guarantee eigensolver convergence on disconnected graphs.
+The graph methods require finite dense float64 input, at least three samples, and
+`1 <= n_neighbors < n_samples`. They produce two dimensions using Euclidean
+neighbors. Exact graph construction is quadratic; these are not yet large-data
+replacements. See [NeighborMap](docs/algorithms/neighbor-map.md) and
+[SpectralMap](docs/algorithms/spectral-map.md) for their constraints.
 
-See the [reproducible benchmark report](working_docs/neighbor_benchmarks/README.md)
-for measured tradeoffs, raw results, and an offline HTML embedding explorer.
-The refreshed heatmaps report neighbor overlap and sklearn rank-based
-trustworthiness separately. The historical hybrid results below retain the older
-overlap metric.
+## Algorithms
 
-### Development toolchain
+PCA · UMAP · t-SNE · MDS · Isomap · LLE · PHATE · TriMap · PaCMAP ·
+NeighborMap · SpectralMap
 
-The project and CI pin **uv 0.12.23** in `.uv-version` and `pyproject.toml`.
-Use `uv self update 0.12.23` (or install that release via your package manager).
-The uv lockfile is regenerated by this version; application dependencies retain
-their locked versions, with maturin added to the development extra.
-
-On Debian/Ubuntu with Rust installed:
-
-```bash
-sudo apt-get install libopenblas-dev libssl-dev gfortran pkg-config
-uv sync --frozen --extra dev --extra benchmark --no-install-project
-uv run --no-sync maturin develop --release --features extension-module,ndarray-linalg/openblas-system
-just test-neighbors
-just benchmark-neighbors
-```
-
-## Supported Algorithms
-
-Squeeze combines Python and CPU-optimized Rust implementations. See the [Algorithm Guide](docs/algorithms/index.md) for detailed documentation on each algorithm.
-
-| Algorithm | Status | Description | Docs |
-|-----------|--------|-------------|------|
-| **UMAP** | ✅ Implemented | Uniform Manifold Approximation and Projection | [Guide](docs/how_umap_works.md) |
-| **t-SNE** | ✅ Implemented | t-Distributed Stochastic Neighbor Embedding | [Guide](docs/algorithms/tsne.md) |
-| **PCA** | ✅ Implemented | Principal Component Analysis (eigendecomposition) | [Guide](docs/algorithms/pca.md) |
-| **Isomap** | ✅ Implemented | Isometric Mapping (geodesic distances + MDS) | [Guide](docs/algorithms/isomap.md) |
-| **LLE** | ✅ Implemented | Locally Linear Embedding | [Guide](docs/algorithms/lle.md) |
-| **MDS** | ✅ Implemented | Multidimensional Scaling (classical + metric SMACOF) | [Guide](docs/algorithms/mds.md) |
-| **PHATE** | ✅ Implemented | Potential of Heat-diffusion for Affinity-based Trajectory Embedding | [Guide](docs/algorithms/phate.md) |
-| **TriMap** | ✅ Implemented | Large-scale Dimensionality Reduction Using Triplets | [Guide](docs/algorithms/trimap.md) |
-| **PaCMAP** | ✅ Implemented | Pairwise Controlled Manifold Approximation | [Guide](docs/algorithms/pacmap.md) |
-| **NeighborMap** | Experimental | Sampled neighbor layout with PCA or spectral initialization | [Benchmarks](working_docs/heatmap_refresh/README.md) |
-| **SpectralMap** | Experimental | Approximate sparse spectral embedding | [Benchmarks](working_docs/heatmap_refresh/README.md) |
-
-### Choosing an Algorithm
-
-| Use Case | Recommended | Why |
-|----------|-------------|-----|
-| Quick exploration | PCA | Fast, interpretable |
-| Cluster visualization | t-SNE, UMAP | Best local structure |
-| Large datasets (>100k) | PaCMAP, TriMap | Fast, scalable |
-| Biological trajectories | PHATE | Designed for this |
-| Experimental speed/quality | NeighborMap | See the measured tradeoffs below |
+The [capability table](docs/algorithms/index.md) documents each implementation and
+its transform support. [Composition](docs/composing_models.md),
+[out-of-sample interpolation](docs/transform.md), and [streaming](docs/streaming.md)
+are separate wrappers with explicit limitations.
 
 ## Benchmark Results
 
@@ -185,277 +114,9 @@ uv run --no-sync python benchmark_metrics_heatmap.py --dataset fashion-mnist --s
 increase the cost of quadratic algorithms. The repeated-seed benchmark and its
 HTML report also accept `--dataset fashion-mnist`; see the protocol link above.
 
-### Hybrid Techniques
 
-These historical results use neighbor overlap in the “Trust. k=15” column;
-they were not rerun as part of the heatmap refresh.
+## Contributing and attribution
 
-Intelligent combinations of algorithms can outperform individual methods:
-
-![Hybrid Comparison](hybrid_comparison.png)
-
-| Hybrid Technique | Trust. k=15 | Silhouette | Classif. Acc | Time | Key Benefit |
-|------------------|:-----------:|:----------:|:------------:|:----:|-------------|
-| **PCA(50)→t-SNE** | **0.59** | 0.66 | 0.97 | 32.3s | Best local structure |
-| **PCA(30)→UMAP** | 0.52 | **0.80** | 0.98 | 6.5s | Best silhouette, 35% faster |
-| **Multi-scale UMAP** | 0.51 | 0.77 | 0.98 | 16.4s | Captures multiple scales |
-| **MDS+UMAP Ensemble** | 0.34 | 0.63 | 0.91 | 18.8s | Best global structure |
-| **Progressive PaCMAP→UMAP** | 0.51 | 0.76 | 0.98 | 8.7s | Fast + refined |
-
-**Key Findings:**
-- **PCA(50)→t-SNE** achieves the best trustworthiness (0.59), beating pure t-SNE
-- **PCA(30)→UMAP** is Pareto optimal: 35% faster than UMAP with better silhouette
-- Hybrid pipelines inherit PCA's noise reduction + manifold method's structure preservation
-
-```python
-from squeeze.composition import DRPipeline, EnsembleDR, ProgressiveDR
-from sklearn.decomposition import PCA
-import squeeze
-
-# Best overall: PCA → t-SNE
-pipeline = DRPipeline([
-    ('pca', PCA(n_components=50)),
-    ('tsne', squeeze.TSNE(n_components=2))
-])
-
-# Fastest high-quality: PCA → UMAP
-pipeline = DRPipeline([
-    ('pca', PCA(n_components=30)),
-    ('umap', squeeze.UMAP(n_components=2))
-])
-
-# Multi-scale structure
-ensemble = EnsembleDR([
-    ('local', squeeze.UMAP(n_neighbors=5), 0.5),
-    ('global', squeeze.UMAP(n_neighbors=30), 0.5)
-], blend_mode='procrustes')
-```
-
-Run the hybrid benchmark:
-
-```bash
-python benchmark_hybrid_techniques.py
-```
-
-![Benchmark Results](benchmark_results.png)
-
-![Embeddings Comparison](embeddings_comparison.png)
-
-Run the base benchmark:
-
-```bash
-just benchmark              # Quick benchmark
-python benchmark_metrics_heatmap.py  # Full metrics heatmap
-```
-
-### k-NN Backend Performance
-
-Squeeze includes a Rust-based HNSW (Hierarchical Navigable Small World) backend with SIMD-accelerated distance computations:
-
-```
-k-NN Backend Comparison (sklearn digits dataset)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Backend              Build Time   Recall    Speedup
-─────────────────────────────────────────────────
-PyNNDescent          6.512s       93.3%     1.00x
-HNSW Simple          0.242s       95.1%     26.96x
-HNSW Robust α=1.2    0.256s       97.6%     25.46x
-```
-
-## Features
-
-### All Algorithms
-
-```python
-import squeeze
-import numpy as np
-
-# Load your data
-X = np.random.randn(1000, 50)  # 1000 samples, 50 features
-
-# PCA - fast linear projection
-pca = squeeze.PCA(n_components=2)
-X_pca = pca.fit_transform(X)
-
-# t-SNE - preserves local structure
-tsne = squeeze.TSNE(n_components=2, perplexity=30, n_iter=1000)
-X_tsne = tsne.fit_transform(X)
-
-# MDS - preserves pairwise distances
-mds = squeeze.MDS(n_components=2, metric=True, n_iter=300)
-X_mds = mds.fit_transform(X)
-
-# Isomap - geodesic distances on manifold
-isomap = squeeze.Isomap(n_components=2, n_neighbors=10)
-X_isomap = isomap.fit_transform(X)
-
-# LLE - local linear relationships
-lle = squeeze.LLE(n_components=2, n_neighbors=10)
-X_lle = lle.fit_transform(X)
-
-# PHATE - diffusion-based embedding
-phate = squeeze.PHATE(n_components=2, k=15, t=10)
-X_phate = phate.fit_transform(X)
-
-# TriMap - triplet-based embedding
-trimap = squeeze.TriMap(n_components=2, n_inliers=10, n_outliers=5)
-X_trimap = trimap.fit_transform(X)
-
-# PaCMAP - pair-based embedding
-pacmap = squeeze.PaCMAP(n_components=2, n_neighbors=10)
-X_pacmap = pacmap.fit_transform(X)
-```
-
-### UMAP with HNSW Backend
-
-```python
-import squeeze
-
-# Use the fast HNSW backend (default)
-reducer = squeeze.UMAP(
-    n_neighbors=15,
-    min_dist=0.1,
-    use_hnsw=True,  # Default
-    hnsw_prune_strategy="robust",  # Better graph quality
-    hnsw_alpha=1.2
-)
-embedding = reducer.fit_transform(data)
-```
-
-### Composition Pipeline
-
-Chain multiple reduction techniques:
-
-```python
-from squeeze.composition import DRPipeline
-from sklearn.decomposition import PCA
-import squeeze
-
-# 2048D → 100D → 2D
-pipeline = DRPipeline([
-    ('pca', PCA(n_components=100)),
-    ('umap', squeeze.UMAP(n_components=2))
-])
-embedding = pipeline.fit_transform(high_dim_data)
-```
-
-### Ensemble Methods
-
-Blend multiple algorithms:
-
-```python
-from squeeze.composition import EnsembleDR
-from sklearn.decomposition import PCA
-import squeeze
-
-ensemble = EnsembleDR([
-    ('pca', PCA(n_components=2), 0.3),
-    ('umap', squeeze.UMAP(n_components=2), 0.7)
-], alignment='procrustes')
-
-blended = ensemble.fit_transform(data)
-```
-
-### Sparse Data Support
-
-Efficient handling of sparse matrices:
-
-```python
-from squeeze.sparse_ops import SparseUMAP
-import scipy.sparse as sp
-
-sparse_data = sp.random(10000, 5000, density=0.05, format='csr')
-embedding = SparseUMAP(n_components=2).fit_transform(sparse_data)
-```
-
-### Evaluation Metrics
-
-Comprehensive metrics for evaluating DR quality:
-
-```python
-from squeeze.evaluation import trustworthiness, continuity, DREvaluator, quick_evaluate
-
-# Quick evaluation (3 core metrics)
-metrics = quick_evaluate(X_original, X_embedded, k=15)
-print(f"Trustworthiness: {metrics['trustworthiness']:.3f}")
-print(f"Continuity: {metrics['continuity']:.3f}")
-print(f"Spearman: {metrics['spearman_correlation']:.3f}")
-
-# Comprehensive evaluation
-evaluator = DREvaluator(X_original, X_embedded, labels=y, method_name='UMAP')
-report = evaluator.evaluate_all()
-print(report)
-
-# Individual metrics
-from squeeze.evaluation import (
-    spearman_distance_correlation,
-    global_structure_preservation,
-    local_density_preservation,
-    clustering_quality,
-    classification_accuracy,
-)
-```
-
-See [Evaluation Metrics Guide](docs/evaluation_metrics.md) for full documentation.
-
-## Development
-
-```bash
-# Clone the repo
-git clone https://github.com/georgepearse/squeeze
-cd squeeze
-
-# Install with uv
-uv sync --extra dev
-
-# Build Rust extension
-uv run maturin develop --release
-
-# Run tests
-uv run pytest squeeze/tests/ -v
-
-# Run benchmarks
-uv run python benchmark_optimizations.py
-```
-
-Or use the justfile:
-
-```bash
-just install    # Install deps + build
-just test       # Run tests
-just benchmark  # Run benchmarks
-just lint       # Check code style
-```
-
-## Project Philosophy
-
-1. **Algorithm Agnostic**: One library for all DR techniques
-2. **Performance First**: SIMD, Rust backend, optimized algorithms
-3. **CPU-Focused**: No GPU dependencies - runs everywhere
-4. **Research Platform**: Easy experimentation with techniques and parameters
-5. **Production Ready**: Reliable, tested, well-documented
-
-## Citation
-
-If you use Squeeze in your research, please cite the original UMAP paper:
-
-```bibtex
-@article{mcinnes2018umap,
-  title={UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction},
-  author={McInnes, Leland and Healy, John and Melville, James},
-  journal={arXiv preprint arXiv:1802.03426},
-  year={2018}
-}
-```
-
-## License
-
-Apache License 2.0
-
-## Acknowledgments
-
-Squeeze builds on the excellent work of:
-- [UMAP](https://github.com/lmcinnes/umap) by Leland McInnes
-- [PyNNDescent](https://github.com/lmcinnes/pynndescent) for approximate nearest neighbors
-- The scientific Python ecosystem (NumPy, SciPy, scikit-learn, Numba)
-- https://github.com/JelmerBot/fast_plscan
+See [Contributing](CONTRIBUTING.md) for tests, documentation builds, and PRs.
+Squeeze derives its UMAP code from umap-learn; original authorship and license
+notices remain intact. See [credits](docs/credits.md) and [LICENSE](LICENSE.txt).
