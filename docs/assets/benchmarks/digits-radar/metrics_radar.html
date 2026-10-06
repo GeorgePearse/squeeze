@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digits · 1,797 samples · Squeeze radar comparison</title>
+<style>
+:root { color-scheme: light; font: 15px/1.5 system-ui,sans-serif; color:#172b36; background:#f6f8fa; }
+body { max-width:1100px; margin:auto; padding:clamp(12px,3vw,32px); }
+h1 { font-size:clamp(23px,4vw,32px); letter-spacing:-.035em; margin-bottom:8px; }
+h2 { font-size:19px; } p { max-width:85ch; color:#475569; }
+.panel { background:white; border:1px solid #dbe3e8; border-radius:12px; padding:18px; margin:18px 0; }
+.controls { display:flex; flex-wrap:wrap; gap:8px; }
+label { display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border:1px solid #dbe3e8; border-radius:6px; cursor:pointer; }
+.swatch { width:12px; height:12px; border-radius:50%; background:var(--color); display:inline-block; }
+button { background:white; color:#075e58; border:1px solid #a7b9b8; padding:7px 12px; border-radius:6px; cursor:pointer; margin:12px 6px 0 0; font:inherit; }
+button:hover { background:#edf8f5; } :focus-visible { outline:3px solid #009688; outline-offset:3px; }
+svg { display:block; width:100%; max-width:700px; margin:auto; overflow:visible; }
+.table-scroll { overflow-x:auto; } table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+th,td { padding:10px; text-align:right; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+th:first-child,td:first-child { text-align:left; } th { font-size:12px; }
+#selection-status { color:#475569; margin:10px 0 0; }
+small { color:#475569; } a { color:#00695c; }
+</style>
+</head>
+<body>
+<h1>Digits · 1,797 samples</h1>
+<p>Algorithm performance radar · <strong>farther from the centre means better performance.</strong>
+Choose methods to compare. Hover or focus a point for its measured value.</p>
+<section class="panel" aria-label="Algorithm selection">
+<div id="controls" class="controls"></div>
+<button id="recommended" type="button">Default comparison</button>
+<button id="all" type="button">Select all</button>
+<button id="none" type="button">Clear</button>
+<p id="selection-status" role="status"></p>
+</section>
+<section class="panel" aria-label="Radar chart">
+<svg id="radar" viewBox="-340 -295 680 590" role="img" aria-labelledby="chart-title chart-desc">
+<title id="chart-title">Algorithm performance radar</title>
+<desc id="chart-desc">Six relative-performance axes, zero at the centre and one at the outer ring. Exact measurements are in the table below.</desc>
+<g id="grid"></g><g id="profiles"></g>
+</svg>
+<p id="point-detail" role="status">Hover or focus a chart point to inspect its value.</p>
+</section>
+<section class="panel">
+<h2>Measured values</h2>
+<p>The chart scales each axis from the worst to the best result across <strong>all algorithms in this dataset</strong>.
+Changing the selection does not rescale it. Zero is the worst observed result, not absence of capability.
+Runtime uses reversed log scaling, so faster methods extend farther. Tied axes sit at 0.5.</p>
+<div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+<p><small>Single-seed benchmark snapshots. Shapes and polygon areas are not overall scores.
+Axes are normalized independently for each dataset; compare raw metrics across datasets.
+Transductive accuracy evaluates a classifier on coordinates fitted to all samples, not a held-out embedding.</small></p>
+<p><a href="https://georgepearse.github.io/squeeze/benchmarking/" target="_blank" rel="noopener">Benchmark protocol and metric definitions</a></p>
+</section>
+<noscript>Enable JavaScript to select algorithms, or use the accompanying PNG/SVG figure and CSV measurements.</noscript>
+<script id="radar-data" type="application/json">{"title": "Digits \u00b7 1,797 samples", "axes": [{"column": "Trust. (k=15)", "label": "Rank trust k=15"}, {"column": "Neighbor Recall", "label": "Neighbor recall k=15"}, {"column": "Spearman", "label": "Global distance correlation"}, {"column": "Silhouette", "label": "Cluster separation"}, {"column": "Transductive Acc.", "label": "Transductive accuracy"}, {"column": "Time (s)", "label": "Speed (reversed log time)"}], "algorithms": [{"name": "UMAP", "color": "#0072B2", "scores": [0.9953918440900377, 0.8783552255853798, 0.5357127690667859, 1.0, 0.9898909134457897, 0.277428621493011], "raw": [0.9871252078446332, 0.5215358931552587, 0.3710178275456866, 0.7629938282110987, 0.9744212318167752, 2.226415906989132], "selected": true}, {"name": "PCA", "color": "#5C677D", "scores": [0.6700654566819507, 0.24493939970810327, 0.8062806464454408, 0.16953001030638953, 0.5756983899430438, 1.0], "raw": [0.8288096554092305, 0.1512149879428677, 0.5823713896139913, 0.3924475212548914, 0.6104766326214793, 0.0009898199932649], "selected": false}, {"name": "t-SNE", "color": "#D55E00", "scores": [1.0, 1.0, 0.574147008697538, 0.7159902765687377, 0.9892392824309709, 0.06564584497989145], "raw": [0.9893677026954398, 0.5926544240400667, 0.401040657787201, 0.6362719051275996, 0.9738486536675952, 21.383497743998305], "selected": true}, {"name": "MDS", "color": "#6F42C1", "scores": [0.80853166340969, 0.32134018656006086, 1.0, 0.16461333863147015, 0.694753137515278, 0.13867626052094645], "raw": [0.896192305142585, 0.1958820255982192, 0.7336948793497147, 0.3902537580192931, 0.7150882079851438, 9.801362644997424], "selected": false}, {"name": "Isomap", "color": "#A16207", "scores": [0.6916712584066227, 0.35243353004632266, 0.7682524490196292, 0.30149247281847025, 0.6833249384472865, 0.0], "raw": [0.8393238177036051, 0.2140604711556297, 0.5526657384374702, 0.4513276779704143, 0.705046425255339, 43.11353027200676], "selected": false}, {"name": "LLE", "color": "#CC79A7", "scores": [0.5284794452060817, 0.2112443682974807, 0.3199859184405174, 0.39843226332082665, 0.5706350408414141, 0.10852036656000948], "raw": [0.7599087961751778, 0.1315154887775922, 0.202503225016466, 0.4945811149561493, 0.6060275456515012, 13.52637364900147], "selected": false}, {"name": "PHATE", "color": "#00857D", "scores": [0.6682666205301012, 0.25655181166317664, 0.7681096795133453, 0.18663270700605564, 0.5731834464588256, 0.1561187831505588], "raw": [0.8279342768658859, 0.1580040808755333, 0.5525542143201205, 0.4000785508883541, 0.6082667904673476, 8.13522549001209], "selected": false}, {"name": "TriMap", "color": "#8C564B", "scores": [0.0, 0.0, 0.0, 0.0, 0.0, 0.35704691065591687], "raw": [0.5027316394583901, 0.0080133555926544, -0.047453142048698, 0.3168051500471655, 0.1046193129062209, 0.9511576070071897], "selected": false}, {"name": "PaCMAP", "color": "#B44B86", "scores": [0.9831870121786607, 0.814772510946126, 0.41564540059592214, 0.8299981489462285, 0.9759689048724387, 0.41375764981546614], "raw": [0.9811858964908108, 0.4843628269337785, 0.2772274402301572, 0.6871409270039945, 0.9621881770349738, 0.5190009030047804], "selected": true}, {"name": "NeighborMap", "color": "#009E73", "scores": [0.9940663202814468, 0.9005647566469955, 0.7238580318304105, 0.8963127509660131, 1.0, 0.4724332662875862], "raw": [0.9864801601566936, 0.5345204971248377, 0.5179871272889764, 0.7167297516221696, 0.9833039306716188, 0.2773119360062992], "selected": true}, {"name": "SpectralMap", "color": "#5454CF", "scores": [0.849225179872872, 0.357636905895044, 0.526357048511519, 0.6565755609390226, 0.930370584319292, 0.5532499668042815], "raw": [0.9159952377935, 0.2171025783713596, 0.3637096249451834, 0.609761731697291, 0.9221216341689878, 0.1169648190116277], "selected": false}]}</script>
+<script>
+'use strict';
+const data = JSON.parse(document.getElementById('radar-data').textContent);
+const svgNS = 'http://www.w3.org/2000/svg';
+const radius = 190;
+const angles = data.axes.map((_, i) => -Math.PI/2 + 2*Math.PI*i/data.axes.length);
+const coordinate = (i, r) => [Math.cos(angles[i])*r, Math.sin(angles[i])*r];
+function svg(tag, attrs, parent, text) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const [key,value] of Object.entries(attrs)) el.setAttribute(key,value);
+  if (text !== undefined) el.textContent = text;
+  parent.appendChild(el); return el;
+}
+const grid = document.getElementById('grid');
+for (const scale of [.25,.5,.75,1]) {
+  svg('circle',{r:radius*scale,fill:'none',stroke:'#cbd5e1'},grid);
+  svg('text',{x:5,y:-radius*scale+13,fill:'#64748b','font-size':11},grid,String(scale));
+}
+data.axes.forEach((axis,i)=>{
+  const [x,y]=coordinate(i,radius);
+  svg('line',{x1:0,y1:0,x2:x,y2:y,stroke:'#cbd5e1'},grid);
+  const [lx,ly]=coordinate(i,radius+45);
+  const text=svg('text',{x:lx,y:ly,fill:'#334155','text-anchor':'middle','font-size':13,'font-weight':600},grid);
+  // Two compact lines keep labels inside the mobile viewBox.
+  const labels = [['Rank trust','k=15'],['Neighbor recall','k=15'],['Global distance','correlation'],['Cluster','separation'],['Transductive','accuracy'],['Speed','reversed log time']][i];
+  labels.forEach((line,j)=>svg('tspan',{x:lx,dy:j?16:0},text,line));
+});
+const controls = document.getElementById('controls');
+data.algorithms.forEach((method,i)=>{
+  const label=document.createElement('label');
+  const input=document.createElement('input');input.type='checkbox';input.checked=method.selected;input.dataset.index=i;
+  input.addEventListener('change',render);
+  const swatch=document.createElement('span');swatch.className='swatch';swatch.style.setProperty('--color',method.color);swatch.setAttribute('aria-hidden','true');
+  label.append(input,swatch,document.createTextNode(method.name));controls.appendChild(label);
+});
+const header=document.createElement('tr');
+for(const text of ['Algorithm',...data.axes.map(a=>a.column)]) { const th=document.createElement('th');th.scope='col';th.textContent=text;header.appendChild(th); }
+document.getElementById('table-head').appendChild(header);
+function render() {
+  const profiles=document.getElementById('profiles');profiles.replaceChildren();
+  document.getElementById('point-detail').textContent='Hover or focus a chart point to inspect its value.';
+  const body=document.getElementById('table-body');body.replaceChildren();
+  const selected=[...controls.querySelectorAll('input:checked')].map(el=>data.algorithms[Number(el.dataset.index)]);
+  for(const method of selected) {
+    const points=method.scores.map((score,i)=>coordinate(i,score*radius).join(',')).join(' ');
+    svg('polygon',{points,fill:method.color,'fill-opacity':.07,stroke:method.color,'stroke-width':2.5,'data-algorithm':method.name},profiles);
+    method.scores.forEach((score,i)=>{
+      const [cx,cy]=coordinate(i,score*radius);
+      const label=`${method.name} · ${data.axes[i].column}: ${method.raw[i].toPrecision(5)} · relative score ${score.toFixed(3)}`;
+      const point=svg('circle',{cx,cy,r:4,fill:method.color,tabindex:0,'aria-label':label},profiles);
+      svg('title',{},point,label);
+      for(const event of ['mouseenter','focus']) point.addEventListener(event,()=>{document.getElementById('point-detail').textContent=label;});
+    });
+    const row=document.createElement('tr');
+    const name=document.createElement('th');name.scope='row';name.textContent=method.name;name.style.color=method.color;row.appendChild(name);
+    for(const value of method.raw){const td=document.createElement('td');td.textContent=value.toPrecision(5);row.appendChild(td);}
+    body.appendChild(row);
+  }
+  document.getElementById('selection-status').textContent=selected.length ? `${selected.length} of ${data.algorithms.length} algorithms selected. Axes remain fixed.` : 'Choose an algorithm to show its profile.';
+}
+for(const [id,choose] of [['all',()=>true],['none',()=>false],['recommended',i=>data.algorithms[i].selected]]) {
+  document.getElementById(id).addEventListener('click',()=>{controls.querySelectorAll('input').forEach((el,i)=>{el.checked=choose(i);});render();});
+}
+render();
+</script>
+</body>
+</html>
