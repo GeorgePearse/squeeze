@@ -20,6 +20,8 @@ is pinned at `b2617bb6d3ffa2e429640350f613e3291e10b141`. Downloads use HTTPS,
 validate the authors' published MD5 checksums and IDX payloads, and cache outside
 the checkout at `~/.cache/squeeze/fashion-mnist`. Raw dataset files are not
 committed. Protocol JSON stores the selected indices, dataset hash and versions.
+The measured Fashion generator is retained at commit `99f4935`; the later
+output-directory cleanup does not change default paths, fitting or metrics.
 `--samples` permits multiples of 10 from 100 through the full 10,000 test images;
 larger counts are expensive for the quadratic implementations.
 

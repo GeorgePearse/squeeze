@@ -370,7 +370,9 @@ def main() -> None:
     df = compute_metrics(X, y, results)
     print()
 
-    artifact_dir = Path("working_docs/heatmap_refresh") / args.dataset
+    artifact_dir = (
+        args.output_dir or Path("working_docs/heatmap_refresh") / args.dataset
+    )
     artifact_dir.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         artifact_dir / "embeddings.npz",

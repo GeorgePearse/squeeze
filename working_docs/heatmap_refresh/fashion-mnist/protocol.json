@@ -2044,5 +2044,6 @@
   "umap_epochs": 200,
   "neighbor_map_epochs": 160,
   "spectral_map_iterations": 128,
-  "classification": "5-fold RandomForest on full-data embeddings; transductive, not held-out embedding evaluation"
+  "classification": "5-fold RandomForest on full-data embeddings; transductive, not held-out embedding evaluation",
+  "measured_source_commit": "99f4935a0be9fbb957e871163b66f09c2e04bc14"
 }
