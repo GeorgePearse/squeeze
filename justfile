@@ -103,3 +103,11 @@ check-rust:
 
 # Full CI check (lint, format, test)
 ci: check test test-rust
+
+# Compare additive Rust graph embeddings on Digits (build first)
+benchmark-neighbors OUTPUT="working_docs/neighbor_benchmarks/local":
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 NUMBA_NUM_THREADS=1 RAYON_NUM_THREADS=1 uv run --no-sync python -m scripts.benchmark_neighbors --output {{OUTPUT}}
+
+# Test the additive embedding APIs (build first)
+test-neighbors:
+    uv run --no-sync pytest squeeze/tests/test_neighbor_map.py squeeze/tests/test_neighbor_benchmark.py

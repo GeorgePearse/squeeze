@@ -62,7 +62,7 @@ parametric = ["tensorflow >= 2.1"]
 tbb = ["tbb >= 2019.0"]
 test = ["pytest", "pytest-testmon", "pytest-watch"]
 benchmark = ["matplotlib"]
-dev = ["pytest", "pytest-testmon", "pytest-watch", "matplotlib", "ruff", "pre-commit"]
+dev = ["maturin>=1.4,<2.0", "pytest", "pytest-testmon", "pytest-watch", "matplotlib", "ruff", "pre-commit"]
 
 [tool.setuptools]
 packages = ["squeeze"]
@@ -106,3 +106,6 @@ addopts = "-v"
 features = ["pyo3/extension-module"]
 python-source = "."
 module-name = "squeeze._hnsw_backend"
+
+[tool.uv]
+required-version = "==0.12.23"

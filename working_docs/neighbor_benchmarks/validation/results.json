@@ -1,0 +1,859 @@
+{
+  "metadata": {
+    "dataset": "sklearn Digits, raw pixels, 1797 x 64; no labels used in fitting",
+    "data_sha256": "20def7f70a702f0af9732fbba4375e147a7d54fe70d8c45569b8e7c1c7010c10",
+    "base_commit": "2397360df5833fcfc5a575b9188379e38681103f",
+    "source_sha256": {
+      "src/barnes_hut.rs": "7d124843e6ebf3780c51983a97e4a32cd66b51edd41202987dbffcc75666158b",
+      "src/cache_aligned.rs": "5f0993f7bc36ffd2c59d05574d72958a28e9acbed512847848c22fb1e76936f5",
+      "src/hnsw_algo.rs": "ba65e0108488bc75bb0827963dd7b7789862ff8f35207b3c3d24eb03bc8dbb92",
+      "src/hnsw_algo_robustprune.rs": "2fda0e47a4534c8f2950ef222149af723549816355311356d6f5b530b7d0ab8e",
+      "src/hnsw_index.rs": "e27f58c630d6ee065bb121f127698e4b747dc3955aaaf14d42b605dd450f6607",
+      "src/isomap.rs": "52df907f287f22382a645adfdd706d6a5181149991c6317bc26679fd0a942d79",
+      "src/lib.rs": "c8ce7431c660322a2bdfd3d1b2a72656448a68dee92176665becdf5d4776100f",
+      "src/lle.rs": "cf7d9929db6c209d1b68bdda82eb357f13d01b5d39e5a912c3c65709f649f5d5",
+      "src/mds.rs": "aaeadd05f2100d94d1c4c3ec3189192cd271217a6bfef100dacb206fb8a2824e",
+      "src/metrics.rs": "21526fa0f47a3b519973403e367f3f2db60ddbd81c5674b54b2932b2533b2c7a",
+      "src/metrics_simd/squared.rs": "202286de042d989f4eb7646cfa8f3d2538229586c8cd7a9b64a91e0ca8920702",
+      "src/metrics_simd.rs": "8685921a04fa5a62e61c3e00c242532e2ccbacf8ff7210b2cece87d8399f22cb",
+      "src/mixed_precision.rs": "e7a128f32714811918f7b1611873b4a36ffb919f4c70b6b148e37c76d79021fd",
+      "src/neighbor_map.rs": "dc0d69ad1a9ce7f35f0aed01a4630bb0073c9ac880cf4fa700bc31f404e299c8",
+      "src/numerical.rs": "63271544f2b4283eca6e94b8ed6577b2f3136e54e328afa2bef3c535fae2892d",
+      "src/pacmap.rs": "edbaa622fb1f2a43e153eb62cb2119d4cf082605724e4f95ced749e4b29b175a",
+      "src/pca.rs": "698d11fd2c768e8240ef771f1b4fab005f51994c3357bb136824a8fd4568521c",
+      "src/phate.rs": "22cde0e9e04462b582564c2aa037b366e5f240128fbefc4f97256d952722c81c",
+      "src/sparse_hnsw_index.rs": "2cf41746adccaa3499fb4b78bb0647bb8a7a06a63e916075d6f967d501ab35f7",
+      "src/sparse_metrics.rs": "1f1ef203271d2b924fea2f132e32a73e49de50096e7627f2cc21ce596e921688",
+      "src/trimap.rs": "e047c1ffa191af218b525209d29509f2152eee3612f4a62782831a10d5bf87dc",
+      "src/tsne.rs": "d6abb511060de8c3af5facd70f47c650e2962c5b0a226f6e14dea80540c540ff",
+      "Cargo.lock": "b6f7582ea8954d381f4d0f2e9d091ab8d77d8c664374f805386775d4f59cd792",
+      "Cargo.toml": "f2699a1e6e44af7d29de8f9e70eaa986682969efd03e552c1b1e9f8ea3312170",
+      "pyproject.toml": "814067951c7b98089dad8a597bdf8d1f8f708449905cf434b8b750bd285538a4",
+      "uv.lock": "522e80d827843eb4cbc72ccabcf538c03b8dd3f22308a9f211bbfdfeb4b058ea",
+      "squeeze/__init__.py": "269fe1f93c71bc76c44238cac5ed9efc0b4309328d4fef2bad596189be358833",
+      "squeeze/aligned_umap.py": "426d7205c5bb9c9657e84b5eab0421120d055d8f6e6f2a93e6db9e46800a05e3",
+      "squeeze/benchmark.py": "0ef702396f2937acc2216413a7b06cdac4872c28fe7ffee0ef99da5a29bea348",
+      "squeeze/composition.py": "85d596b91eb534658a418db85d7cc1fcb675d73a34dadb16efa57847584d1d70",
+      "squeeze/distances.py": "80b275953af7b1af927543a3fe6e8e42285eea90a3402026c59b0c639565cab4",
+      "squeeze/evaluation.py": "845585e54baed428620a851eecc46c9e20a8d0e6a8f6cefddbda804dcd78fd3c",
+      "squeeze/extensions.py": "9e76f3f09928d3e07f189584c763f2411a9fcf61aa56805f9d722a12a4045390",
+      "squeeze/hnsw_wrapper.py": "80d3348b4d142422bc179915d30444b475982e47957746beab915e864aa343e1",
+      "squeeze/layouts.py": "94b8f6985398239e1f9d6306e2b261a1a9787cee097237ab500c8cce5ce2fe01",
+      "squeeze/metrics.py": "84b99e4537cfe1c045fea6ec62f011b5acb6f08aeb102e96cbbe7d8ae65ca9d3",
+      "squeeze/parametric_umap.py": "90941496e090a27daf047fd077b13212cab5ffe417d1132f0bbc078ac26237b0",
+      "squeeze/plot.py": "62003b69f4a57f6927fef803d94a7f03fcc2fd630a7fd36d730733d53b3d6cc9",
+      "squeeze/sparse.py": "32ca23aff8952864f620274290cde4f42e3f654e01a07a8ce3b4947ff48ae59f",
+      "squeeze/sparse_ops.py": "8f1d6cc33d0324b3ffe4b40e03f308b456a295780f2a2d1ce6f6a03b9647378d",
+      "squeeze/spectral.py": "da0b3295782840dad359bbb321d515f2ddcbb349ad2f3f4a8f5a9244bab4cdf1",
+      "squeeze/strategies.py": "daa41dd395a7b5a9bc80208e06d2ed41a7f61dccee44f33afd117f2bfa71c813",
+      "squeeze/umap_.py": "8b313ae5227cc732438e5e0ca40b2c6d20de9e4b7c71cbff0da81641d6926efa",
+      "squeeze/utils.py": "e65ee6b22ee621ff921429c6f1fae5075fd4d147e7dab364e81f3e67302a9456",
+      "squeeze/validation.py": "2da473ecb8dafdf09b89d89d54a6133e6612d081297041bb147272264dbe24ee",
+      "scripts/benchmark_neighbors.py": "3401520f162eee4949baa44f9c373816a8707c752404759620f9cd39fcd1e9af"
+    },
+    "extension_sha256": "b4ef5056d961e54e35f2f92767112c3e4a1bce0a388c982cff943c9b81c1048b",
+    "python": "3.10.17",
+    "platform": "Linux-5.10.0-46-cloud-amd64-x86_64-with-glibc2.31",
+    "cpu": "AMD EPYC 7B13",
+    "versions": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "scikit-learn": "1.6.1",
+      "numba": "0.61.2",
+      "pynndescent": "0.5.13"
+    },
+    "thread_environment": {
+      "RAYON_NUM_THREADS": "1",
+      "NUMBA_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "seeds": [
+      17,
+      29,
+      53
+    ],
+    "methods": [
+      "sklearn-pca",
+      "sklearn-tsne",
+      "sklearn-isomap",
+      "sklearn-spectral",
+      "rust-pca",
+      "rust-tsne",
+      "rust-pacmap",
+      "rust-trimap",
+      "squeeze-umap",
+      "spectral-map",
+      "neighbor-pca-80",
+      "neighbor-pca-160",
+      "neighbor-pca-320",
+      "neighbor-spectral-160"
+    ],
+    "protocol": "One full-data warmup per method (seed 42), then randomized interleaved full fit_transform runs. BLAS limited to one thread. Metrics excluded from fit timing. Seeds are optimizer replicates, not independent datasets.",
+    "pair_seed": 20261006,
+    "pair_count": 49960,
+    "threadpools": [
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "filepath": "/home/georgepearse/squeeze-worktrees/rust-benchmark-iterations/.venv/lib/python3.10/site-packages/numpy.libs/libscipy_openblas64_-56d6093b.so",
+        "version": "0.3.29",
+        "threading_layer": "pthreads",
+        "architecture": "Haswell"
+      },
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "filepath": "/home/georgepearse/squeeze-worktrees/rust-benchmark-iterations/.venv/lib/python3.10/site-packages/scipy.libs/libscipy_openblas-68440149.so",
+        "version": "0.3.28",
+        "threading_layer": "pthreads",
+        "architecture": "Haswell"
+      },
+      {
+        "user_api": "openmp",
+        "internal_api": "openmp",
+        "num_threads": 1,
+        "prefix": "libgomp",
+        "filepath": "/home/georgepearse/squeeze-worktrees/rust-benchmark-iterations/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-a34b3233.so.1.0.0",
+        "version": null
+      },
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libopenblas",
+        "filepath": "/opt/conda/lib/libopenblasp-r0.3.29.so",
+        "version": "0.3.29",
+        "threading_layer": "pthreads",
+        "architecture": "Zen"
+      }
+    ],
+    "measured_source_commit": "7cc94730257d4815f07a6ae9b86d0ac3a2c5a886",
+    "post_measurement_source_edits": "The following commit only removes pre-existing trailing whitespace from src/lib.rs and src/metrics_simd.rs to satisfy hooks; measured source hashes match measured_source_commit."
+  },
+  "runs": [
+    {
+      "method": "neighbor-spectral-160",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "init": "spectral",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.3085559340106556,
+      "seconds": 0.30123566499969456,
+      "trustworthiness_5": 0.9880706711670559,
+      "trustworthiness_15": 0.9866466031636092,
+      "trustworthiness_30": 0.982712965164925,
+      "neighbor_recall_15": 0.53092190688184,
+      "distance_spearman": 0.3560070825957641,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pacmap",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "n_iter": 450
+      },
+      "warmup_seconds": 0.5344913500011899,
+      "seconds": 0.5170913600013591,
+      "trustworthiness_5": 0.9818049646746814,
+      "trustworthiness_15": 0.9805186396719071,
+      "trustworthiness_30": 0.9757298736387969,
+      "neighbor_recall_15": 0.48677425338527175,
+      "distance_spearman": 0.24108695605417474,
+      "status": "ok"
+    },
+    {
+      "method": "spectral-map",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "n_neighbors": 15,
+        "n_iter": 128
+      },
+      "warmup_seconds": 0.10165014800440986,
+      "seconds": 0.12705886700132396,
+      "trustworthiness_5": 0.9209078667538874,
+      "trustworthiness_15": 0.915027112078944,
+      "trustworthiness_30": 0.9116413929963203,
+      "neighbor_recall_15": 0.21406047115562976,
+      "distance_spearman": 0.35040390770108565,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pca",
+      "seed": 17,
+      "parameters": {
+        "n_components": 2
+      },
+      "warmup_seconds": 0.001397480009472929,
+      "seconds": 0.0009816200035857037,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-320",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "init": "pca",
+        "n_epochs": 320,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.4817290810024133,
+      "seconds": 0.4632769009913318,
+      "trustworthiness_5": 0.9882439927672759,
+      "trustworthiness_15": 0.9873145082716466,
+      "trustworthiness_30": 0.9839379585762486,
+      "neighbor_recall_15": 0.5385642737896494,
+      "distance_spearman": 0.47869807890281,
+      "status": "ok"
+    },
+    {
+      "method": "rust-trimap",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "n_iter": 800
+      },
+      "warmup_seconds": 0.9754926309979055,
+      "seconds": 0.9550937129970407,
+      "trustworthiness_5": 0.49727727692231605,
+      "trustworthiness_15": 0.5016152646577651,
+      "trustworthiness_30": 0.5038738557982974,
+      "neighbor_recall_15": 0.008866629567798183,
+      "distance_spearman": -0.052367696545866316,
+      "status": "ok"
+    },
+    {
+      "method": "squeeze-umap",
+      "seed": 17,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 17,
+        "n_epochs": 200,
+        "n_jobs": 1
+      },
+      "warmup_seconds": 10.62845551299688,
+      "seconds": 2.1840434390032897,
+      "trustworthiness_5": 0.9874766123154765,
+      "trustworthiness_15": 0.985802467973994,
+      "trustworthiness_30": 0.9812235986294282,
+      "neighbor_recall_15": 0.5189018734928584,
+      "distance_spearman": 0.361831624411578,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-tsne",
+      "seed": 17,
+      "parameters": {
+        "n_components": 2,
+        "random_state": 17,
+        "perplexity": 30,
+        "max_iter": 1000,
+        "n_jobs": 1
+      },
+      "warmup_seconds": 6.728028034995077,
+      "seconds": 6.863503202010179,
+      "trustworthiness_5": 0.9949919638127392,
+      "trustworthiness_15": 0.9904428379421463,
+      "trustworthiness_30": 0.9852388336297907,
+      "neighbor_recall_15": 0.5914672602485624,
+      "distance_spearman": 0.5023229272900143,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-pca",
+      "seed": 17,
+      "parameters": {
+        "n_components": 2,
+        "svd_solver": "full"
+      },
+      "warmup_seconds": 0.004659240003093146,
+      "seconds": 0.0043066600046586245,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-80",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "init": "pca",
+        "n_epochs": 80,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.1767084270104533,
+      "seconds": 0.18644012699951418,
+      "trustworthiness_5": 0.9858545684954708,
+      "trustworthiness_15": 0.9838863344205769,
+      "trustworthiness_30": 0.9801372891127106,
+      "neighbor_recall_15": 0.5161936560934891,
+      "distance_spearman": 0.5228596384948618,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-isomap",
+      "seed": 17,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "n_jobs": 1
+      },
+      "warmup_seconds": 1.420819274004316,
+      "seconds": 1.4155647629959276,
+      "trustworthiness_5": 0.8439545693353279,
+      "trustworthiness_15": 0.8390867948313372,
+      "trustworthiness_30": 0.8356868980468977,
+      "neighbor_recall_15": 0.21346688925987758,
+      "distance_spearman": 0.5472717418171211,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-160",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "init": "pca",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.2828971949929837,
+      "seconds": 0.2816329249908449,
+      "trustworthiness_5": 0.9886049446425367,
+      "trustworthiness_15": 0.9877322783368748,
+      "trustworthiness_30": 0.9834496048726923,
+      "neighbor_recall_15": 0.5317380819884994,
+      "distance_spearman": 0.5078788391773832,
+      "status": "ok"
+    },
+    {
+      "method": "rust-tsne",
+      "seed": 17,
+      "parameters": {
+        "random_state": 17,
+        "n_iter": 1000
+      },
+      "warmup_seconds": 21.030455519998213,
+      "seconds": 21.200473256991245,
+      "trustworthiness_5": 0.9953005334958301,
+      "trustworthiness_15": 0.9887999896273738,
+      "trustworthiness_30": 0.9836953067707341,
+      "neighbor_recall_15": 0.5916898534594695,
+      "distance_spearman": 0.43767186138843817,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-spectral",
+      "seed": 17,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 17,
+        "n_jobs": 1
+      },
+      "warmup_seconds": 0.15813332601101138,
+      "seconds": 0.16044830800092313,
+      "trustworthiness_5": 0.9397650826652582,
+      "trustworthiness_15": 0.9347668051705031,
+      "trustworthiness_30": 0.9293704794358897,
+      "neighbor_recall_15": 0.326841031348544,
+      "distance_spearman": 0.32506872207022214,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-pca",
+      "seed": 29,
+      "parameters": {
+        "n_components": 2,
+        "svd_solver": "full"
+      },
+      "seconds": 0.0047090299922274426,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-80",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "init": "pca",
+        "n_epochs": 80,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.17342667600314599,
+      "trustworthiness_5": 0.9858903401825228,
+      "trustworthiness_15": 0.9852964260238315,
+      "trustworthiness_30": 0.9799495072008925,
+      "neighbor_recall_15": 0.5198293452049713,
+      "distance_spearman": 0.5266227932944755,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-spectral",
+      "seed": 29,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 29,
+        "n_jobs": 1
+      },
+      "seconds": 0.1537396569910925,
+      "trustworthiness_5": 0.9397650826652582,
+      "trustworthiness_15": 0.9347668051705031,
+      "trustworthiness_30": 0.9293704794358897,
+      "neighbor_recall_15": 0.326841031348544,
+      "distance_spearman": 0.32506872207022214,
+      "status": "ok"
+    },
+    {
+      "method": "rust-tsne",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "n_iter": 1000
+      },
+      "seconds": 21.310681233997457,
+      "trustworthiness_5": 0.9950832904850734,
+      "trustworthiness_15": 0.9899560773655705,
+      "trustworthiness_30": 0.9844389150926786,
+      "neighbor_recall_15": 0.5912075681691709,
+      "distance_spearman": 0.42744083028756885,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-320",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "init": "pca",
+        "n_epochs": 320,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.4465138320083497,
+      "trustworthiness_5": 0.9889897235719554,
+      "trustworthiness_15": 0.9877211110337347,
+      "trustworthiness_30": 0.9840115208772744,
+      "neighbor_recall_15": 0.5380077907623817,
+      "distance_spearman": 0.48964332462386756,
+      "status": "ok"
+    },
+    {
+      "method": "rust-trimap",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "n_iter": 800
+      },
+      "seconds": 0.9650724520033691,
+      "trustworthiness_5": 0.5055387324940361,
+      "trustworthiness_15": 0.5042802558107096,
+      "trustworthiness_30": 0.5037433372555618,
+      "neighbor_recall_15": 0.009423112595065848,
+      "distance_spearman": -0.06206393029679028,
+      "status": "ok"
+    },
+    {
+      "method": "spectral-map",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "n_neighbors": 15,
+        "n_iter": 128
+      },
+      "seconds": 0.10446488700108603,
+      "trustworthiness_5": 0.9132771748952434,
+      "trustworthiness_15": 0.9120073812945999,
+      "trustworthiness_30": 0.9055111094589776,
+      "neighbor_recall_15": 0.20760526803932478,
+      "distance_spearman": 0.3511493137731094,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pacmap",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "n_iter": 450
+      },
+      "seconds": 0.5561945399967954,
+      "trustworthiness_5": 0.9808970481514903,
+      "trustworthiness_15": 0.9793434169479928,
+      "trustworthiness_30": 0.9734385869429669,
+      "neighbor_recall_15": 0.4747913188647746,
+      "distance_spearman": 0.2699488595918698,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-160",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "init": "pca",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.2721575449977536,
+      "trustworthiness_5": 0.9864789244106925,
+      "trustworthiness_15": 0.9859327950024018,
+      "trustworthiness_30": 0.9825922535169129,
+      "neighbor_recall_15": 0.5300686329066964,
+      "distance_spearman": 0.491505123652248,
+      "status": "ok"
+    },
+    {
+      "method": "squeeze-umap",
+      "seed": 29,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 29,
+        "n_epochs": 200,
+        "n_jobs": 1
+      },
+      "seconds": 2.1751693289988907,
+      "trustworthiness_5": 0.9884535837475851,
+      "trustworthiness_15": 0.986559502381626,
+      "trustworthiness_30": 0.9831368221202453,
+      "neighbor_recall_15": 0.5211649044704136,
+      "distance_spearman": 0.32432695007682155,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-spectral-160",
+      "seed": 29,
+      "parameters": {
+        "random_state": 29,
+        "init": "spectral",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.29867561398714315,
+      "trustworthiness_5": 0.986281526909796,
+      "trustworthiness_15": 0.9863053521286992,
+      "trustworthiness_30": 0.9818285336473658,
+      "neighbor_recall_15": 0.5336301242812095,
+      "distance_spearman": 0.35218284811160805,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-isomap",
+      "seed": 29,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "n_jobs": 1
+      },
+      "seconds": 1.4123316339973826,
+      "trustworthiness_5": 0.8439545693353279,
+      "trustworthiness_15": 0.8390867948313372,
+      "trustworthiness_30": 0.8356868980468977,
+      "neighbor_recall_15": 0.21346688925987758,
+      "distance_spearman": 0.5472717418171211,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pca",
+      "seed": 29,
+      "parameters": {
+        "n_components": 2
+      },
+      "seconds": 0.0010868709941860288,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-tsne",
+      "seed": 29,
+      "parameters": {
+        "n_components": 2,
+        "random_state": 29,
+        "perplexity": 30,
+        "max_iter": 1000,
+        "n_jobs": 1
+      },
+      "seconds": 7.03345083000022,
+      "trustworthiness_5": 0.9950079522015607,
+      "trustworthiness_15": 0.9904027067535207,
+      "trustworthiness_30": 0.9851494172019817,
+      "neighbor_recall_15": 0.5919124466703765,
+      "distance_spearman": 0.5006986418940074,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-spectral",
+      "seed": 53,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 53,
+        "n_jobs": 1
+      },
+      "seconds": 0.1762433370022336,
+      "trustworthiness_5": 0.9397650826652582,
+      "trustworthiness_15": 0.9347668051705031,
+      "trustworthiness_30": 0.9293704794358897,
+      "neighbor_recall_15": 0.326841031348544,
+      "distance_spearman": 0.32506872207022214,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-80",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "init": "pca",
+        "n_epochs": 80,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.18537089601159096,
+      "trustworthiness_5": 0.9859650563497389,
+      "trustworthiness_15": 0.9853748690089981,
+      "trustworthiness_30": 0.9825147621036382,
+      "neighbor_recall_15": 0.5143758115377481,
+      "distance_spearman": 0.5071937913299518,
+      "status": "ok"
+    },
+    {
+      "method": "rust-trimap",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "n_iter": 800
+      },
+      "seconds": 0.9632883119920734,
+      "trustworthiness_5": 0.5027305617430204,
+      "trustworthiness_15": 0.5017687837071139,
+      "trustworthiness_30": 0.5051147986517955,
+      "neighbor_recall_15": 0.008569838619922094,
+      "distance_spearman": -0.05400798869421132,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pca",
+      "seed": 53,
+      "parameters": {
+        "n_components": 2
+      },
+      "seconds": 0.0011788800038630143,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "spectral-map",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "n_neighbors": 15,
+        "n_iter": 128
+      },
+      "seconds": 0.10547408800630365,
+      "trustworthiness_5": 0.9153839095218943,
+      "trustworthiness_15": 0.910057076630076,
+      "trustworthiness_30": 0.9047670457412739,
+      "neighbor_recall_15": 0.21695418289742163,
+      "distance_spearman": 0.25487915532418587,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-pca",
+      "seed": 53,
+      "parameters": {
+        "n_components": 2,
+        "svd_solver": "full"
+      },
+      "seconds": 0.004572609992465004,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pacmap",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "n_iter": 450
+      },
+      "seconds": 0.5368088700051885,
+      "trustworthiness_5": 0.9808230163122004,
+      "trustworthiness_15": 0.9789611145721386,
+      "trustworthiness_30": 0.9715947212853514,
+      "neighbor_recall_15": 0.4913374142088666,
+      "distance_spearman": 0.245962749005692,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-320",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "init": "pca",
+        "n_epochs": 320,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.4443329920031829,
+      "trustworthiness_5": 0.9884768508970762,
+      "trustworthiness_15": 0.9880384799334646,
+      "trustworthiness_30": 0.9844828448975527,
+      "neighbor_recall_15": 0.540493414950844,
+      "distance_spearman": 0.49142374027965197,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-tsne",
+      "seed": 53,
+      "parameters": {
+        "n_components": 2,
+        "random_state": 53,
+        "perplexity": 30,
+        "max_iter": 1000,
+        "n_jobs": 1
+      },
+      "seconds": 7.117189728000085,
+      "trustworthiness_5": 0.9950316548324594,
+      "trustworthiness_15": 0.9904760679883818,
+      "trustworthiness_30": 0.9852188491693766,
+      "neighbor_recall_15": 0.5923576330921907,
+      "distance_spearman": 0.5016735708725143,
+      "status": "ok"
+    },
+    {
+      "method": "rust-tsne",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "n_iter": 1000
+      },
+      "seconds": 21.380528542998945,
+      "trustworthiness_5": 0.9956561351709404,
+      "trustworthiness_15": 0.9896271647367517,
+      "trustworthiness_30": 0.9842408073467833,
+      "neighbor_recall_15": 0.5898349100352439,
+      "distance_spearman": 0.434129041780606,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-spectral-160",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "init": "spectral",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.29412525398947764,
+      "trustworthiness_5": 0.9874037624971499,
+      "trustworthiness_15": 0.9862962969933814,
+      "trustworthiness_30": 0.9836613321289704,
+      "neighbor_recall_15": 0.5279539974030792,
+      "distance_spearman": 0.3187601842653883,
+      "status": "ok"
+    },
+    {
+      "method": "squeeze-umap",
+      "seed": 53,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 53,
+        "n_epochs": 200,
+        "n_jobs": 1
+      },
+      "seconds": 2.1814565600070637,
+      "trustworthiness_5": 0.9884741135853713,
+      "trustworthiness_15": 0.9866817153395875,
+      "trustworthiness_30": 0.981005135752152,
+      "neighbor_recall_15": 0.5212762010758671,
+      "distance_spearman": 0.34854025289035173,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-isomap",
+      "seed": 53,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "n_jobs": 1
+      },
+      "seconds": 1.4656653630081564,
+      "trustworthiness_5": 0.8439545693353279,
+      "trustworthiness_15": 0.8390867948313372,
+      "trustworthiness_30": 0.8356868980468977,
+      "neighbor_recall_15": 0.21346688925987758,
+      "distance_spearman": 0.5472717418171211,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-160",
+      "seed": 53,
+      "parameters": {
+        "random_state": 53,
+        "init": "pca",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "seconds": 0.287448895003763,
+      "trustworthiness_5": 0.9874923518577793,
+      "trustworthiness_15": 0.9867304624999242,
+      "trustworthiness_30": 0.9830034864781614,
+      "neighbor_recall_15": 0.5298089408273048,
+      "distance_spearman": 0.5105709636099753,
+      "status": "ok"
+    }
+  ]
+}

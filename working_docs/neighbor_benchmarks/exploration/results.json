@@ -1,0 +1,351 @@
+{
+  "metadata": {
+    "dataset": "sklearn Digits, raw pixels, 1797 x 64; no labels used in fitting",
+    "data_sha256": "20def7f70a702f0af9732fbba4375e147a7d54fe70d8c45569b8e7c1c7010c10",
+    "base_commit": "2397360df5833fcfc5a575b9188379e38681103f",
+    "source_sha256": {
+      "src/barnes_hut.rs": "7d124843e6ebf3780c51983a97e4a32cd66b51edd41202987dbffcc75666158b",
+      "src/cache_aligned.rs": "5f0993f7bc36ffd2c59d05574d72958a28e9acbed512847848c22fb1e76936f5",
+      "src/hnsw_algo.rs": "ba65e0108488bc75bb0827963dd7b7789862ff8f35207b3c3d24eb03bc8dbb92",
+      "src/hnsw_algo_robustprune.rs": "2fda0e47a4534c8f2950ef222149af723549816355311356d6f5b530b7d0ab8e",
+      "src/hnsw_index.rs": "e27f58c630d6ee065bb121f127698e4b747dc3955aaaf14d42b605dd450f6607",
+      "src/isomap.rs": "52df907f287f22382a645adfdd706d6a5181149991c6317bc26679fd0a942d79",
+      "src/lib.rs": "c8ce7431c660322a2bdfd3d1b2a72656448a68dee92176665becdf5d4776100f",
+      "src/lle.rs": "cf7d9929db6c209d1b68bdda82eb357f13d01b5d39e5a912c3c65709f649f5d5",
+      "src/mds.rs": "aaeadd05f2100d94d1c4c3ec3189192cd271217a6bfef100dacb206fb8a2824e",
+      "src/metrics.rs": "21526fa0f47a3b519973403e367f3f2db60ddbd81c5674b54b2932b2533b2c7a",
+      "src/metrics_simd.rs": "1fcecd66fbde6572603581597800a7345f3c863d0572753488f7815b54ee83f7",
+      "src/mixed_precision.rs": "e7a128f32714811918f7b1611873b4a36ffb919f4c70b6b148e37c76d79021fd",
+      "src/neighbor_map.rs": "a71dd324426346904158d3aff37865b58b321f4da561deb4e3fb736485b16b83",
+      "src/numerical.rs": "63271544f2b4283eca6e94b8ed6577b2f3136e54e328afa2bef3c535fae2892d",
+      "src/pacmap.rs": "edbaa622fb1f2a43e153eb62cb2119d4cf082605724e4f95ced749e4b29b175a",
+      "src/pca.rs": "698d11fd2c768e8240ef771f1b4fab005f51994c3357bb136824a8fd4568521c",
+      "src/phate.rs": "22cde0e9e04462b582564c2aa037b366e5f240128fbefc4f97256d952722c81c",
+      "src/sparse_hnsw_index.rs": "2cf41746adccaa3499fb4b78bb0647bb8a7a06a63e916075d6f967d501ab35f7",
+      "src/sparse_metrics.rs": "1f1ef203271d2b924fea2f132e32a73e49de50096e7627f2cc21ce596e921688",
+      "src/trimap.rs": "e047c1ffa191af218b525209d29509f2152eee3612f4a62782831a10d5bf87dc",
+      "src/tsne.rs": "d6abb511060de8c3af5facd70f47c650e2962c5b0a226f6e14dea80540c540ff",
+      "Cargo.lock": "b6f7582ea8954d381f4d0f2e9d091ab8d77d8c664374f805386775d4f59cd792",
+      "scripts/benchmark_neighbors.py": "e9d3ea34754cc2d602fa6d700264123b175738af30973d45e840c6b51656c966"
+    },
+    "extension_sha256": "a716385241e0906a83f0f19c962242a26ecc2f4780fe99d9354b3b1a3398648f",
+    "python": "3.10.17",
+    "platform": "Linux-5.10.0-46-cloud-amd64-x86_64-with-glibc2.31",
+    "cpu": "AMD EPYC 7B13",
+    "versions": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "scikit-learn": "1.6.1",
+      "numba": "0.61.2",
+      "pynndescent": "0.5.13"
+    },
+    "thread_environment": {
+      "RAYON_NUM_THREADS": "1",
+      "NUMBA_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "seeds": [
+      42
+    ],
+    "methods": [
+      "spectral-map",
+      "neighbor-pca-80",
+      "neighbor-pca-160",
+      "neighbor-pca-320",
+      "neighbor-spectral-80",
+      "neighbor-spectral-160",
+      "neighbor-spectral-320",
+      "sklearn-pca",
+      "sklearn-tsne",
+      "rust-pacmap",
+      "rust-trimap",
+      "rust-tsne",
+      "squeeze-umap"
+    ],
+    "protocol": "One full-data warmup per method (seed 42), then randomized interleaved full fit_transform runs. BLAS limited to one thread. Metrics excluded from fit timing. Seeds are optimizer replicates, not independent datasets.",
+    "pair_seed": 20261006,
+    "pair_count": 49960,
+    "threadpools": [
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "filepath": "/home/georgepearse/squeeze-worktrees/rust-benchmark-iterations/.venv/lib/python3.10/site-packages/numpy.libs/libscipy_openblas64_-56d6093b.so",
+        "version": "0.3.29",
+        "threading_layer": "pthreads",
+        "architecture": "Haswell"
+      },
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libscipy_openblas",
+        "filepath": "/home/georgepearse/squeeze-worktrees/rust-benchmark-iterations/.venv/lib/python3.10/site-packages/scipy.libs/libscipy_openblas-68440149.so",
+        "version": "0.3.28",
+        "threading_layer": "pthreads",
+        "architecture": "Haswell"
+      },
+      {
+        "user_api": "openmp",
+        "internal_api": "openmp",
+        "num_threads": 1,
+        "prefix": "libgomp",
+        "filepath": "/home/georgepearse/squeeze-worktrees/rust-benchmark-iterations/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-a34b3233.so.1.0.0",
+        "version": null
+      },
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libopenblas",
+        "filepath": "/opt/conda/lib/libopenblasp-r0.3.29.so",
+        "version": "0.3.29",
+        "threading_layer": "pthreads",
+        "architecture": "Zen"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "method": "spectral-map",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "n_neighbors": 15,
+        "n_iter": 128
+      },
+      "warmup_seconds": 0.2748912249953719,
+      "seconds": 0.2549151749990415,
+      "trustworthiness_5": 0.9210166748941547,
+      "trustworthiness_15": 0.9159952377934999,
+      "trustworthiness_30": 0.9092494108846894,
+      "neighbor_recall_15": 0.21710257837135966,
+      "distance_spearman": 0.3633263767078613,
+      "status": "ok"
+    },
+    {
+      "method": "squeeze-umap",
+      "seed": 42,
+      "parameters": {
+        "n_components": 2,
+        "n_neighbors": 15,
+        "random_state": 42,
+        "n_epochs": 200,
+        "n_jobs": 1
+      },
+      "warmup_seconds": 10.496744814998237,
+      "seconds": 2.1962833590077935,
+      "trustworthiness_5": 0.9883412295444274,
+      "trustworthiness_15": 0.9871252078446331,
+      "trustworthiness_30": 0.9825134594599546,
+      "neighbor_recall_15": 0.5214245965498052,
+      "distance_spearman": 0.36570416975610043,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-pca",
+      "seed": 42,
+      "parameters": {
+        "n_components": 2,
+        "svd_solver": "full"
+      },
+      "warmup_seconds": 0.004654029005905613,
+      "seconds": 0.004159939999226481,
+      "trustworthiness_5": 0.8304287656621666,
+      "trustworthiness_15": 0.8288096554092305,
+      "trustworthiness_30": 0.8303936954587459,
+      "neighbor_recall_15": 0.15121498794286775,
+      "distance_spearman": 0.5775268906496986,
+      "status": "ok"
+    },
+    {
+      "method": "rust-trimap",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "n_iter": 800
+      },
+      "warmup_seconds": 0.980994172001374,
+      "seconds": 0.951545031988644,
+      "trustworthiness_5": 0.5007574576968694,
+      "trustworthiness_15": 0.5027316394583901,
+      "trustworthiness_30": 0.5057268717334952,
+      "neighbor_recall_15": 0.007976256724169913,
+      "distance_spearman": -0.0500464078892543,
+      "status": "ok"
+    },
+    {
+      "method": "rust-pacmap",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "n_iter": 450
+      },
+      "warmup_seconds": 0.5349068500072462,
+      "seconds": 0.5587483199924463,
+      "trustworthiness_5": 0.9842703493462958,
+      "trustworthiness_15": 0.9811858964908109,
+      "trustworthiness_30": 0.9731306335036884,
+      "neighbor_recall_15": 0.48443702467074756,
+      "distance_spearman": 0.27264143889084896,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-320",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "init": "pca",
+        "n_epochs": 320,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.6061310689983657,
+      "seconds": 0.6058377389999805,
+      "trustworthiness_5": 0.9888121093692892,
+      "trustworthiness_15": 0.9873967155162985,
+      "trustworthiness_30": 0.9850635062624595,
+      "neighbor_recall_15": 0.5424596549805231,
+      "distance_spearman": 0.5037959331406318,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-spectral-320",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "init": "spectral",
+        "n_epochs": 320,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.6496554879995529,
+      "seconds": 0.632435109000653,
+      "trustworthiness_5": 0.988205172710371,
+      "trustworthiness_15": 0.987303780132113,
+      "trustworthiness_30": 0.9832469113974067,
+      "neighbor_recall_15": 0.5441662029308106,
+      "distance_spearman": 0.36047247424772694,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-spectral-160",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "init": "spectral",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.43661231199803296,
+      "seconds": 0.4419491919979919,
+      "trustworthiness_5": 0.9880319755334103,
+      "trustworthiness_15": 0.9864266658468946,
+      "trustworthiness_30": 0.9830904247057919,
+      "neighbor_recall_15": 0.530699313670933,
+      "distance_spearman": 0.3670363528110759,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-160",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "init": "pca",
+        "n_epochs": 160,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.41669526300393045,
+      "seconds": 0.4179922820039792,
+      "trustworthiness_5": 0.9880215861912578,
+      "trustworthiness_15": 0.9864801601566936,
+      "trustworthiness_30": 0.9841863928488462,
+      "neighbor_recall_15": 0.5344092005193842,
+      "distance_spearman": 0.5160110362205395,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-spectral-80",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "init": "spectral",
+        "n_epochs": 80,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.38206294299743604,
+      "seconds": 0.36648593400605023,
+      "trustworthiness_5": 0.9858142553594541,
+      "trustworthiness_15": 0.9859485839796881,
+      "trustworthiness_30": 0.982819803128177,
+      "neighbor_recall_15": 0.517343721016509,
+      "distance_spearman": 0.36841640198578063,
+      "status": "ok"
+    },
+    {
+      "method": "rust-tsne",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "n_iter": 1000
+      },
+      "warmup_seconds": 22.15586270899803,
+      "seconds": 22.12539415899664,
+      "trustworthiness_5": 0.9950524957283939,
+      "trustworthiness_15": 0.9893677026954398,
+      "trustworthiness_30": 0.9842728333183212,
+      "neighbor_recall_15": 0.5924689296976441,
+      "distance_spearman": 0.39178597114426955,
+      "status": "ok"
+    },
+    {
+      "method": "neighbor-pca-80",
+      "seed": 42,
+      "parameters": {
+        "random_state": 42,
+        "init": "pca",
+        "n_epochs": 80,
+        "n_neighbors": 15,
+        "negative_samples": 5,
+        "learning_rate": 1.0
+      },
+      "warmup_seconds": 0.3195735340123065,
+      "seconds": 0.34365750299184583,
+      "trustworthiness_5": 0.9861098850235767,
+      "trustworthiness_15": 0.9847980798930616,
+      "trustworthiness_30": 0.980857926425308,
+      "neighbor_recall_15": 0.5133741420886663,
+      "distance_spearman": 0.5002750065765725,
+      "status": "ok"
+    },
+    {
+      "method": "sklearn-tsne",
+      "seed": 42,
+      "parameters": {
+        "n_components": 2,
+        "random_state": 42,
+        "perplexity": 30,
+        "max_iter": 1000,
+        "n_jobs": 1
+      },
+      "warmup_seconds": 6.961274821005645,
+      "seconds": 7.446128901996417,
+      "trustworthiness_5": 0.9950459012956505,
+      "trustworthiness_15": 0.9904556782495022,
+      "trustworthiness_30": 0.9851780541818225,
+      "neighbor_recall_15": 0.5920237432758301,
+      "distance_spearman": 0.5002538420072882,
+      "status": "ok"
+    }
+  ]
+}
