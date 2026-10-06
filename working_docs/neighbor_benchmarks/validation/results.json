@@ -131,7 +131,9 @@
         "threading_layer": "pthreads",
         "architecture": "Zen"
       }
-    ]
+    ],
+    "measured_source_commit": "7cc94730257d4815f07a6ae9b86d0ac3a2c5a886",
+    "post_measurement_source_edits": "The following commit only removes pre-existing trailing whitespace from src/lib.rs and src/metrics_simd.rs to satisfy hooks; measured source hashes match measured_source_commit."
   },
   "runs": [
     {

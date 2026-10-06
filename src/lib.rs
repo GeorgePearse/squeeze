@@ -26,7 +26,7 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     // HNSW index classes
     m.add_class::<hnsw_index::HnswIndex>()?;
     m.add_class::<sparse_hnsw_index::SparseHnswIndex>()?;
-    
+
     // Dimensionality reduction algorithms
     m.add_class::<pca::PCA>()?;
     m.add_class::<tsne::TSNE>()?;
@@ -38,6 +38,6 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     m.add_class::<pacmap::PaCMAP>()?;
     m.add_class::<neighbor_map::NeighborMap>()?;
     m.add_class::<neighbor_map::SpectralMap>()?;
-    
+
     Ok(())
 }

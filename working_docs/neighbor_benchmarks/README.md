@@ -96,7 +96,9 @@ repository. Different seeds measure optimizer variability, **not dataset
 holdout/generalization**. Three repeats and a shared VM are not sufficient for
 significance claims or universal speedup promises. Historical exploratory
 measurements used an earlier working version; the final validation hashes
-identify the implementation delivered in this PR.
+identify the implementation at commit `7cc9473` in this PR.
+The later hook cleanup only removes pre-existing trailing whitespace in
+`src/lib.rs` and `src/metrics_simd.rs`; no algorithm or parameter changed.
 
 ## Reproduce
 
