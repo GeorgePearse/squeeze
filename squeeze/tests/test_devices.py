@@ -91,6 +91,8 @@ def test_algorithms_accept_device_cpu(name: str, digits) -> None:
         kwargs.update(n_iter=20, random_state=0)
     elif name == "MDS":
         kwargs.update(n_iter=5, random_state=0)
+    elif name == "Isomap":
+        kwargs.update(n_neighbors=25)  # 300 digits are disconnected at the default 10
     emb = cls(n_components=2, **kwargs).fit_transform(X[:300])
     assert emb.shape == (300, 2)
     assert np.isfinite(emb).all()
@@ -144,9 +146,13 @@ def test_gpu_knn_matches_exact(digits) -> None:
     elapsed = time.perf_counter() - t
     assert gpu.compute_device != "cpu", gpu.compute_device
     e_idx, e_dist = _exact_knn(X, 15)
-    recall = np.mean([len(set(a) & set(b)) / 15 for a, b in zip(g_idx, e_idx)])
+    # Digits has many tied distances (integer pixels), so a neighbour counts as correct when
+    # its distance is within tolerance of the exact k-th distance ("identical up to ties").
+    recall = float(np.mean(g_dist <= e_dist[:, -1:] + 1e-3))
+    strict = np.mean([len(set(a) & set(b)) / 15 for a, b in zip(g_idx, e_idx)])
     print(
-        f"\n[{GPU}] kNN digits 1797x64 k=15: {elapsed:.3f}s recall vs exact {recall:.4f}",
+        f"\n[{GPU}] kNN digits 1797x64 k=15: {elapsed:.3f}s "
+        f"recall vs exact {recall:.4f} (strict index match {strict:.4f})",
     )
     assert recall >= 0.999
     np.testing.assert_allclose(

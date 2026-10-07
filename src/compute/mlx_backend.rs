@@ -34,7 +34,7 @@ pub fn probe() -> Result<Device> {
         mlx_rs::Device::set_default(&mlx_rs::Device::gpu());
         let a = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
         let s = a.sum(None).map_err(err)?;
-        let v: f32 = s.item();
+        let v: f32 = s.item_exact::<f32>();
         if (v - 6.0).abs() > 1e-6 {
             return Err(format!("MLX GPU self-test returned {} instead of 6", v));
         }
@@ -255,7 +255,7 @@ impl Backend for MlxBackend {
         let mut r0 = 0;
         while r0 < n {
             let r1 = (r0 + chunk).min(n);
-            let block = ops::matmul(&rows(&xa, r0, r1), &at).map_err(err)?;
+            let block = ops::matmul(rows(&xa, r0, r1), &at).map_err(err)?;
             out.extend(host_f32(&block)?);
             r0 = r1;
         }

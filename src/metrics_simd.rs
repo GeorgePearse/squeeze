@@ -80,7 +80,7 @@ pub fn euclidean(a: &[f32], b: &[f32]) -> MetricResult<f32> {
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { euclidean_neon(a, b) });
+        Ok(unsafe { euclidean_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -155,6 +155,7 @@ unsafe fn euclidean_neon(a: &[f32], b: &[f32]) -> f32 {
 
 /// Scalar fallback
 #[inline]
+#[allow(dead_code)]
 fn euclidean_scalar(a: &[f32], b: &[f32]) -> f32 {
     a.iter()
         .zip(b.iter())
@@ -182,7 +183,7 @@ pub fn manhattan(a: &[f32], b: &[f32]) -> MetricResult<f32> {
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { manhattan_neon(a, b) });
+        Ok(unsafe { manhattan_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -256,6 +257,7 @@ unsafe fn manhattan_neon(a: &[f32], b: &[f32]) -> f32 {
 
 /// Scalar fallback
 #[inline]
+#[allow(dead_code)]
 fn manhattan_scalar(a: &[f32], b: &[f32]) -> f32 {
     a.iter()
         .zip(b.iter())
@@ -282,7 +284,7 @@ pub fn cosine(a: &[f32], b: &[f32]) -> MetricResult<f32> {
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { cosine_neon(a, b) });
+        Ok(unsafe { cosine_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -379,6 +381,7 @@ unsafe fn cosine_neon(a: &[f32], b: &[f32]) -> f32 {
 
 /// Scalar fallback
 #[inline]
+#[allow(dead_code)]
 fn cosine_scalar(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
     let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();

@@ -14,7 +14,7 @@ Trustworthiness is sklearn's at k=15, same seeds on every device.
 
 """
 
-# ruff: noqa: PLC0415, T201, PERF401, E501, N806, C901, S603, RUF059, PLR0912, ICN001, D103, ANN202  # test/benchmark pragmatics: prints are the timing record
+# ruff: noqa: PLC0415, T201, PERF401, E501, N806, C901, S603, RUF059, PLR0912, PLR0915, ICN001, D103, ANN202  # test/benchmark pragmatics: prints are the timing record
 
 from __future__ import annotations
 
@@ -206,12 +206,18 @@ def summarise(records: list[dict], out: Path) -> str:
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
+        # Fixed categorical colours per device kind (blue, orange, aqua, violet).
+        colours = {"cpu": "#2a78d6", "wgpu": "#eb6834", "mlx": "#1baf7a", "cuda": "#4a3aa7"}
         fig, ax = plt.subplots(figsize=(max(8, 1.2 * len(rows_for_plot)), 4.5))
         width = 0.8 / max(1, len(devices))
         xs = np.arange(len(rows_for_plot))
         for i, d in enumerate(devices):
             vals = [row[1].get(d, np.nan) for row in rows_for_plot]
-            ax.bar(xs + i * width, vals, width, label=d)
+            colour = colours.get(d.split(":")[0], "#52514e")
+            ax.bar(xs + i * width, vals, width * 0.92, label=d, color=colour, linewidth=0)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", color="#e5e4e0", linewidth=0.8)
+        ax.set_axisbelow(True)
         ax.set_xticks(xs + width * (len(devices) - 1) / 2)
         ax.set_xticklabels([row[0] for row in rows_for_plot], fontsize=8)
         ax.set_ylabel("wall-clock seconds (log)")
