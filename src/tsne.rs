@@ -36,12 +36,14 @@ pub struct TSNE {
     min_grad_norm: f64,
     /// Number of iterations with no progress before stopping
     n_iter_without_progress: usize,
+    device: Option<String>,
 }
 
 #[pymethods]
 impl TSNE {
     #[new]
-    #[pyo3(signature = (n_components=2, perplexity=30.0, learning_rate=200.0, n_iter=1000, early_exaggeration=12.0, random_state=None, theta=0.5, use_barnes_hut=None, min_grad_norm=1e-7, n_iter_without_progress=300))]
+    #[pyo3(signature = (n_components=2, perplexity=30.0, learning_rate=200.0, n_iter=1000, early_exaggeration=12.0, random_state=None, theta=0.5, use_barnes_hut=None, min_grad_norm=1e-7, n_iter_without_progress=300, device=None))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         n_components: usize,
         perplexity: f64,
@@ -53,6 +55,7 @@ impl TSNE {
         use_barnes_hut: Option<bool>,
         min_grad_norm: f64,
         n_iter_without_progress: usize,
+        device: Option<String>,
     ) -> Self {
         Self {
             n_components,
@@ -65,6 +68,7 @@ impl TSNE {
             use_barnes_hut,
             min_grad_norm,
             n_iter_without_progress,
+            device,
         }
     }
 
@@ -74,23 +78,30 @@ impl TSNE {
     {
         let x = data.as_array();
         let n_samples = x.nrows();
-        let n_features = x.ncols();
 
         if n_samples < 4 {
             return Err(PyValueError::new_err("t-SNE requires at least 4 samples"));
         }
 
-        // Determine whether to use Barnes-Hut
-        let use_bh = self.should_use_barnes_hut(n_samples);
+        let device = crate::device_py::resolve(py, self.device.as_deref())?;
 
-        // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
-            .into_iter()
-            .map(|row| row.iter().map(|&v| v as f32).collect())
-            .collect();
+        // Determine whether to use Barnes-Hut. On a GPU the exact O(n²) gradient is used up to
+        // TSNE_EXACT_MAX_ROWS samples unless Barnes-Hut was requested explicitly.
+        let use_bh = match self.use_barnes_hut {
+            Some(flag) => flag,
+            None if device.is_gpu() && n_samples <= crate::compute::TSNE_EXACT_MAX_ROWS => false,
+            None => self.should_use_barnes_hut(n_samples),
+        } && self.n_components == 2;
 
-        // Compute pairwise distances
-        let distances = self.compute_pairwise_distances(&x_f32);
+        // Squared pairwise distances on the selected device
+        let x32 = x.mapv(|v| v as f32);
+        let mut distances = crate::device_py::with_fallback(py, &device, "pairwise distances", |b| {
+            b.pairwise_sqdist(x32.view(), x32.view())
+        })?
+        .mapv(|v| v.max(0.0) as f64);
+        for i in 0..n_samples {
+            distances[[i, i]] = 0.0;
+        }
 
         // Compute P (joint probabilities in high-dimensional space)
         let p = self.compute_joint_probabilities(&distances, n_samples);
@@ -102,14 +113,52 @@ impl TSNE {
         };
 
         let normal = Normal::new(0.0, 1e-4).unwrap();
-        let mut y: Array2<f64> = Array2::zeros((n_samples, self.n_components));
-        for mut row in y.rows_mut() {
+        let mut y0: Array2<f64> = Array2::zeros((n_samples, self.n_components));
+        for mut row in y0.rows_mut() {
             for v in row.iter_mut() {
                 *v = normal.sample(&mut rng);
             }
         }
 
-        // Gradient descent
+        let y = if use_bh {
+            // Barnes-Hut repulsion stays on the CPU
+            self.optimize(y0, &mut |y, ex| {
+                let scaled;
+                let p_ref = if ex == 1.0 {
+                    &p
+                } else {
+                    scaled = &p * ex;
+                    &scaled
+                };
+                Ok(self.compute_gradient_barnes_hut(p_ref, y))
+            })
+            .map_err(PyValueError::new_err)?
+        } else {
+            // Exact gradient on the selected device (CPU reference or GPU, f32)
+            crate::device_py::with_fallback(py, &device, "t-SNE optimisation", |backend| {
+                let mut out = None;
+                backend.tsne_exact_session(p.view(), self.n_components, &mut |grad_fn| {
+                    out = Some(self.optimize(y0.clone(), &mut |y, ex| grad_fn(y.view(), &[ex]))?);
+                    Ok(())
+                })?;
+                out.ok_or_else(|| "t-SNE session produced no embedding".to_string())
+            })?
+        };
+
+        Ok(y.into_pyarray_bound(py))
+    }
+}
+
+impl TSNE {
+    /// Gradient descent with gains and momentum (the loop shared by the exact and Barnes-Hut
+    /// paths). `grad_fn(y, exaggeration)` returns the gradient for the current embedding;
+    /// the exaggeration factor is `early_exaggeration` for the first 250 iterations, then 1.
+    fn optimize(
+        &self,
+        mut y: Array2<f64>,
+        grad_fn: &mut dyn FnMut(&Array2<f64>, f64) -> crate::compute::Result<Array2<f64>>,
+    ) -> crate::compute::Result<Array2<f64>> {
+        let n_samples = y.nrows();
         let mut gains = Array2::ones((n_samples, self.n_components));
         let mut y_incs = Array2::zeros((n_samples, self.n_components));
         let momentum = 0.5;
@@ -122,20 +171,8 @@ impl TSNE {
 
         for iter in 0..self.n_iter {
             // Apply early exaggeration for first 250 iterations
-            let p_scaled = if iter < 250 {
-                &p * self.early_exaggeration
-            } else {
-                p.clone()
-            };
-
-            // Compute gradients - use Barnes-Hut for 2D embeddings on large datasets
-            let grad = if use_bh && self.n_components == 2 {
-                self.compute_gradient_barnes_hut(&p_scaled, &y)
-            } else {
-                // Compute Q (joint probabilities in low-dimensional space)
-                let q = self.compute_q(&y);
-                self.compute_gradient(&p_scaled, &q, &y)
-            };
+            let exaggeration = if iter < 250 { self.early_exaggeration } else { 1.0 };
+            let grad = grad_fn(&y, exaggeration)?;
 
             // Compute gradient norm for early stopping (skip during early exaggeration phase)
             if iter >= 250 && self.min_grad_norm > 0.0 {
@@ -189,11 +226,9 @@ impl TSNE {
             }
         }
 
-        Ok(y.into_pyarray_bound(py))
+        Ok(y)
     }
-}
 
-impl TSNE {
     /// Determine whether to use Barnes-Hut approximation
     fn should_use_barnes_hut(&self, n_samples: usize) -> bool {
         match self.use_barnes_hut {
@@ -316,6 +351,7 @@ impl TSNE {
         0.0
     }
 
+    #[cfg(test)]
     fn compute_pairwise_distances(&self, data: &[Vec<f32>]) -> Array2<f64> {
         let n = data.len();
         let mut distances = Array2::zeros((n, n));
@@ -418,6 +454,7 @@ impl TSNE {
         p_sym
     }
 
+    #[cfg(test)]
     fn compute_q(&self, y: &Array2<f64>) -> Array2<f64> {
         let n = y.nrows();
         let mut q = Array2::zeros((n, n));
@@ -449,6 +486,7 @@ impl TSNE {
         q
     }
 
+    #[cfg(test)]
     fn compute_gradient(&self, p: &Array2<f64>, q: &Array2<f64>, y: &Array2<f64>) -> Array2<f64> {
         let n = y.nrows();
         
@@ -499,7 +537,7 @@ mod tests {
     fn create_tsne(n_components: usize, perplexity: f64, learning_rate: f64,
                    n_iter: usize, early_exaggeration: f64, random_state: Option<u64>) -> TSNE {
         TSNE::new(n_components, perplexity, learning_rate, n_iter, early_exaggeration,
-                  random_state, 0.5, None, 1e-7, 300)
+                  random_state, 0.5, None, 1e-7, 300, None)
     }
 
     fn create_two_clusters() -> Vec<Vec<f32>> {
@@ -691,17 +729,17 @@ mod tests {
     #[test]
     fn test_should_use_barnes_hut_explicit() {
         // Explicit true
-        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, Some(true), 1e-7, 300, None);
         assert!(tsne.should_use_barnes_hut(100)); // Even for small n
 
         // Explicit false
-        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, Some(false), 1e-7, 300);
+        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, Some(false), 1e-7, 300, None);
         assert!(!tsne.should_use_barnes_hut(5000)); // Even for large n
     }
 
     #[test]
     fn test_should_use_barnes_hut_auto() {
-        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, None, 1e-7, 300);
+        let tsne = TSNE::new(2, 30.0, 200.0, 1000, 12.0, None, 0.5, None, 1e-7, 300, None);
 
         // Auto: large dataset with 2D -> use Barnes-Hut
         assert!(tsne.should_use_barnes_hut(2000));
@@ -710,13 +748,13 @@ mod tests {
         assert!(!tsne.should_use_barnes_hut(500));
 
         // Auto: 3D output -> don't use Barnes-Hut (only 2D supported)
-        let tsne_3d = TSNE::new(3, 30.0, 200.0, 1000, 12.0, None, 0.5, None, 1e-7, 300);
+        let tsne_3d = TSNE::new(3, 30.0, 200.0, 1000, 12.0, None, 0.5, None, 1e-7, 300, None);
         assert!(!tsne_3d.should_use_barnes_hut(5000));
     }
 
     #[test]
     fn test_barnes_hut_gradient_shape() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300, None);
 
         // Create test P matrix and embedding
         let n = 10;
@@ -736,7 +774,7 @@ mod tests {
 
     #[test]
     fn test_barnes_hut_gradient_nonzero() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300, None);
 
         // Create a non-uniform P matrix
         let n = 5;
@@ -766,8 +804,8 @@ mod tests {
     fn test_barnes_hut_vs_exact_similar() {
         // With theta=0, Barnes-Hut should give similar results to exact
         // (not identical due to tree structure but should be close)
-        let tsne_exact = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.0, Some(false), 1e-7, 300);
-        let tsne_bh = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.1, Some(true), 1e-7, 300);
+        let tsne_exact = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.0, Some(false), 1e-7, 300, None);
+        let tsne_bh = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.1, Some(true), 1e-7, 300, None);
 
         // Create small test case
         let n = 5;
@@ -809,7 +847,7 @@ mod tests {
 
     #[test]
     fn test_z_contribution_positive() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300);
+        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, Some(true), 1e-7, 300, None);
 
         let y = Array2::from_shape_vec((4, 2), vec![
             0.0, 0.0,
@@ -831,8 +869,8 @@ mod tests {
     #[test]
     fn test_theta_effect_on_approximation() {
         // Higher theta = more approximation = faster but less accurate
-        let tsne_low_theta = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.1, Some(true), 1e-7, 300);
-        let tsne_high_theta = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 1.0, Some(true), 1e-7, 300);
+        let tsne_low_theta = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.1, Some(true), 1e-7, 300, None);
+        let tsne_high_theta = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 1.0, Some(true), 1e-7, 300, None);
 
         let n = 20;
         let mut y = Array2::zeros((n, 2));
@@ -860,13 +898,13 @@ mod tests {
     #[test]
     fn test_early_stopping_disabled() {
         // With min_grad_norm = 0, early stopping is disabled
-        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, None, 0.0, 300);
+        let tsne = TSNE::new(2, 5.0, 200.0, 100, 12.0, Some(42), 0.5, None, 0.0, 300, None);
         assert_eq!(tsne.min_grad_norm, 0.0);
     }
 
     #[test]
     fn test_early_stopping_parameters() {
-        let tsne = TSNE::new(2, 5.0, 200.0, 1000, 12.0, Some(42), 0.5, None, 1e-5, 100);
+        let tsne = TSNE::new(2, 5.0, 200.0, 1000, 12.0, Some(42), 0.5, None, 1e-5, 100, None);
         assert_eq!(tsne.min_grad_norm, 1e-5);
         assert_eq!(tsne.n_iter_without_progress, 100);
     }

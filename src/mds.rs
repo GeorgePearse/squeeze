@@ -22,17 +22,19 @@ pub struct MDS {
     n_iter: usize,
     random_state: Option<u64>,
     stress: Option<f64>,
+    device: Option<String>,
 }
 
 #[pymethods]
 impl MDS {
     #[new]
-    #[pyo3(signature = (n_components=2, metric=true, n_iter=300, random_state=None))]
+    #[pyo3(signature = (n_components=2, metric=true, n_iter=300, random_state=None, device=None))]
     pub fn new(
         n_components: usize,
         metric: bool,
         n_iter: usize,
         random_state: Option<u64>,
+        device: Option<String>,
     ) -> Self {
         Self {
             n_components,
@@ -40,6 +42,7 @@ impl MDS {
             n_iter,
             random_state,
             stress: None,
+            device,
         }
     }
 
@@ -50,14 +53,9 @@ impl MDS {
         let x = data.as_array();
         let n_samples = x.nrows();
 
-        // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
-            .into_iter()
-            .map(|row| row.iter().map(|&v| v as f32).collect())
-            .collect();
-
-        // Compute pairwise distances
-        let distances = compute_distance_matrix(&x_f32);
+        // Pairwise distances on the selected device (GPU in f32, CPU reference otherwise)
+        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Apply MDS
         let embedding = if self.metric {
@@ -392,7 +390,7 @@ mod tests {
 
     #[test]
     fn test_stress_computation() {
-        let mut mds = MDS::new(2, true, 100, Some(42));
+        let mut mds = MDS::new(2, true, 100, Some(42), None);
         
         // Create a simple embedding
         let embedding = Array2::from_shape_vec((3, 2), vec![
@@ -416,7 +414,7 @@ mod tests {
 
     #[test]
     fn test_smacof_iteration() {
-        let mds = MDS::new(2, true, 100, None);
+        let mds = MDS::new(2, true, 100, None, None);
         
         // Simple test case
         let distances = Array2::from_shape_vec((3, 3), vec![
@@ -455,7 +453,7 @@ mod tests {
         let classical_result = classical_mds(&distances, 2).unwrap();
         
         // Metric MDS (would need to be called through the struct)
-        let mut metric_mds = MDS::new(2, true, 10, Some(42));
+        let mut metric_mds = MDS::new(2, true, 10, Some(42), None);
         // Note: Can't call metric_mds directly without Python interface
         // but the test structure is here for when it's needed
         

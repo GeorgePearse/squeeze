@@ -15,7 +15,8 @@ use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
 use crate::metrics_simd;
-use crate::mds::compute_distance_matrix;
+use crate::compute::cpu::center_rows;
+use crate::compute::Backend;
 
 /// TriMap dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -28,12 +29,14 @@ pub struct TriMap {
     learning_rate: f64,
     weight_adj: f64,
     random_state: Option<u64>,
+    device: Option<String>,
 }
 
 #[pymethods]
 impl TriMap {
     #[new]
-    #[pyo3(signature = (n_components=2, n_inliers=12, n_outliers=4, n_random=3, n_iter=800, learning_rate=0.1, weight_adj=50.0, random_state=None))]
+    #[pyo3(signature = (n_components=2, n_inliers=12, n_outliers=4, n_random=3, n_iter=800, learning_rate=0.1, weight_adj=50.0, random_state=None, device=None))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         n_components: usize,
         n_inliers: usize,
@@ -43,6 +46,7 @@ impl TriMap {
         learning_rate: f64,
         weight_adj: f64,
         random_state: Option<u64>,
+        device: Option<String>,
     ) -> Self {
         Self {
             n_components,
@@ -53,6 +57,7 @@ impl TriMap {
             learning_rate,
             weight_adj,
             random_state,
+            device,
         }
     }
 
@@ -69,24 +74,23 @@ impl TriMap {
             ));
         }
 
-        // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
-            .into_iter()
-            .map(|row| row.iter().map(|&v| v as f32).collect())
-            .collect();
-
-        // Compute pairwise distances
-        let distances = compute_distance_matrix(&x_f32);
+        // Pairwise distances on the selected device
+        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Generate triplets: (anchor, positive, negative)
         let triplets = self.generate_triplets(&distances, n_samples);
         let weights = self.compute_weights(&distances, &triplets);
 
         // Initialize embedding with PCA
-        let mut embedding = self.initialize_embedding(&x.to_owned(), n_samples)?;
+        let embedding = self.initialize_embedding(&x.to_owned(), n_samples)?;
 
-        // Optimize using gradient descent
-        self.optimize(&mut embedding, &triplets, &weights, n_samples);
+        // Optimize using gradient descent; the triplet gradient runs on the device
+        let embedding = crate::device_py::with_fallback(py, &device, "TriMap optimisation", |backend| {
+            let mut y = embedding.clone();
+            self.optimize(backend, &mut y, &triplets, &weights, n_samples)?;
+            Ok(y)
+        })?;
 
         Ok(embedding.into_pyarray_bound(py))
     }
@@ -197,66 +201,38 @@ impl TriMap {
         Ok(embedding)
     }
 
+    /// Gradient descent with momentum. The triplet gradient
+    /// (`loss = d²_ij - d²_ik + 1 > 0`, scaled by `2·w/|triplets|`) is evaluated by the
+    /// compute backend; the update and centring stay here in `f64`.
     fn optimize(
         &self,
+        backend: &dyn Backend,
         embedding: &mut Array2<f64>,
         triplets: &[(usize, usize, usize)],
         weights: &[f64],
-        n_samples: usize
-    ) {
-        let mut velocity = Array2::zeros((n_samples, self.n_components));
-        let momentum = 0.5;
+        n_samples: usize,
+    ) -> crate::compute::Result<()> {
+        let trip32: Vec<(u32, u32, u32)> = triplets
+            .iter()
+            .map(|&(i, j, k)| (i as u32, j as u32, k as u32))
+            .collect();
+        let scale = 2.0 / (triplets.len().max(1) as f64);
+        let dim = self.n_components;
+        backend.trimap_session(n_samples, dim, &trip32, weights, &mut |grad_fn| {
+            let mut velocity = Array2::zeros((n_samples, dim));
+            let momentum = 0.5;
+            for iter in 0..self.n_iter {
+                let grad = grad_fn(embedding.view(), &[scale])?;
 
-        for iter in 0..self.n_iter {
-            let mut grad = Array2::zeros((n_samples, self.n_components));
+                // Update with momentum and adaptive learning rate
+                let lr = self.learning_rate * (1.0 - iter as f64 / self.n_iter as f64).max(0.01);
+                velocity = momentum * &velocity - lr * &grad;
+                *embedding = &*embedding + &velocity;
 
-            // Compute gradients for all triplets
-            for (idx, &(i, j, k)) in triplets.iter().enumerate() {
-                let weight = weights[idx];
-
-                // Compute distances in embedding space
-                let mut d_ij_sq = 0.0;
-                let mut d_ik_sq = 0.0;
-                for c in 0..self.n_components {
-                    let diff_ij = embedding[[i, c]] - embedding[[j, c]];
-                    let diff_ik = embedding[[i, c]] - embedding[[k, c]];
-                    d_ij_sq += diff_ij * diff_ij;
-                    d_ik_sq += diff_ik * diff_ik;
-                }
-
-                // Triplet loss gradient
-                // We want d_ij < d_ik, so loss = max(0, d_ij - d_ik + margin)
-                let margin = 1.0;
-                let loss = d_ij_sq - d_ik_sq + margin;
-                
-                if loss > 0.0 {
-                    let scale = 2.0 * weight / (triplets.len() as f64);
-                    
-                    for c in 0..self.n_components {
-                        let diff_ij = embedding[[i, c]] - embedding[[j, c]];
-                        let diff_ik = embedding[[i, c]] - embedding[[k, c]];
-                        
-                        // Gradient w.r.t. anchor
-                        grad[[i, c]] += scale * (diff_ij - diff_ik);
-                        // Gradient w.r.t. positive
-                        grad[[j, c]] -= scale * diff_ij;
-                        // Gradient w.r.t. negative
-                        grad[[k, c]] += scale * diff_ik;
-                    }
-                }
+                center_rows(embedding);
             }
-
-            // Update with momentum and adaptive learning rate
-            let lr = self.learning_rate * (1.0 - iter as f64 / self.n_iter as f64).max(0.01);
-            velocity = momentum * &velocity - lr * &grad;
-            *embedding = &*embedding + &velocity;
-
-            // Center embedding
-            let mean = embedding.mean_axis(Axis(0)).unwrap();
-            for mut row in embedding.rows_mut() {
-                row -= &mean;
-            }
-        }
+            Ok(())
+        })
     }
 }
 
@@ -287,7 +263,7 @@ mod tests {
 
     #[test]
     fn test_triplet_generation_not_empty() {
-        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
 
         let triplets = trimap.generate_triplets(&distances, 30);
@@ -297,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_triplet_generation_distinct_indices() {
-        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
 
         let triplets = trimap.generate_triplets(&distances, 30);
@@ -312,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_triplet_generation_valid_indices() {
-        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 3, 2, 1, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
 
         let triplets = trimap.generate_triplets(&distances, 30);
@@ -328,7 +304,7 @@ mod tests {
     #[test]
     fn test_triplet_structure() {
         // Test that triplets are structured correctly (inliers paired with outliers)
-        let trimap = TriMap::new(2, 3, 2, 0, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 3, 2, 0, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(20);
 
         let triplets = trimap.generate_triplets(&distances, 20);
@@ -341,7 +317,7 @@ mod tests {
 
     #[test]
     fn test_weights_positive() {
-        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
         let triplets = trimap.generate_triplets(&distances, 30);
 
@@ -355,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_weights_count_matches_triplets() {
-        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
         let triplets = trimap.generate_triplets(&distances, 30);
 
@@ -366,7 +342,7 @@ mod tests {
 
     #[test]
     fn test_weights_higher_for_good_triplets() {
-        let trimap = TriMap::new(2, 5, 3, 0, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 5, 3, 0, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
         let triplets = trimap.generate_triplets(&distances, 30);
 
@@ -395,7 +371,7 @@ mod tests {
 
     #[test]
     fn test_initialization_shape() {
-        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let data = create_test_data();
 
         let embedding = trimap.initialize_embedding(&data, 30).unwrap();
@@ -405,8 +381,8 @@ mod tests {
 
     #[test]
     fn test_initialization_reproducible() {
-        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
-        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
+        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let data = create_test_data();
 
         let emb1 = trimap1.initialize_embedding(&data, 30).unwrap();
@@ -421,8 +397,8 @@ mod tests {
 
     #[test]
     fn test_initialization_different_seeds() {
-        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
-        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(123));
+        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
+        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(123), None);
         let data = create_test_data();
 
         let emb1 = trimap1.initialize_embedding(&data, 30).unwrap();
@@ -443,8 +419,8 @@ mod tests {
 
     #[test]
     fn test_triplet_generation_reproducible() {
-        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
-        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap1 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
+        let trimap2 = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(30);
 
         let triplets1 = trimap1.generate_triplets(&distances, 30);
@@ -463,7 +439,7 @@ mod tests {
         let n_outliers = 3;
         let n_random = 2;
         let n_samples = 30;
-        let trimap = TriMap::new(2, n_inliers, n_outliers, n_random, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, n_inliers, n_outliers, n_random, 100, 0.1, 50.0, Some(42), None);
         let distances = create_test_distances(n_samples);
 
         let triplets = trimap.generate_triplets(&distances, n_samples);
@@ -475,7 +451,7 @@ mod tests {
 
     #[test]
     fn test_initialization_finite() {
-        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let data = create_test_data();
 
         let embedding = trimap.initialize_embedding(&data, 30).unwrap();
@@ -488,7 +464,7 @@ mod tests {
 
     #[test]
     fn test_initialization_scaled() {
-        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42));
+        let trimap = TriMap::new(2, 5, 3, 1, 100, 0.1, 50.0, Some(42), None);
         let data = create_test_data();
 
         let embedding = trimap.initialize_embedding(&data, 30).unwrap();

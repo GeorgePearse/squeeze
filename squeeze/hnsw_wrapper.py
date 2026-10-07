@@ -66,6 +66,12 @@ class HnswIndexWrapper:
         Whether to log progress
     compressed : bool, default=False
         Whether to return compressed neighbor graph
+    device : str, optional
+        Compute device: ``None``/``"auto"`` uses a GPU when one is available
+        (exact brute-force kNN for euclidean, cosine and manhattan, up to 500k
+        rows) and the CPU HNSW graph otherwise. ``"cpu"``, ``"gpu"``, ``"wgpu"``,
+        ``"mlx"`` and ``"cuda"`` force a choice; an unavailable device warns and
+        falls back to the CPU. Sparse data always uses the CPU graph.
 
     """
 
@@ -85,6 +91,7 @@ class HnswIndexWrapper:
         compressed: bool = False,
         prune_strategy: str = "simple",
         prune_alpha: float = 1.2,
+        device: str | None = None,
     ) -> None:
         """Initialize the HNSW index wrapper."""
         if _HnswIndex is None:
@@ -106,6 +113,7 @@ class HnswIndexWrapper:
         self._compressed = compressed
         self._prune_strategy = prune_strategy
         self._prune_alpha = prune_alpha
+        self._device = device
 
         # Compute HNSW parameters from PyNNDescent-style parameters
         self._m = self._compute_m(n_trees, data.shape[0])
@@ -168,6 +176,7 @@ class HnswIndexWrapper:
                 seed,
                 prune_strategy,
                 prune_alpha,
+                device,
             )
 
         # Store state for API compatibility
@@ -360,6 +369,13 @@ class HnswIndexWrapper:
     def _raw_data(self) -> NDArray:
         """Get the raw data used to build the index."""
         return self._data
+
+    @property
+    def compute_device(self) -> str:
+        """The device actually used for neighbour search (``"cpu"`` or a GPU name)."""
+        if self._is_sparse:
+            return "cpu"
+        return self._index.compute_device
 
     def __repr__(self) -> str:
         """Return string representation of the index."""

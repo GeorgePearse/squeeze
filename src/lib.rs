@@ -8,6 +8,8 @@ pub mod mixed_precision;
 pub mod cache_aligned;
 pub mod barnes_hut;
 pub mod numerical;
+pub mod compute;
+pub mod device_py;
 
 // Dimensionality reduction algorithms
 pub mod pca;
@@ -38,6 +40,11 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     m.add_class::<pacmap::PaCMAP>()?;
     m.add_class::<neighbor_map::NeighborMap>()?;
     m.add_class::<neighbor_map::SpectralMap>()?;
+
+    // Compute devices (CPU / GPU selection)
+    m.add_function(pyo3::wrap_pyfunction!(device_py::devices, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(device_py::default_device, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(device_py::resolve_device, m)?)?;
 
     Ok(())
 }

@@ -13,7 +13,6 @@ use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
 use crate::metrics_simd;
-use crate::mds::compute_distance_matrix;
 
 /// Locally Linear Embedding
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -23,18 +22,26 @@ pub struct LLE {
     reg: f64,
     /// Whether to raise an error on singular weight matrices
     error_on_singular: bool,
+    device: Option<String>,
 }
 
 #[pymethods]
 impl LLE {
     #[new]
-    #[pyo3(signature = (n_components=2, n_neighbors=12, reg=1e-3, error_on_singular=false))]
-    pub fn new(n_components: usize, n_neighbors: usize, reg: f64, error_on_singular: bool) -> Self {
+    #[pyo3(signature = (n_components=2, n_neighbors=12, reg=1e-3, error_on_singular=false, device=None))]
+    pub fn new(
+        n_components: usize,
+        n_neighbors: usize,
+        reg: f64,
+        error_on_singular: bool,
+        device: Option<String>,
+    ) -> Self {
         Self {
             n_components,
             n_neighbors,
             reg,
             error_on_singular,
+            device,
         }
     }
 
@@ -53,14 +60,9 @@ impl LLE {
             )));
         }
 
-        // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
-            .into_iter()
-            .map(|row| row.iter().map(|&v| v as f32).collect())
-            .collect();
-
-        // Compute pairwise distances and find k-NN
-        let distances = compute_distance_matrix(&x_f32);
+        // Pairwise distances on the selected device, then k-NN
+        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let distances = crate::device_py::distance_matrix(py, &device, x)?;
         let neighbors = self.find_neighbors(&distances, n_samples);
 
         // Step 1: Compute reconstruction weights
@@ -222,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_find_neighbors() {
-        let lle = LLE::new(2, 2, 1e-3, false);
+        let lle = LLE::new(2, 2, 1e-3, false, None);
 
         let distances = Array2::from_shape_vec((4, 4), vec![
             0.0, 1.0, 2.0, 3.0,
@@ -249,7 +251,7 @@ mod tests {
 
     #[test]
     fn test_find_neighbors_distances() {
-        let lle = LLE::new(2, 3, 1e-3, false);
+        let lle = LLE::new(2, 3, 1e-3, false, None);
 
         // More complex distance matrix
         let distances = Array2::from_shape_vec((5, 5), vec![
@@ -271,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_reconstruction_weights_sum_to_one() {
-        let lle = LLE::new(2, 3, 1e-3, false);
+        let lle = LLE::new(2, 3, 1e-3, false, None);
 
         // Simple test data
         let x = Array2::from_shape_vec((5, 2), vec![
@@ -301,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_embedding_eigendecomposition() {
-        let lle = LLE::new(2, 2, 1e-3, false);
+        let lle = LLE::new(2, 2, 1e-3, false, None);
 
         // Simple weight matrix
         let weights = Array2::from_shape_vec((3, 3), vec![
@@ -319,17 +321,17 @@ mod tests {
     #[test]
     fn test_error_on_singular_flag() {
         // Default should be false
-        let lle = LLE::new(2, 3, 1e-3, false);
+        let lle = LLE::new(2, 3, 1e-3, false, None);
         assert!(!lle.error_on_singular);
 
         // Can be set to true
-        let lle_strict = LLE::new(2, 3, 1e-3, true);
+        let lle_strict = LLE::new(2, 3, 1e-3, true, None);
         assert!(lle_strict.error_on_singular);
     }
 
     #[test]
     fn test_weights_non_negative() {
-        let lle = LLE::new(2, 3, 1e-1, false);  // Higher reg for stability
+        let lle = LLE::new(2, 3, 1e-1, false, None);  // Higher reg for stability
 
         let x = Array2::from_shape_vec((4, 2), vec![
             0.0, 0.0,
