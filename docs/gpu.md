@@ -217,6 +217,11 @@ uv run --no-sync maturin develop --release --features extension-module,gpu-cuda
 uv run --no-sync maturin develop --release --features extension-module --no-default-features
 ```
 
+On macOS with Homebrew's OpenBLAS (`ndarray-linalg/openblas-system`), link the gfortran
+runtime as well, e.g. `RUSTFLAGS="-L $(brew --prefix openblas)/lib -L $(brew --prefix gcc)/lib/gcc/current -l gfortran"`,
+otherwise the extension fails to load with `symbol not found in flat namespace
+'__gfortran_concat_string'` (the CI workflow does this).
+
 Runtime requirements: a Vulkan loader and driver on Linux (`libvulkan1` plus the vendor
 ICD; `mesa-vulkan-drivers` for lavapipe), nothing extra on macOS (Metal) or Windows
 (DX12). Python-level GPU libraries (torch, cupy, jax, mlx-python) are not used.

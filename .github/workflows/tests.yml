@@ -116,7 +116,9 @@ jobs:
           echo "OPENBLAS_DIR=$(brew --prefix openblas)" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=$(brew --prefix openblas)/lib" >> "$GITHUB_ENV"
           echo "PKG_CONFIG_PATH=$(brew --prefix openblas)/lib/pkgconfig" >> "$GITHUB_ENV"
-          echo "RUSTFLAGS=-L $(brew --prefix openblas)/lib" >> "$GITHUB_ENV"
+          # brew's OpenBLAS carries Fortran LAPACK; the Python extension loads with a flat
+          # namespace, so the gfortran runtime has to be linked explicitly.
+          echo "RUSTFLAGS=-L $(brew --prefix openblas)/lib -L $(brew --prefix gcc)/lib/gcc/current -l gfortran" >> "$GITHUB_ENV"
       - name: clippy (gpu-wgpu + gpu-mlx)
         run: cargo clippy --features gpu-mlx,ndarray-linalg/openblas-system --all-targets -- -D warnings
       - name: Rust compute tests on MLX
