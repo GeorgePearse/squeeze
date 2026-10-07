@@ -51,6 +51,18 @@ enumerates.
 d x d covariance), on `HnswIndexWrapper`, and on `squeeze.UMAP`. An explicit device that is
 not available warns and falls back to the CPU; an unknown name raises `ValueError`.
 
+`auto` is also size-aware, because a GPU only pays for the transfers above a certain
+input size (measured on a T4, see the benchmarks below):
+
+| work | GPU from | override |
+|---|---:|---|
+| pairwise distance matrix, brute-force k-NN | 4 096 rows | `SQUEEZE_GPU_MIN_ROWS` |
+| exact t-SNE gradient | 1 000 rows | `SQUEEZE_GPU_MIN_ROWS_TSNE` |
+| PaCMAP / TriMap gradient steps | 100 000 rows | `SQUEEZE_GPU_MIN_ROWS_STEP` |
+
+Below the threshold `auto` keeps that work on the CPU even when a GPU is present. An
+explicit `device="gpu"` (or `SQUEEZE_DEVICE`) always uses the device.
+
 `squeeze.devices()` prints the probe report. On a Linux box with only the Mesa software
 driver it reads:
 
@@ -94,7 +106,72 @@ compute shaders); `auto` never selects it anyway.
 
 ## Benchmarks
 
-BENCHMARKS_PLACEHOLDER
+All runs use the same seeds on every device; trustworthiness (T) is scikit-learn's at
+k = 15; time is the whole `fit_transform`. The CPU and GPU runs of one table share the
+machine, so the speedup is like for like.
+
+### NVIDIA Tesla T4 (Modal container, 8 vCPU, CUDA backend, driver 610.57.04)
+
+Digits (1 797 x 64):
+
+| algorithm | CPU (s) | CUDA (s) | speedup | T CPU | T CUDA |
+|---|---:|---:|---:|---:|---:|
+| UMAP | 21.44 | 20.83 | 1.03x | 0.9871 | 0.9871 |
+| t-SNE (exact on GPU, Barnes-Hut on CPU) | 8.97 | 6.02 | 1.49x | 0.9897 | 0.9892 |
+| MDS | 15.38 | 16.36 | 0.94x | 0.8962 | 0.8962 |
+| Isomap | 7.32 | 8.22 | 0.89x | 0.8347 | 0.8347 |
+| LLE | 18.55 | 36.54 | 0.51x | 0.9141 | 0.9141 |
+| PHATE | 10.31 | 11.17 | 0.92x | 0.8279 | 0.8279 |
+| TriMap | 0.83 | 2.56 | 0.33x | 0.5027 | 0.5027 |
+| PaCMAP | 0.41 | 0.90 | 0.45x | 0.9804 | 0.9804 |
+
+Fashion-MNIST, 2 000-image stratified sample of the official test split (2 000 x 784):
+
+| algorithm | CPU (s) | CUDA (s) | speedup | T CPU | T CUDA |
+|---|---:|---:|---:|---:|---:|
+| UMAP | 24.17 | 23.80 | 1.02x | 0.9747 | 0.9747 |
+| t-SNE | 11.03 | 3.40 | 3.24x | 0.9805 | 0.9800 |
+| MDS | 15.85 | 16.37 | 0.97x | 0.9253 | 0.9253 |
+| Isomap | 10.64 | 11.53 | 0.92x | 0.9224 | 0.9224 |
+| LLE | 22.28 | 25.20 | 0.88x | 0.9117 | 0.9117 |
+| PHATE | 13.79 | 15.38 | 0.90x | 0.9056 | 0.9056 |
+| TriMap | 0.90 | 4.40 | 0.20x | 0.5021 | 0.5021 |
+| PaCMAP | 0.49 | 1.37 | 0.35x | 0.9677 | 0.9679 |
+
+Larger inputs (UMAP on the 10 000-image Fashion-MNIST sample; k-NN alone, k = 15, on
+synthetic Gaussian data; "recall" is against exact search on a 200-row sample):
+
+| workload | CPU (s) | CUDA (s) | speedup | quality CPU | quality CUDA |
+|---|---:|---:|---:|---:|---:|
+| UMAP, Fashion-MNIST 10 000 x 784 | 76.37 | 72.00 | 1.06x | T 0.9780 | T 0.9780 |
+| k-NN, 100 000 x 128 (HNSW on CPU, brute force on GPU) | 282.25 | 16.62 | 17.0x | recall 0.59 | recall 1.00 |
+| k-NN, 1 000 000 x 128 (brute force on GPU) | KNN1M_CPU | KNN1M_GPU | KNN1M_SPEED | KNN1M_QCPU | KNN1M_QGPU |
+
+The pattern across both datasets: the exact t-SNE gradient is the one per-iteration kernel
+that wins at these sizes (n² work per step); the pairwise distance matrix is a small part of
+the quadratic algorithms, whose time goes to SMACOF, eigensolvers, Dijkstra and power
+iterations on the CPU, so moving it is neutral; and the PaCMAP / TriMap steps are
+launch-latency bound (450-800 round trips over ~50k pairs each), so they lose. Brute-force
+k-NN is both much faster and exact once the input has tens of thousands of rows. These
+measurements set the `auto` thresholds above. The LLE slowdown on Digits (0.51x) was not
+reproduced on Fashion-MNIST (0.88x) and is noted, not explained.
+
+### Apple Silicon (GitHub `macos-15` runner): MLX versus Metal through wgpu
+
+MACOS_PLACEHOLDER
+
+### Software Vulkan (Mesa lavapipe)
+
+Correctness only: a software rasteriser, so no speed claims. All kernel tests and the
+end-to-end device tests pass under lavapipe on this box (Mesa 26.2.4) and on the Ubuntu CI
+runner (Mesa 24). It is how the GPU code paths are exercised without a GPU.
+
+### Cost
+
+MODAL_COST_PLACEHOLDER
+
+Benchmark driver: `scripts/benchmark_gpu.py` (per-job subprocesses, JSON lines, Markdown
+table and plot); `scripts/modal_gpu_benchmark.py` runs it on a Modal GPU.
 
 ## Building
 
