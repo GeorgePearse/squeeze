@@ -304,12 +304,16 @@ def main() -> None:
     with log.open("a") as fh:
         for spec in specs:
             print(f"-> {spec}", flush=True)
+            env = {**os.environ, "PYTHONUNBUFFERED": "1"}
+            if spec["kind"] == "knn":
+                # the synthetic kNN run is the one place the brute-force row cap is lifted
+                env.setdefault("SQUEEZE_BRUTEFORCE_MAX_ROWS", str(max(spec["rows"], 500_000)))
             proc = subprocess.run(
                 [sys.executable, __file__, "--job", json.dumps(spec)],
                 capture_output=True,
                 text=True,
                 check=False,
-                env={**os.environ, "PYTHONUNBUFFERED": "1"},
+                env=env,
             )
             result_lines = [
                 line for line in proc.stdout.splitlines() if line.startswith("RESULT ")

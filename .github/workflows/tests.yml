@@ -32,19 +32,23 @@ jobs:
           vulkaninfo --summary | head -40 || true
       - name: rustfmt (compute module)
         run: rustfmt --edition 2021 --check src/compute/*.rs src/device_py.rs
+      # ndarray-linalg/openblas-system links the distro OpenBLAS instead of building it from
+      # source (the static build trips over AVX-512 intrinsics on some runner CPUs).
       - name: clippy (default features)
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --features ndarray-linalg/openblas-system --all-targets -- -D warnings
       - name: clippy (no GPU features)
-        run: cargo clippy --no-default-features --all-targets -- -D warnings
+        run: cargo clippy --no-default-features --features ndarray-linalg/openblas-system --all-targets -- -D warnings
+      - name: clippy (gpu-cuda, compile only)
+        run: cargo clippy --features gpu-cuda,ndarray-linalg/openblas-system --all-targets -- -D warnings
       - name: Rust tests (CPU)
-        run: cargo test --lib
+        run: cargo test --features ndarray-linalg/openblas-system --lib
       - name: Rust tests (wgpu on lavapipe)
         env:
           SQUEEZE_DEVICE: wgpu
           VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
-        run: 'cargo test --lib "compute::" -- --nocapture --test-threads=1'
+        run: 'cargo test --features ndarray-linalg/openblas-system --lib "compute::" -- --nocapture --test-threads=1'
       - name: Rust tests (no GPU features)
-        run: cargo test --no-default-features --lib
+        run: cargo test --no-default-features --features ndarray-linalg/openblas-system --lib
 
   python:
     name: Python ${{ matrix.python-version }} (Linux, CPU + lavapipe)
@@ -72,7 +76,7 @@ jobs:
       - name: Build the extension and install test dependencies
         run: |
           uv pip install --system maturin pytest scikit-learn
-          uv pip install --system -e .
+          uv pip install --system -e . --config-settings build-args="--features ndarray-linalg/openblas-system"
       - name: Device report
         run: python -c "import squeeze; print(squeeze.devices())"
       - name: Python tests (CPU)
