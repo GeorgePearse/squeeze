@@ -74,7 +74,8 @@ impl TriMap {
         }
 
         // Pairwise distances on the selected device
-        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
+        let step_device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Step)?;
         let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Generate triplets: (anchor, positive, negative)
@@ -85,7 +86,7 @@ impl TriMap {
         let embedding = self.initialize_embedding(&x.to_owned(), n_samples)?;
 
         // Optimize using gradient descent; the triplet gradient runs on the device
-        let embedding = crate::device_py::with_fallback(py, &device, "TriMap optimisation", |backend| {
+        let embedding = crate::device_py::with_fallback(py, &step_device, "TriMap optimisation", |backend| {
             let mut y = embedding.clone();
             self.optimize(backend, &mut y, &triplets, &weights, n_samples)?;
             Ok(y)

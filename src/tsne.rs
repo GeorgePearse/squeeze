@@ -84,13 +84,14 @@ impl TSNE {
             return Err(PyValueError::new_err("t-SNE requires at least 4 samples"));
         }
 
-        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
+        let grad_device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::TsneExact)?;
 
         // Determine whether to use Barnes-Hut. On a GPU the exact O(n²) gradient is used up to
         // TSNE_EXACT_MAX_ROWS samples unless Barnes-Hut was requested explicitly.
         let use_bh = match self.use_barnes_hut {
             Some(flag) => flag,
-            None if device.is_gpu() && n_samples <= crate::compute::TSNE_EXACT_MAX_ROWS => false,
+            None if grad_device.is_gpu() && n_samples <= crate::compute::TSNE_EXACT_MAX_ROWS => false,
             None => self.should_use_barnes_hut(n_samples),
         } && self.n_components == 2;
 
@@ -136,7 +137,7 @@ impl TSNE {
             .map_err(PyValueError::new_err)?
         } else {
             // Exact gradient on the selected device (CPU reference or GPU, f32)
-            crate::device_py::with_fallback(py, &device, "t-SNE optimisation", |backend| {
+            crate::device_py::with_fallback(py, &grad_device, "t-SNE optimisation", |backend| {
                 let mut out = None;
                 backend.tsne_exact_session(p.view(), self.n_components, &mut |grad_fn| {
                     out = Some(self.optimize(y0.clone(), &mut |y, ex| grad_fn(y.view(), &[ex]))?);

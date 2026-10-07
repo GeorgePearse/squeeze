@@ -53,7 +53,7 @@ impl MDS {
         let n_samples = x.nrows();
 
         // Pairwise distances on the selected device (GPU in f32, CPU reference otherwise)
-        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
         let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Apply MDS

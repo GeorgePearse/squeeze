@@ -129,7 +129,7 @@ impl HnswIndex {
 
         // Resolve the compute device. A GPU runs exact brute-force kNN for supported metrics
         // up to bruteforce_max_rows() rows; otherwise the HNSW graph is built on the CPU.
-        let resolved = crate::device_py::resolve(py, device.as_deref())?;
+        let resolved = crate::device_py::resolve_for(py, device.as_deref(), n_samples, crate::device_py::Work::Knn)?;
         let gpu = match resolved {
             Device::Cpu => None,
             dev if n_samples <= bruteforce_max_rows() && Metric::parse(&metric).is_some() => Some(dev),
@@ -487,7 +487,7 @@ impl HnswIndex {
         self.prune_alpha = decoded.prune_alpha;
         self.neighbor_graph_cache = None;
         // The device is re-resolved on the loading machine; the graph is built lazily if needed.
-        self.gpu = match crate::device_py::resolve(py, self.device.as_deref())? {
+        self.gpu = match crate::device_py::resolve_for(py, self.device.as_deref(), self.data.len(), crate::device_py::Work::Knn)? {
             Device::Cpu => None,
             dev if self.data.len() <= bruteforce_max_rows() && Metric::parse(&self.metric).is_some() => Some(dev),
             _ => None,

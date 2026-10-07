@@ -62,7 +62,7 @@ impl PHATE {
         }
 
         // Pairwise distances on the selected device
-        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
         let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Step 1: Compute adaptive kernel bandwidth (local scaling)

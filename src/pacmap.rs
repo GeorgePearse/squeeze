@@ -69,7 +69,8 @@ impl PaCMAP {
         }
 
         // Pairwise distances on the selected device
-        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
+        let step_device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Step)?;
         let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Generate three types of pairs
@@ -79,7 +80,7 @@ impl PaCMAP {
         let embedding = self.initialize_embedding(n_samples)?;
 
         // Three-phase optimization; the pair gradient runs on the device
-        let embedding = crate::device_py::with_fallback(py, &device, "PaCMAP optimisation", |backend| {
+        let embedding = crate::device_py::with_fallback(py, &step_device, "PaCMAP optimisation", |backend| {
             let mut y = embedding.clone();
             self.optimize(backend, &mut y, &near_pairs, &mid_near_pairs, &far_pairs, n_samples)?;
             Ok(y)

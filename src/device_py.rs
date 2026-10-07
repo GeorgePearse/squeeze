@@ -27,6 +27,55 @@ pub fn resolve(py: Python<'_>, device: Option<&str>) -> PyResult<Device> {
     }
 }
 
+/// Kinds of work with different GPU break-even sizes (measured on a T4, see docs/gpu.md).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Work {
+    /// Pairwise distance matrix (MDS, Isomap, LLE, PHATE, TriMap, PaCMAP, t-SNE affinities).
+    Pairwise,
+    /// Exact brute-force k-NN instead of the HNSW graph.
+    Knn,
+    /// Exact t-SNE gradient instead of Barnes-Hut.
+    TsneExact,
+    /// Per-iteration PaCMAP / TriMap gradient steps (launch-latency bound at small n).
+    Step,
+}
+
+/// Below this many rows `device="auto"` keeps the work on the CPU even when a GPU exists.
+/// Environment overrides: `SQUEEZE_GPU_MIN_ROWS` (pairwise and k-NN), `SQUEEZE_GPU_MIN_ROWS_TSNE`,
+/// `SQUEEZE_GPU_MIN_ROWS_STEP`.
+pub fn gpu_min_rows(work: Work) -> usize {
+    let env = |key: &str| {
+        std::env::var(key)
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+    };
+    match work {
+        Work::Pairwise | Work::Knn => env("SQUEEZE_GPU_MIN_ROWS").unwrap_or(4_096),
+        Work::TsneExact => env("SQUEEZE_GPU_MIN_ROWS_TSNE").unwrap_or(1_000),
+        Work::Step => env("SQUEEZE_GPU_MIN_ROWS_STEP").unwrap_or(100_000),
+    }
+}
+
+/// Was a device named explicitly, either as the `device=` argument or through `SQUEEZE_DEVICE`?
+fn explicit(request: Option<&str>) -> bool {
+    let named = |r: &str| {
+        let r = r.trim().to_ascii_lowercase();
+        !r.is_empty() && r != "auto"
+    };
+    request.is_some_and(named) || Device::probe().requested.as_deref().is_some_and(named)
+}
+
+/// Resolve `device=` for a piece of work on `n` rows. `auto` only picks a GPU when the work
+/// is large enough to pay for the transfers (see [`gpu_min_rows`]); an explicit device is
+/// always honoured.
+pub fn resolve_for(py: Python<'_>, device: Option<&str>, n: usize, work: Work) -> PyResult<Device> {
+    let resolved = resolve(py, device)?;
+    if resolved.is_gpu() && !explicit(device) && n < gpu_min_rows(work) {
+        return Ok(Device::Cpu);
+    }
+    Ok(resolved)
+}
+
 /// The backend for `device`, or the CPU backend with a warning when it cannot be opened.
 pub fn backend(py: Python<'_>, device: &Device) -> Arc<dyn Backend> {
     match device.backend() {

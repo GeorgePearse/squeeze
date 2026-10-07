@@ -60,7 +60,7 @@ impl LLE {
         }
 
         // Pairwise distances on the selected device, then k-NN
-        let device = crate::device_py::resolve(py, self.device.as_deref())?;
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
         let distances = crate::device_py::distance_matrix(py, &device, x)?;
         let neighbors = self.find_neighbors(&distances, n_samples);
 
