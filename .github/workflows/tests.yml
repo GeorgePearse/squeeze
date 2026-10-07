@@ -78,7 +78,9 @@ jobs:
           uv pip install --system maturin pytest scikit-learn pandas matplotlib
           uv pip install --system -e . --config-settings build-args="--features ndarray-linalg/openblas-system"
       - name: Device report
-        run: python -c "import squeeze; print(squeeze.devices())"
+        run: |
+          python -c "import squeeze._hnsw_backend as m; print(m.__file__)"
+          python -c "import squeeze; print(squeeze.devices())"
       - name: Python tests (CPU)
         # The deselected tests fail on main before this branch (RandomState.integers,
         # a missing UserWarning, sokalmichener removed from newer scipy/sklearn) or are
@@ -137,7 +139,9 @@ jobs:
           uv pip install --system maturin pytest scikit-learn pandas matplotlib
           uv pip install --system -e . --config-settings build-args="--features gpu-mlx,ndarray-linalg/openblas-system"
       - name: Device report (auto picks MLX)
-        run: python -c "import squeeze; print(squeeze.devices())"
+        run: |
+          python -c "import squeeze._hnsw_backend as m; print(m.__file__)"
+          python -c "import squeeze; print(squeeze.devices())"
       - name: Device tests on MLX
         env:
           SQUEEZE_DEVICE: mlx
