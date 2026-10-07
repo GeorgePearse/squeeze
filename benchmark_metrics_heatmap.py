@@ -11,6 +11,7 @@ Usage:
 Output:
     - metrics_heatmap.png: Heatmap visualization of all algorithms vs metrics
     - metrics_results.csv: Raw metric values for further analysis
+    - metrics_radar.png/.svg/.html: Static and interactive radar comparisons
 """
 
 # ruff: noqa: T201, N803, N806, PLC0415
@@ -35,6 +36,7 @@ from sklearn.manifold import trustworthiness as rank_trustworthiness
 from threadpoolctl import threadpool_limits
 
 from scripts.benchmark_datasets import load_benchmark_data
+from scripts.benchmark_radar import create_radar
 
 
 @dataclass
@@ -421,6 +423,12 @@ def main() -> None:
     create_heatmap(
         df,
         str(output / "metrics_heatmap.png"),
+        f"{provenance['name']} ({len(X):,} samples)",
+    )
+
+    create_radar(
+        df,
+        output,
         f"{provenance['name']} ({len(X):,} samples)",
     )
 

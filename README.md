@@ -72,6 +72,18 @@ reported separately; the older heatmap mislabeled overlap as trustworthiness.
 See the [methodology and reproduction commands](working_docs/heatmap_refresh/README.md)
 and [raw CSV](metrics_results.csv).
 
+### Algorithm performance radars
+
+![Radar profiles for all 11 algorithms on Digits](docs/assets/benchmarks/digits-radar/metrics_radar.png)
+
+Farther out means better **relative to the algorithms on this dataset**. The six
+axes compare rank trustworthiness, neighbor recall, global distance correlation,
+cluster separation, transductive accuracy, and speed (reversed log runtime).
+These shapes are not overall scores or absolute capability measurements.
+
+[Interactive Digits and Fashion-MNIST comparisons](https://georgepearse.github.io/squeeze/benchmarking/#circular-performance-profiles)
+· [Fashion-MNIST PNG](docs/assets/benchmarks/fashion-mnist-radar/metrics_radar.png)
+
 ### Metrics Comparison Table
 
 | Algorithm | Trust. k15 | Neighbor recall k15 | Spearman | Silhouette | Transductive acc. | Time (s) |

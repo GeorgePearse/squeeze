@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__ · Squeeze radar comparison</title>
+<style>
+:root { color-scheme: light; font: 15px/1.5 system-ui,sans-serif; color:#172b36; background:#f6f8fa; }
+body { max-width:1100px; margin:auto; padding:clamp(12px,3vw,32px); }
+h1 { font-size:clamp(23px,4vw,32px); letter-spacing:-.035em; margin-bottom:8px; }
+h2 { font-size:19px; } p { max-width:85ch; color:#475569; }
+.panel { background:white; border:1px solid #dbe3e8; border-radius:12px; padding:18px; margin:18px 0; }
+.controls { display:flex; flex-wrap:wrap; gap:8px; }
+label { display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border:1px solid #dbe3e8; border-radius:6px; cursor:pointer; }
+.swatch { width:12px; height:12px; border-radius:50%; background:var(--color); display:inline-block; }
+button { background:white; color:#075e58; border:1px solid #a7b9b8; padding:7px 12px; border-radius:6px; cursor:pointer; margin:12px 6px 0 0; font:inherit; }
+button:hover { background:#edf8f5; } :focus-visible { outline:3px solid #009688; outline-offset:3px; }
+svg { display:block; width:100%; max-width:700px; margin:auto; overflow:visible; }
+.table-scroll { overflow-x:auto; } table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+th,td { padding:10px; text-align:right; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+th:first-child,td:first-child { text-align:left; } th { font-size:12px; }
+#selection-status { color:#475569; margin:10px 0 0; }
+small { color:#475569; } a { color:#00695c; }
+</style>
+</head>
+<body>
+<h1>__TITLE__</h1>
+<p>Algorithm performance radar · <strong>farther from the centre means better performance.</strong>
+Choose methods to compare. Hover or focus a point for its measured value.</p>
+<section class="panel" aria-label="Algorithm selection">
+<div id="controls" class="controls"></div>
+<button id="recommended" type="button">Default comparison</button>
+<button id="all" type="button">Select all</button>
+<button id="none" type="button">Clear</button>
+<p id="selection-status" role="status"></p>
+</section>
+<section class="panel" aria-label="Radar chart">
+<svg id="radar" viewBox="-340 -295 680 590" role="img" aria-labelledby="chart-title chart-desc">
+<title id="chart-title">Algorithm performance radar</title>
+<desc id="chart-desc">Six relative-performance axes, zero at the centre and one at the outer ring. Exact measurements are in the table below.</desc>
+<g id="grid"></g><g id="profiles"></g>
+</svg>
+<p id="point-detail" role="status">Hover or focus a chart point to inspect its value.</p>
+</section>
+<section class="panel">
+<h2>Measured values</h2>
+<p>The chart scales each axis from the worst to the best result across <strong>all algorithms in this dataset</strong>.
+Changing the selection does not rescale it. Zero is the worst observed result, not absence of capability.
+Runtime uses reversed log scaling, so faster methods extend farther. Tied axes sit at 0.5.</p>
+<div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+<p><small>Single-seed benchmark snapshots. Shapes and polygon areas are not overall scores.
+Axes are normalized independently for each dataset; compare raw metrics across datasets.
+Transductive accuracy evaluates a classifier on coordinates fitted to all samples, not a held-out embedding.</small></p>
+<p><a href="https://georgepearse.github.io/squeeze/benchmarking/" target="_blank" rel="noopener">Benchmark protocol and metric definitions</a></p>
+</section>
+<noscript>Enable JavaScript to select algorithms, or use the accompanying PNG/SVG figure and CSV measurements.</noscript>
+<script id="radar-data" type="application/json">__DATA__</script>
+<script>
+'use strict';
+const data = JSON.parse(document.getElementById('radar-data').textContent);
+const svgNS = 'http://www.w3.org/2000/svg';
+const radius = 190;
+const angles = data.axes.map((_, i) => -Math.PI/2 + 2*Math.PI*i/data.axes.length);
+const coordinate = (i, r) => [Math.cos(angles[i])*r, Math.sin(angles[i])*r];
+function svg(tag, attrs, parent, text) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const [key,value] of Object.entries(attrs)) el.setAttribute(key,value);
+  if (text !== undefined) el.textContent = text;
+  parent.appendChild(el); return el;
+}
+const grid = document.getElementById('grid');
+for (const scale of [.25,.5,.75,1]) {
+  svg('circle',{r:radius*scale,fill:'none',stroke:'#cbd5e1'},grid);
+  svg('text',{x:5,y:-radius*scale+13,fill:'#64748b','font-size':11},grid,String(scale));
+}
+data.axes.forEach((axis,i)=>{
+  const [x,y]=coordinate(i,radius);
+  svg('line',{x1:0,y1:0,x2:x,y2:y,stroke:'#cbd5e1'},grid);
+  const [lx,ly]=coordinate(i,radius+45);
+  const text=svg('text',{x:lx,y:ly,fill:'#334155','text-anchor':'middle','font-size':13,'font-weight':600},grid);
+  // Two compact lines keep labels inside the mobile viewBox.
+  const labels = [['Rank trust','k=15'],['Neighbor recall','k=15'],['Global distance','correlation'],['Cluster','separation'],['Transductive','accuracy'],['Speed','reversed log time']][i];
+  labels.forEach((line,j)=>svg('tspan',{x:lx,dy:j?16:0},text,line));
+});
+const controls = document.getElementById('controls');
+data.algorithms.forEach((method,i)=>{
+  const label=document.createElement('label');
+  const input=document.createElement('input');input.type='checkbox';input.checked=method.selected;input.dataset.index=i;
+  input.addEventListener('change',render);
+  const swatch=document.createElement('span');swatch.className='swatch';swatch.style.setProperty('--color',method.color);swatch.setAttribute('aria-hidden','true');
+  label.append(input,swatch,document.createTextNode(method.name));controls.appendChild(label);
+});
+const header=document.createElement('tr');
+for(const text of ['Algorithm',...data.axes.map(a=>a.column)]) { const th=document.createElement('th');th.scope='col';th.textContent=text;header.appendChild(th); }
+document.getElementById('table-head').appendChild(header);
+function render() {
+  const profiles=document.getElementById('profiles');profiles.replaceChildren();
+  document.getElementById('point-detail').textContent='Hover or focus a chart point to inspect its value.';
+  const body=document.getElementById('table-body');body.replaceChildren();
+  const selected=[...controls.querySelectorAll('input:checked')].map(el=>data.algorithms[Number(el.dataset.index)]);
+  for(const method of selected) {
+    const points=method.scores.map((score,i)=>coordinate(i,score*radius).join(',')).join(' ');
+    svg('polygon',{points,fill:method.color,'fill-opacity':.07,stroke:method.color,'stroke-width':2.5,'data-algorithm':method.name},profiles);
+    method.scores.forEach((score,i)=>{
+      const [cx,cy]=coordinate(i,score*radius);
+      const label=`${method.name} · ${data.axes[i].column}: ${method.raw[i].toPrecision(5)} · relative score ${score.toFixed(3)}`;
+      const point=svg('circle',{cx,cy,r:4,fill:method.color,tabindex:0,'aria-label':label},profiles);
+      svg('title',{},point,label);
+      for(const event of ['mouseenter','focus']) point.addEventListener(event,()=>{document.getElementById('point-detail').textContent=label;});
+    });
+    const row=document.createElement('tr');
+    const name=document.createElement('th');name.scope='row';name.textContent=method.name;name.style.color=method.color;row.appendChild(name);
+    for(const value of method.raw){const td=document.createElement('td');td.textContent=value.toPrecision(5);row.appendChild(td);}
+    body.appendChild(row);
+  }
+  document.getElementById('selection-status').textContent=selected.length ? `${selected.length} of ${data.algorithms.length} algorithms selected. Axes remain fixed.` : 'Choose an algorithm to show its profile.';
+}
+for(const [id,choose] of [['all',()=>true],['none',()=>false],['recommended',i=>data.algorithms[i].selected]]) {
+  document.getElementById(id).addEventListener('click',()=>{controls.querySelectorAll('input').forEach((el,i)=>{el.checked=choose(i);});render();});
+}
+render();
+</script>
+</body>
+</html>

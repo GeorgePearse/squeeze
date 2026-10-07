@@ -37,6 +37,6 @@ jobs:
           cargo test --release --lib --features ndarray-linalg/openblas-system neighbor_map::tests
           cargo test --release --lib --features ndarray-linalg/openblas-system metrics_simd::squared::tests
       - name: Test Python embedding contracts
-        run: uv run --no-sync pytest squeeze/tests/test_neighbor_map.py squeeze/tests/test_neighbor_benchmark.py squeeze/tests/test_benchmark_datasets.py
+        run: uv run --no-sync pytest squeeze/tests/test_neighbor_map.py squeeze/tests/test_neighbor_benchmark.py squeeze/tests/test_benchmark_datasets.py squeeze/tests/test_benchmark_radar.py
       - name: Verify documentation examples and API contracts
         run: uv run --no-sync python scripts/check_docs.py

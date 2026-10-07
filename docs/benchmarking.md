@@ -9,6 +9,38 @@ These are single-seed snapshots. Use the repeated-seed runner below to inspect
 variation; no general significance or large-data scalability claim follows from
 the heatmaps alone.
 
+## Circular performance profiles
+
+The radar charts show six complementary metrics: rank trustworthiness, neighbor
+recall, global distance correlation, cluster separation, transductive accuracy,
+and speed. **Farther from the centre is better.** Each axis is scaled from the
+worst to the best observed result across all 11 algorithms within that dataset;
+0 is not zero absolute capability. Speed uses reversed log runtime. Tied axes
+sit at 0.5. These relative shapes are not comparable across datasets and polygon
+area is not an overall score; exact values remain available in the table.
+
+Select algorithms to overlay below. The axes stay fixed when you change the
+selection. Open the standalone chart for a larger view or download the figures.
+
+### Digits radar
+
+<iframe src="../assets/benchmarks/digits-radar/metrics_radar.html" title="Interactive Digits algorithm radar comparison" style="width:100%;height:1050px;border:1px solid #dbe3e8;border-radius:12px" loading="lazy"></iframe>
+
+[Open interactive chart](assets/benchmarks/digits-radar/metrics_radar.html) ·
+[PNG](assets/benchmarks/digits-radar/metrics_radar.png) ·
+[SVG](assets/benchmarks/digits-radar/metrics_radar.svg)
+
+### Fashion-MNIST radar
+
+<iframe src="../assets/benchmarks/fashion-mnist-radar/metrics_radar.html" title="Interactive Fashion-MNIST algorithm radar comparison" style="width:100%;height:1050px;border:1px solid #dbe3e8;border-radius:12px" loading="lazy"></iframe>
+
+[Open interactive chart](assets/benchmarks/fashion-mnist-radar/metrics_radar.html) ·
+[PNG](assets/benchmarks/fashion-mnist-radar/metrics_radar.png) ·
+[SVG](assets/benchmarks/fashion-mnist-radar/metrics_radar.svg)
+
+Static figures show one radar per algorithm to keep all 11 profiles readable.
+The charts reuse the saved heatmap CSVs; generating them does not rerun any fits.
+
 ## Digits · 1,797 × 64
 
 ![Algorithm versus metrics for Digits, including NeighborMap and SpectralMap](assets/benchmarks/digits.png)
@@ -26,7 +58,7 @@ Rank trustworthiness, neighbor recall, and transductive classification accuracy
 have different meanings: read the [metric definitions](evaluation_metrics.md)
 before comparing them. Sample selection is documented in [Datasets](datasets.md).
 
-## Reproduce the heatmaps
+## Reproduce the charts
 
 [Build the current extension](installation.md), then run:
 
@@ -36,9 +68,18 @@ uv run --no-sync python benchmark_metrics_heatmap.py --dataset fashion-mnist --s
 ```
 
 Digits writes the root PNG/CSV and saves embeddings/protocol under
-`working_docs/heatmap_refresh/digits`. Fashion-MNIST writes all four artifacts
+`working_docs/heatmap_refresh/digits`. Fashion-MNIST writes its artifacts
 under `working_docs/heatmap_refresh/fashion-mnist`. `--output-dir PATH` keeps
-all four output files together at a custom location. Use `--help` for options.
+all output files together at a custom location. Use `--help` for options.
+
+The benchmark now also generates `metrics_radar.png`, `metrics_radar.svg` and
+`metrics_radar.html` alongside its heatmap. To redraw the documentation figures
+from the saved results without rerunning algorithms:
+
+```bash
+uv run --no-sync python -m scripts.benchmark_radar metrics_results.csv --output-dir docs/assets/benchmarks/digits-radar --title "Digits · 1,797 samples"
+uv run --no-sync python -m scripts.benchmark_radar working_docs/heatmap_refresh/fashion-mnist/metrics_results.csv --output-dir docs/assets/benchmarks/fashion-mnist-radar --title "Fashion-MNIST · 2,000 samples"
+```
 
 ## Repeated-seed comparisons
 

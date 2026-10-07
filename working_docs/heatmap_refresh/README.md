@@ -33,6 +33,12 @@ larger counts are expensive for the quadratic implementations.
 - Per-dataset `embeddings.npz` and `protocol.json` preserve raw coordinates and
   run settings. The Fashion sample is independent of the algorithm seed.
 
+The radar renderer reuses these saved CSV measurements without refitting. New
+benchmark runs also emit `metrics_radar.png`, `.svg` and `.html`. The documentation
+stores both dataset renderings under `docs/assets/benchmarks/*-radar/`; see the
+[radar guide](../../docs/benchmarking.md#circular-performance-profiles) for the
+relative normalization and regeneration commands.
+
 ## Metric definitions
 
 Trustworthiness at k=5/15/30 now uses sklearn's rank-based implementation.
