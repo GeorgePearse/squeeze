@@ -23,7 +23,7 @@ emb = squeeze.UMAP(n_neighbors=15, device="gpu").fit_transform(X)               
 | `cpu` | everywhere | SIMD (AVX2/NEON) distances, rayon-parallel kernels, `f64` state | always on |
 | `wgpu` | Linux, Windows, macOS, Android | WGSL compute shaders through [wgpu](https://wgpu.rs): Vulkan, Metal or DX12 | `gpu-wgpu` (default on) |
 | `mlx` | macOS on Apple Silicon | [MLX](https://github.com/ml-explore/mlx) array programs through `mlx-rs` | `gpu-mlx` |
-| `cuda` | NVIDIA | not implemented: NVIDIA GPUs use `wgpu` on Vulkan (see the measurements below) | `gpu-cuda` |
+| `cuda` | NVIDIA (Linux, Windows) | CUDA C twins of the WGSL kernels, compiled to PTX and JIT-built by the driver through [cudarc](https://github.com/coreylowman/cudarc); needs only the NVIDIA driver, no CUDA toolkit | `gpu-cuda` |
 
 GPU kernels work in `f32`. The algorithms keep their `f64` state and convert at the
 boundary once per call; reductions on the CPU keep `f64` accumulation. Everything
@@ -35,7 +35,9 @@ compiles and all tests pass with `--no-default-features` (CPU only).
 
 1. `SQUEEZE_DEVICE` environment variable, if set (`cpu`, `gpu`, `wgpu`, `mlx`, `cuda`, `auto`).
 2. MLX, on macOS aarch64 when built with `gpu-mlx`.
-3. CUDA, when built with `gpu-cuda` (currently always rejected, see above).
+3. CUDA, when built with `gpu-cuda` and `libcuda.so.1` is present (so on a machine with both a
+   Vulkan ICD and CUDA the CUDA backend wins; sandboxed GPU containers such as Modal's expose
+   CUDA but no working Vulkan driver, which is why this backend exists).
 4. A wgpu adapter of type *discrete GPU*, then *integrated GPU*. Vulkan, Metal and DX12
    adapters are preferred over OpenGL.
 5. CPU.
@@ -101,6 +103,8 @@ BENCHMARKS_PLACEHOLDER
 uv run --no-sync maturin develop --release --features extension-module
 # Apple Silicon with MLX as well
 uv run --no-sync maturin develop --release --features extension-module,gpu-mlx
+# NVIDIA with the CUDA backend as well (the embedded PTX targets compute_75 and newer)
+uv run --no-sync maturin develop --release --features extension-module,gpu-cuda
 # CPU only
 uv run --no-sync maturin develop --release --features extension-module --no-default-features
 ```
@@ -127,4 +131,7 @@ refactor. It exposes four public types:
 
 The wgpu kernels use at most three storage bindings each so minimal Vulkan
 implementations work, and tile pairwise work through a scratch buffer bounded by the
-adapter's `max_storage_buffer_binding_size` (256 MiB cap).
+adapter's `max_storage_buffer_binding_size` (256 MiB cap). The CUDA kernels
+(`src/compute/kernels/squeeze.cu`) mirror them one to one and are regenerated with
+`nvcc -arch=compute_75 -ptx -O3` into `squeeze.ptx` (`SQUEEZE_CUDA_PTX=<file>` loads
+another build at runtime).

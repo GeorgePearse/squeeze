@@ -1,9 +1,12 @@
-"""Run scripts/benchmark_gpu.py on a Modal GPU (wgpu over Vulkan on NVIDIA).
+"""Run scripts/benchmark_gpu.py on a Modal GPU.
 
-Build the wheel first (any CPython >= 3.9, abi3):
+Modal's gVisor sandbox exposes the CUDA driver but not a working Vulkan ICD (the NVIDIA
+ICD loads yet `vkCreateInstance` fails), so the GPU path here is the CUDA backend; the
+Vulkan ICD is still installed so the probe report shows what wgpu sees. Build the wheel
+with CUDA first (any CPython >= 3.9, abi3):
 
-    uvx uv@0.12.23 run --no-sync maturin build --release --features extension-module \
-        -o /var/tmp/squeeze-gpu/wheels
+    uvx uv@0.12.23 run --no-sync maturin build --release \
+        --features extension-module,gpu-cuda -o /var/tmp/squeeze-gpu/wheels
 
 Then, with the Modal CLI authenticated:
 
@@ -49,7 +52,12 @@ def _image() -> modal.Image:
     return (
         modal.Image.debian_slim(python_version="3.12")
         .apt_install(
-            "libvulkan1", "vulkan-tools", "libgomp1", "libxext6", "libx11-6", "libxcb1"
+            "libvulkan1",
+            "vulkan-tools",
+            "libgomp1",
+            "libxext6",
+            "libx11-6",
+            "libxcb1",
         )
         .env({"NVIDIA_DRIVER_CAPABILITIES": "all", "PYTHONUNBUFFERED": "1"})
         .run_commands(
@@ -115,7 +123,7 @@ def run(args: str, run_id: str) -> str:
             "sh",
             "-c",
             "env | grep -i nvidia; ls /usr/lib/x86_64-linux-gnu | grep -i nvidia; ldd /usr/lib/x86_64-linux-gnu/libGLX_nvidia.so.0; ls /dev | grep -i nvidia",
-        ]
+        ],
     )
     sh(["vulkaninfo", "--summary"])
     if args.strip() == "probe":
@@ -148,7 +156,7 @@ def run(args: str, run_id: str) -> str:
 
 
 @app.local_entrypoint()
-def main(args: str = "--devices cpu,wgpu --datasets digits", run_id: str = "") -> None:
+def main(args: str = "--devices cpu,cuda --datasets digits", run_id: str = "") -> None:
     run_id = run_id or f"{GPU.lower()}-{time.strftime('%Y%m%d-%H%M%S')}"
     print(f"run id: {run_id}  gpu: {GPU}  wheel: {_wheel().name}")
     print(run.remote(args, run_id))
