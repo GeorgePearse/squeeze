@@ -145,20 +145,49 @@ synthetic Gaussian data; "recall" is against exact search on a 200-row sample):
 |---|---:|---:|---:|---:|---:|
 | UMAP, Fashion-MNIST 10 000 x 784 | 76.37 | 72.00 | 1.06x | T 0.9780 | T 0.9780 |
 | k-NN, 100 000 x 128 (HNSW on CPU, brute force on GPU) | 282.25 | 16.62 | 17.0x | recall 0.59 | recall 1.00 |
-| k-NN, 1 000 000 x 128 (brute force on GPU) | KNN1M_CPU | KNN1M_GPU | KNN1M_SPEED | KNN1M_QCPU | KNN1M_QGPU |
+| k-NN, 1 000 000 x 128 (brute force on GPU; CPU HNSW not run, see note) | — | 1579 | — | — | recall 1.00 |
 
 The pattern across both datasets: the exact t-SNE gradient is the one per-iteration kernel
 that wins at these sizes (n² work per step); the pairwise distance matrix is a small part of
 the quadratic algorithms, whose time goes to SMACOF, eigensolvers, Dijkstra and power
 iterations on the CPU, so moving it is neutral; and the PaCMAP / TriMap steps are
 launch-latency bound (450-800 round trips over ~50k pairs each), so they lose. Brute-force
-k-NN is both much faster and exact once the input has tens of thousands of rows. These
+k-NN is both much faster and exact once the input has tens of thousands of rows. At one
+million rows the exact GPU search took 26 minutes (1.6 GB of f32 data, `SQUEEZE_BRUTEFORCE_MAX_ROWS`
+raised for the run); the CPU HNSW build for that size is a multi-hour serial loop and was not
+run. The GPU k-NN is bound by the top-k merge, which scans each 65 536-column tile with one
+thread per query row; a parallel top-k would make the 1M case several times faster. These
 measurements set the `auto` thresholds above. The LLE slowdown on Digits (0.51x) was not
 reproduced on Fashion-MNIST (0.88x) and is noted, not explained.
 
 ### Apple Silicon (GitHub `macos-15` runner): MLX versus Metal through wgpu
 
-MACOS_PLACEHOLDER
+GitHub-hosted `macos-15` runner, `mlx:Apple M1 (Virtual)` for MLX and
+`wgpu:Apple Paravirtual device (metal, integrated)` for Metal through wgpu; Rust kernel tests
+from the CI log (run 37694837589), CPU column from the same runner. The first MLX call
+includes Metal kernel compilation; the first wgpu call includes pipeline creation.
+
+| kernel | MLX | Metal via wgpu | CPU (same runner) |
+|---|---:|---:|---:|
+| k-NN euclidean, 2 000 x 64, 300 queries, k = 15 | 1.63 s (first call) | — | 0.146 s |
+| k-NN cosine, same input | 0.019 s | — | 0.214 s |
+| k-NN manhattan, same input | 0.182 s | — | 0.170 s |
+| k-NN euclidean, 600 x 37, 50 queries, k = 12 | — | 0.102 s (first call) | — |
+| k-NN cosine / manhattan, same input | — | 0.058 s / 0.058 s | — |
+| k-NN euclidean, 70 000 x 16, 1 100 queries, k = 8 | — | 0.256 s | — |
+| squared distances 1 797 x 300 x 64 | 0.005 s | — | — |
+| PaCMAP, 10 steps, n = 500 | 0.362 s | — | — |
+| TriMap, 10 steps, n = 400 | 0.052 s | — | — |
+| exact t-SNE, 10 steps, n = 500 | 0.517 s | — | — |
+
+Both backends pass every kernel test against the CPU reference on the runner (recall 1.0,
+max relative distance error < 5e-7). MLX's cosine k-NN is a single matmul plus
+`argpartition` and is 11x faster than the runner's CPU; its manhattan k-NN materialises a
+`[queries, n, d]` difference tensor and is CPU speed. The PaCMAP / TriMap / t-SNE MLX steps
+are gather + scatter-add array programs evaluated lazily, 5-50 ms per step at these sizes,
+in line with the CUDA finding that per-iteration steps only pay off at large n. The runner
+is a virtualised M1 shared with the macOS CI fleet; treat these as functional numbers, not a
+Mac benchmark.
 
 ### Software Vulkan (Mesa lavapipe)
 
@@ -168,7 +197,9 @@ runner (Mesa 24). It is how the GPU code paths are exercised without a GPU.
 
 ### Cost
 
-MODAL_COST_PLACEHOLDER
+About 70 minutes of Tesla T4 container time on Modal (T4 USD 0.59/h plus 8 vCPU), roughly
+USD 1.2 in total including the three failed Vulkan probes; the macOS runs used GitHub-hosted
+`macos-15` minutes. Spend cap for the session was USD 50.
 
 Benchmark driver: `scripts/benchmark_gpu.py` (per-job subprocesses, JSON lines, Markdown
 table and plot); `scripts/modal_gpu_benchmark.py` runs it on a Modal GPU.
