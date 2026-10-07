@@ -1,8 +1,10 @@
 """Squeeze: High-performance dimensionality reduction library.
 
 This package provides Python implementations of various dimension reduction
-techniques including UMAP, t-SNE, PCA, and more. All implementations are
-optimized for CPU performance with SIMD vectorization and Rust backends.
+techniques including UMAP, t-SNE, PCA, and more. The implementations are
+SIMD-optimised Rust with a CPU reference path; when a GPU is present the heavy
+kernels (pairwise distances, exact k-NN, embedding gradients) run on it through
+wgpu (Vulkan/Metal/DX12) or MLX on Apple Silicon. See ``squeeze.devices()``.
 
 Implemented algorithms:
 - UMAP: Uniform Manifold Approximation and Projection
@@ -54,6 +56,23 @@ except ImportError:
     # Older compiled extensions can still provide the established algorithms.
     NeighborMap = None
     SpectralMap = None
+
+try:
+    from ._hnsw_backend import default_device, devices, resolve_device
+except ImportError:
+
+    def devices() -> str:
+        """Report the compute devices (CPU only: the Rust backend is not built)."""
+        return "squeeze compute devices\n  chosen: cpu (Rust backend not available)\n"
+
+    def default_device() -> str:
+        """Return the device ``device="auto"`` resolves to."""
+        return "cpu"
+
+    def resolve_device(device: "str | None" = None) -> str:  # noqa: ARG001
+        """Return what a ``device=`` argument resolves to."""
+        return "cpu"
+
 
 try:
     with catch_warnings():
@@ -132,6 +151,10 @@ __all__ = [  # noqa: RUF022 - grouped by API category
     "PaCMAP",
     "NeighborMap",
     "SpectralMap",
+    # Compute devices
+    "devices",
+    "default_device",
+    "resolve_device",
     # Composition utilities
     "AdaptiveDR",
     "DRPipeline",

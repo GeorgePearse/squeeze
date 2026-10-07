@@ -11,24 +11,25 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
-use crate::mds::{compute_distance_matrix, classical_mds};
+use crate::mds::classical_mds;
 
 /// Isomap dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
 pub struct Isomap {
     n_components: usize,
     n_neighbors: usize,
+    device: Option<String>,
 }
 
 #[pymethods]
 impl Isomap {
     #[new]
-    #[pyo3(signature = (n_components=2, n_neighbors=10))]
-    pub fn new(n_components: usize, n_neighbors: usize) -> Self {
+    #[pyo3(signature = (n_components=2, n_neighbors=10, device=None))]
+    pub fn new(n_components: usize, n_neighbors: usize, device: Option<String>) -> Self {
         Self {
             n_components,
             n_neighbors,
+            device,
         }
     }
 
@@ -46,14 +47,9 @@ impl Isomap {
             )));
         }
 
-        // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
-            .into_iter()
-            .map(|row| row.iter().map(|&v| v as f32).collect())
-            .collect();
-
-        // Compute pairwise distances
-        let distances = compute_distance_matrix(&x_f32);
+        // Pairwise distances on the selected device
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
+        let distances = crate::device_py::distance_matrix(py, &device, x)?;
 
         // Build k-NN graph
         let knn_graph = self.build_knn_graph(&distances, n_samples);
@@ -93,7 +89,7 @@ impl Isomap {
     fn compute_geodesic_distances(
         &self, 
         knn_graph: &[Vec<(usize, f64)>], 
-        distances: &Array2<f64>,
+        _distances: &Array2<f64>,
         n_samples: usize
     ) -> PyResult<Array2<f64>> {
         // Use parallel Dijkstra for O(n^2 log n) instead of Floyd-Warshall's O(n^3)
@@ -110,7 +106,7 @@ impl Isomap {
         }
         
         // Check for disconnected components
-        let max_dist = geodesic.iter()
+        let _max_dist = geodesic.iter()
             .filter(|&&d| !d.is_infinite())
             .cloned()
             .fold(0.0_f64, f64::max);
@@ -174,12 +170,10 @@ impl Isomap {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use std::collections::BinaryHeap;
-    use ordered_float::OrderedFloat;
 
     #[test]
     fn test_knn_graph_construction() {
-        let isomap = Isomap::new(2, 2);
+        let isomap = Isomap::new(2, 2, None);
         
         // Simple distance matrix
         let distances = Array2::from_shape_vec((4, 4), vec![
@@ -209,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_geodesic_distances_simple_chain() {
-        let isomap = Isomap::new(2, 1);
+        let isomap = Isomap::new(2, 1, None);
         
         // Create a chain: 0 -- 1 -- 2 -- 3
         // Direct distances don't reflect the chain structure
@@ -234,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_floyd_warshall_correctness() {
-        let isomap = Isomap::new(2, 2);
+        let isomap = Isomap::new(2, 2, None);
         
         // Create a simple graph
         let knn_graph = vec![
@@ -261,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_disconnected_graph_detection() {
-        let isomap = Isomap::new(2, 1);
+        let isomap = Isomap::new(2, 1, None);
 
         // Create disconnected components: 0-1 and 2-3
         let knn_graph = vec![
@@ -282,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_symmetric_knn_graph() {
-        let isomap = Isomap::new(2, 2);
+        let isomap = Isomap::new(2, 2, None);
         
         // Test that the geodesic distance computation makes the graph symmetric
         let knn_graph = vec![

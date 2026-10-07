@@ -1,11 +1,11 @@
-/// SIMD-optimized distance metrics
-///
-/// This module provides vectorized implementations of distance metrics using:
-/// - AVX2 for x86/x64 CPUs (8 floats per instruction)
-/// - NEON for ARM CPUs (4 floats per instruction)
-/// - Scalar fallback for all other platforms
-///
-/// Runtime CPU feature detection automatically selects the best implementation.
+//! SIMD-optimized distance metrics
+//!
+//! This module provides vectorized implementations of distance metrics using:
+//! - AVX2 for x86/x64 CPUs (8 floats per instruction)
+//! - NEON for ARM CPUs (4 floats per instruction)
+//! - Scalar fallback for all other platforms
+//!
+//! Runtime CPU feature detection automatically selects the best implementation.
 
 use crate::metrics::{MetricError, MetricResult};
 
@@ -75,12 +75,12 @@ pub fn euclidean(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { euclidean_avx2(a, b) });
         }
-        return Ok(euclidean_scalar(a, b));
+        Ok(euclidean_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { euclidean_neon(a, b) });
+        Ok(unsafe { euclidean_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -155,6 +155,7 @@ unsafe fn euclidean_neon(a: &[f32], b: &[f32]) -> f32 {
 
 /// Scalar fallback
 #[inline]
+#[allow(dead_code)]
 fn euclidean_scalar(a: &[f32], b: &[f32]) -> f32 {
     a.iter()
         .zip(b.iter())
@@ -177,12 +178,12 @@ pub fn manhattan(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { manhattan_avx2(a, b) });
         }
-        return Ok(manhattan_scalar(a, b));
+        Ok(manhattan_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { manhattan_neon(a, b) });
+        Ok(unsafe { manhattan_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -256,6 +257,7 @@ unsafe fn manhattan_neon(a: &[f32], b: &[f32]) -> f32 {
 
 /// Scalar fallback
 #[inline]
+#[allow(dead_code)]
 fn manhattan_scalar(a: &[f32], b: &[f32]) -> f32 {
     a.iter()
         .zip(b.iter())
@@ -277,12 +279,12 @@ pub fn cosine(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { cosine_avx2(a, b) });
         }
-        return Ok(cosine_scalar(a, b));
+        Ok(cosine_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        return Ok(unsafe { cosine_neon(a, b) });
+        Ok(unsafe { cosine_neon(a, b) })
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
@@ -379,6 +381,7 @@ unsafe fn cosine_neon(a: &[f32], b: &[f32]) -> f32 {
 
 /// Scalar fallback
 #[inline]
+#[allow(dead_code)]
 fn cosine_scalar(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
     let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();

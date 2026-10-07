@@ -2,8 +2,9 @@
 
 ## Explore structure. Measure the tradeoffs.
 
-Squeeze is a Python library for CPU dimensionality reduction, combining a
-Python/Numba UMAP implementation with ten Rust algorithms. Fit a linear baseline,
+Squeeze is a Python library for dimensionality reduction, combining a
+Python/Numba UMAP implementation with ten Rust algorithms. It runs on the CPU
+everywhere and moves the heavy kernels to a GPU when one is present. Fit a linear baseline,
 compare neighborhood layouts, and inspect the quality you keep when reducing data
 to two dimensions.
 
@@ -29,7 +30,10 @@ contract. [Check the capability table](algorithms/index.md) before building a pi
 
 This is an alpha research library. The benchmarks document particular datasets,
 parameters, and machines; they are not a blanket speed or quality guarantee.
-Squeeze targets CPU execution. No CUDA installation is needed for the core methods.
+Squeeze runs on the CPU with no GPU software installed. When a GPU driver is
+present (Vulkan, Metal or DX12; MLX on Apple Silicon) the pairwise, k-NN and
+gradient kernels use it automatically; see [GPU compute](gpu.md). No CUDA
+installation is needed.
 
 ### Built on previous work
 

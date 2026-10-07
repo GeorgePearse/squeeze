@@ -1,11 +1,11 @@
-/// Mixed precision vector storage and operations
-///
-/// This module provides f16 storage with f32 computation for:
-/// - 50% memory reduction
-/// - Better cache utilization (2x more vectors in cache)
-/// - Minimal accuracy loss (<0.5%)
-///
-/// Conversion overhead is offset by cache benefits.
+//! Mixed precision vector storage and operations
+//!
+//! This module provides f16 storage with f32 computation for:
+//! - 50% memory reduction
+//! - Better cache utilization (2x more vectors in cache)
+//! - Minimal accuracy loss (<0.5%)
+//!
+//! Conversion overhead is offset by cache benefits.
 
 use half::f16;
 use serde::{Serialize, Deserialize};

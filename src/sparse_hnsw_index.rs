@@ -58,6 +58,7 @@ impl SparseHnswIndex {
     /// Create a new sparse nearest neighbor index
     #[new]
     #[pyo3(signature = (data, indices, indptr, n_samples, n_features, n_neighbors, metric, m, ef_construction, dist_p=2.0, random_state=None, prune_strategy="simple", prune_alpha=1.2))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         data: PyReadonlyArray1<f32>,
         indices: PyReadonlyArray1<i32>,

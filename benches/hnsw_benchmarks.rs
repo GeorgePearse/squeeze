@@ -8,9 +8,9 @@ use _hnsw_backend::metrics_simd;
 
 /// Generate random f32 vectors
 fn generate_vectors(n: usize, dim: usize) -> Vec<Vec<f32>> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     (0..n)
-        .map(|_| (0..dim).map(|_| rng.gen::<f32>()).collect())
+        .map(|_| (0..dim).map(|_| rng.random::<f32>()).collect())
         .collect()
 }
 
@@ -132,7 +132,7 @@ fn bench_neighbor_selection(c: &mut Criterion) {
     let mut group = c.benchmark_group("neighbor_selection");
     
     for k in [5, 10, 15, 30, 50].iter() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let candidates: Vec<Entry> = (0..1000)
             .map(|i| Entry { index: i, distance: rng.random() })
             .collect();
