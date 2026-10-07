@@ -139,7 +139,9 @@ jobs:
       - name: Build the extension with MLX
         run: |
           uv pip install --system maturin pytest scikit-learn pandas matplotlib
-          uv pip install --system -e . --config-settings build-args="--features gpu-mlx,ndarray-linalg/openblas-system"
+          # --skip-auditwheel: maturin's wheel repair cannot resolve libgfortran's
+          # @rpath/libgcc_s dependency; the dylibs load fine through their own rpaths.
+          uv pip install --system -e . --config-settings build-args="--features gpu-mlx,ndarray-linalg/openblas-system --skip-auditwheel"
       - name: Device report (auto picks MLX)
         run: |
           python -c "import squeeze._hnsw_backend as m; print(m.__file__)"
