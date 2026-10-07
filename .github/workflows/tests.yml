@@ -75,7 +75,7 @@ jobs:
           version: "0.12.23"
       - name: Build the extension and install test dependencies
         run: |
-          uv pip install --system maturin pytest scikit-learn
+          uv pip install --system maturin pytest scikit-learn pandas matplotlib
           uv pip install --system -e . --config-settings build-args="--features ndarray-linalg/openblas-system"
       - name: Device report
         run: python -c "import squeeze; print(squeeze.devices())"
@@ -130,7 +130,7 @@ jobs:
           version: "0.12.23"
       - name: Build the extension with MLX
         run: |
-          uv pip install --system maturin pytest scikit-learn
+          uv pip install --system maturin pytest scikit-learn pandas matplotlib
           uv pip install --system -e . --config-settings build-args="--features gpu-mlx,ndarray-linalg/openblas-system"
       - name: Device report (auto picks MLX)
         run: python -c "import squeeze; print(squeeze.devices())"
