@@ -6,8 +6,8 @@
 //! the call fails and the caller falls back to the CPU.
 
 use super::{
-    contiguous_f32, pairs_to_csr, to_f32, to_f64_matrix, triplets_to_csr, Backend, Device,
-    GradFn, Metric, Result,
+    contiguous_f32, pairs_to_csr, to_f32, to_f64_matrix, triplets_to_csr, Backend, Device, GradFn,
+    Metric, Result,
 };
 use ndarray::{Array2, ArrayView2};
 use std::collections::HashMap;
@@ -53,12 +53,17 @@ impl Variant {
     fn source(self) -> String {
         let (acc, fin) = match self {
             Variant::SqEuclidean => ("let v = x - y; acc = acc + v * v;", "let result = acc;"),
-            Variant::Euclidean => ("let v = x - y; acc = acc + v * v;", "let result = sqrt(acc);"),
+            Variant::Euclidean => (
+                "let v = x - y; acc = acc + v * v;",
+                "let result = sqrt(acc);",
+            ),
             Variant::Manhattan => ("acc = acc + abs(x - y);", "let result = acc;"),
             Variant::Dot => ("acc = acc + x * y;", "let result = acc;"),
             Variant::Cosine => ("acc = acc + x * y;", "let result = 1.0 - acc;"),
         };
-        DIST_TILE_SRC.replace("//ACC//", acc).replace("//FINAL//", fin)
+        DIST_TILE_SRC
+            .replace("//ACC//", acc)
+            .replace("//FINAL//", fin)
     }
 }
 
@@ -214,12 +219,20 @@ impl WgpuBackend {
 
     fn take_error(&self, what: &str) -> Result<()> {
         match self.last_error.lock().unwrap().take() {
-            Some(e) => Err(format!("wgpu error during {} on {}: {}", what, self.desc, e)),
+            Some(e) => Err(format!(
+                "wgpu error during {} on {}: {}",
+                what, self.desc, e
+            )),
             None => Ok(()),
         }
     }
 
-    fn pipeline(&self, key: &str, source: impl FnOnce() -> String, entry: &str) -> Result<wgpu::ComputePipeline> {
+    fn pipeline(
+        &self,
+        key: &str,
+        source: impl FnOnce() -> String,
+        entry: &str,
+    ) -> Result<wgpu::ComputePipeline> {
         self.pipeline_with_layout(key, source, entry, None)
     }
 
@@ -277,10 +290,12 @@ impl WgpuBackend {
         }
         let src = source();
         let scope = self.device.push_error_scope(wgpu::ErrorFilter::Validation);
-        let module = self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(key),
-            source: wgpu::ShaderSource::Wgsl(src.into()),
-        });
+        let module = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(key),
+                source: wgpu::ShaderSource::Wgsl(src.into()),
+            });
         let pipeline = self
             .device
             .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
@@ -325,13 +340,14 @@ impl WgpuBackend {
         let buf = if bytes.is_empty() {
             self.storage_zeroed(label, 4)
         } else {
-            self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some(label),
-                contents: bytes,
-                usage: wgpu::BufferUsages::STORAGE
-                    | wgpu::BufferUsages::COPY_DST
-                    | wgpu::BufferUsages::COPY_SRC,
-            })
+            self.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(label),
+                    contents: bytes,
+                    usage: wgpu::BufferUsages::STORAGE
+                        | wgpu::BufferUsages::COPY_DST
+                        | wgpu::BufferUsages::COPY_SRC,
+                })
         };
         Ok(buf)
     }
@@ -348,11 +364,12 @@ impl WgpuBackend {
     }
 
     fn uniform(&self, label: &str, words: &[u32]) -> wgpu::Buffer {
-        self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(label),
-            contents: bytemuck::cast_slice(words),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        })
+        self.device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(label),
+                contents: bytemuck::cast_slice(words),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            })
     }
 
     fn bind(&self, pipeline: &wgpu::ComputePipeline, buffers: &[&wgpu::Buffer]) -> wgpu::BindGroup {
@@ -373,7 +390,9 @@ impl WgpuBackend {
 
     fn encoder(&self) -> wgpu::CommandEncoder {
         self.device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("squeeze") })
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("squeeze"),
+            })
     }
 
     fn dispatch(
@@ -402,7 +421,13 @@ impl WgpuBackend {
     }
 
     /// Copy `bytes` starting at `offset` (a multiple of 4) from `src` back to the host.
-    fn readback_at(&self, src: &wgpu::Buffer, offset: u64, bytes: u64, what: &str) -> Result<Vec<u8>> {
+    fn readback_at(
+        &self,
+        src: &wgpu::Buffer,
+        offset: u64,
+        bytes: u64,
+        what: &str,
+    ) -> Result<Vec<u8>> {
         let staging = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("staging"),
             size: bytes,
@@ -413,11 +438,9 @@ impl WgpuBackend {
         encoder.copy_buffer_to_buffer(src, offset, &staging, 0, bytes);
         self.queue.submit(Some(encoder.finish()));
         let (tx, rx) = mpsc::channel();
-        staging
-            .slice(..)
-            .map_async(wgpu::MapMode::Read, move |r| {
-                let _ = tx.send(r);
-            });
+        staging.slice(..).map_async(wgpu::MapMode::Read, move |r| {
+            let _ = tx.send(r);
+        });
         self.device
             .poll(wgpu::PollType::wait_indefinitely())
             .map_err(|e| format!("wgpu poll failed during {}: {}", what, e))?;
@@ -467,7 +490,8 @@ impl WgpuBackend {
         let b_buf = self.storage_from("b", b)?;
         let max_rows = (self.limits.max_compute_workgroups_per_dimension as usize) * 16;
         let b_cols = n_b.min(TILE_COLS).min(max_rows);
-        let budget_floats = (TILE_BUDGET_BYTES.min(self.limits.max_storage_buffer_binding_size) / 4) as usize;
+        let budget_floats =
+            (TILE_BUDGET_BYTES.min(self.limits.max_storage_buffer_binding_size) / 4) as usize;
         let a_rows_max = n_a.min(budget_floats / b_cols).min(max_rows).max(1);
         let tile = self.storage_zeroed("tile", (a_rows_max * b_cols * 4) as u64);
         let params = self.uniform("dist-params", &[0; 8]);
@@ -511,23 +535,40 @@ impl WgpuBackend {
     }
 
     /// Pairwise matrix `[n_a, n_b]` for a variant, assembled on the host tile by tile.
-    fn pairwise(&self, a: ArrayView2<f32>, b: ArrayView2<f32>, variant: Variant) -> Result<Array2<f32>> {
+    fn pairwise(
+        &self,
+        a: ArrayView2<f32>,
+        b: ArrayView2<f32>,
+        variant: Variant,
+    ) -> Result<Array2<f32>> {
         if a.ncols() != b.ncols() {
-            return Err(format!("feature mismatch: {} vs {} columns", a.ncols(), b.ncols()));
+            return Err(format!(
+                "feature mismatch: {} vs {} columns",
+                a.ncols(),
+                b.ncols()
+            ));
         }
         let (n_a, n_b, d) = (a.nrows(), b.nrows(), a.ncols());
         let a = contiguous_f32(a);
         let b = contiguous_f32(b);
         let mut out = vec![0f32; n_a * n_b];
-        self.tiles(&a, n_a, &b, n_b, d, variant, |tile, a0, a_rows, b0, b_rows| {
-            let bytes = self.readback(tile, (a_rows * b_rows * 4) as u64, variant.key())?;
-            let vals: &[f32] = bytemuck::cast_slice(&bytes);
-            for r in 0..a_rows {
-                out[(a0 + r) * n_b + b0..(a0 + r) * n_b + b0 + b_rows]
-                    .copy_from_slice(&vals[r * b_rows..(r + 1) * b_rows]);
-            }
-            Ok(())
-        })?;
+        self.tiles(
+            &a,
+            n_a,
+            &b,
+            n_b,
+            d,
+            variant,
+            |tile, a0, a_rows, b0, b_rows| {
+                let bytes = self.readback(tile, (a_rows * b_rows * 4) as u64, variant.key())?;
+                let vals: &[f32] = bytemuck::cast_slice(&bytes);
+                for r in 0..a_rows {
+                    out[(a0 + r) * n_b + b0..(a0 + r) * n_b + b0 + b_rows]
+                        .copy_from_slice(&vals[r * b_rows..(r + 1) * b_rows]);
+                }
+                Ok(())
+            },
+        )?;
         Array2::from_shape_vec((n_a, n_b), out).map_err(|e| e.to_string())
     }
 }
@@ -537,7 +578,11 @@ impl WgpuBackend {
 fn normalize_rows(x: &[f32], d: usize) -> Vec<f32> {
     let mut out = x.to_vec();
     for row in out.chunks_mut(d) {
-        let norm = row.iter().map(|v| (*v as f64) * (*v as f64)).sum::<f64>().sqrt();
+        let norm = row
+            .iter()
+            .map(|v| (*v as f64) * (*v as f64))
+            .sum::<f64>()
+            .sqrt();
         if norm < 1e-10 {
             row.iter_mut().for_each(|v| *v = 0.0);
         } else {
@@ -586,32 +631,44 @@ impl Backend for WgpuBackend {
         let params = self.uniform("topk-params", &[0; 8]);
         let topk = self.pipeline("topk_merge", || TOPK_MERGE_SRC.to_string(), "main")?;
         // Queries are the `a` side (rows of the tile), data the `b` side (columns).
-        self.tiles(&queries_v, m, &data_v, n, d, variant, |tile, q0, q_rows, b0, b_cols| {
-            self.queue.write_buffer(
-                &params,
-                0,
-                bytemuck::cast_slice(&[
-                    q0 as u32,
-                    q_rows as u32,
-                    b0 as u32,
-                    b_cols as u32,
-                    k as u32,
-                    b_cols as u32,
+        self.tiles(
+            &queries_v,
+            m,
+            &data_v,
+            n,
+            d,
+            variant,
+            |tile, q0, q_rows, b0, b_cols| {
+                self.queue.write_buffer(
+                    &params,
                     0,
-                    0,
-                ]),
-            );
-            let bind = self.bind(&topk, &[tile, &best_idx, &best_dist, &params]);
-            let mut enc = self.encoder();
-            Self::dispatch(&mut enc, &topk, &bind, (self.groups_1d(q_rows)?, 1, 1));
-            self.submit(enc, "topk_merge")
-        })?;
+                    bytemuck::cast_slice(&[
+                        q0 as u32,
+                        q_rows as u32,
+                        b0 as u32,
+                        b_cols as u32,
+                        k as u32,
+                        b_cols as u32,
+                        0,
+                        0,
+                    ]),
+                );
+                let bind = self.bind(&topk, &[tile, &best_idx, &best_dist, &params]);
+                let mut enc = self.encoder();
+                Self::dispatch(&mut enc, &topk, &bind, (self.groups_1d(q_rows)?, 1, 1));
+                self.submit(enc, "topk_merge")
+            },
+        )?;
         let idx_bytes = self.readback(&best_idx, (m * k * 4) as u64, "knn readback")?;
         let dist_bytes = self.readback(&best_dist, (m * k * 4) as u64, "knn readback")?;
-        let idx = Array2::from_shape_vec((m, k), bytemuck::cast_slice::<u8, u32>(&idx_bytes).to_vec())
-            .map_err(|e| e.to_string())?;
-        let dist = Array2::from_shape_vec((m, k), bytemuck::cast_slice::<u8, f32>(&dist_bytes).to_vec())
-            .map_err(|e| e.to_string())?;
+        let idx =
+            Array2::from_shape_vec((m, k), bytemuck::cast_slice::<u8, u32>(&idx_bytes).to_vec())
+                .map_err(|e| e.to_string())?;
+        let dist = Array2::from_shape_vec(
+            (m, k),
+            bytemuck::cast_slice::<u8, f32>(&dist_bytes).to_vec(),
+        )
+        .map_err(|e| e.to_string())?;
         Ok((idx, dist))
     }
 
@@ -652,7 +709,8 @@ impl Backend for WgpuBackend {
             if y.nrows() != n || y.ncols() != dim || w.len() != 3 {
                 return Err("pacmap: embedding shape or weights mismatch".into());
             }
-            self.queue.write_buffer(&y_buf, 0, bytemuck::cast_slice(&to_f32(y)));
+            self.queue
+                .write_buffer(&y_buf, 0, bytemuck::cast_slice(&to_f32(y)));
             self.queue.write_buffer(
                 &params,
                 0,
@@ -711,7 +769,8 @@ impl Backend for WgpuBackend {
             if y.nrows() != n || y.ncols() != dim || s.len() != 1 {
                 return Err("trimap: embedding shape or scalars mismatch".into());
             }
-            self.queue.write_buffer(&y_buf, 0, bytemuck::cast_slice(&to_f32(y)));
+            self.queue
+                .write_buffer(&y_buf, 0, bytemuck::cast_slice(&to_f32(y)));
             self.queue.write_buffer(
                 &params,
                 0,
@@ -756,12 +815,24 @@ impl Backend for WgpuBackend {
         let scratch = self.storage_zeroed("scratch", grad_offset + (n * dim * 4) as u64);
         let params = self.uniform("tsne-params", &[0; 4]);
         let layout = self.shared_layout();
-        let rowsum_p =
-            self.pipeline_with_layout("tsne_rowsum", || TSNE_SRC.to_string(), "rowsum_main", Some(&layout))?;
-        let reduce_p =
-            self.pipeline_with_layout("tsne_reduce", || TSNE_SRC.to_string(), "reduce_main", Some(&layout))?;
-        let grad_p =
-            self.pipeline_with_layout("tsne_grad", || TSNE_SRC.to_string(), "grad_main", Some(&layout))?;
+        let rowsum_p = self.pipeline_with_layout(
+            "tsne_rowsum",
+            || TSNE_SRC.to_string(),
+            "rowsum_main",
+            Some(&layout),
+        )?;
+        let reduce_p = self.pipeline_with_layout(
+            "tsne_reduce",
+            || TSNE_SRC.to_string(),
+            "reduce_main",
+            Some(&layout),
+        )?;
+        let grad_p = self.pipeline_with_layout(
+            "tsne_grad",
+            || TSNE_SRC.to_string(),
+            "grad_main",
+            Some(&layout),
+        )?;
         let bufs = [&y_buf, &p_buf, &scratch, &params];
         let bind_rowsum = self.bind(&rowsum_p, &bufs);
         let bind_reduce = self.bind(&reduce_p, &bufs);
@@ -770,7 +841,8 @@ impl Backend for WgpuBackend {
             if y.nrows() != n || y.ncols() != dim || s.len() != 1 {
                 return Err("tsne: embedding shape or scalars mismatch".into());
             }
-            self.queue.write_buffer(&y_buf, 0, bytemuck::cast_slice(&to_f32(y)));
+            self.queue
+                .write_buffer(&y_buf, 0, bytemuck::cast_slice(&to_f32(y)));
             self.queue.write_buffer(
                 &params,
                 0,
@@ -781,7 +853,8 @@ impl Backend for WgpuBackend {
             Self::dispatch(&mut enc, &reduce_p, &bind_reduce, (1, 1, 1));
             Self::dispatch(&mut enc, &grad_p, &bind_grad, (groups, 1, 1));
             self.submit(enc, "tsne_exact")?;
-            let bytes = self.readback_at(&scratch, grad_offset, (n * dim * 4) as u64, "tsne_exact")?;
+            let bytes =
+                self.readback_at(&scratch, grad_offset, (n * dim * 4) as u64, "tsne_exact")?;
             Ok(to_f64_matrix(bytemuck::cast_slice(&bytes), n, dim))
         };
         run(&mut grad_fn)
@@ -799,6 +872,12 @@ mod tests {
     use rand_distr::StandardNormal;
 
     fn backend() -> Option<WgpuBackend> {
+        // Only probe when asked: forcing "wgpu" would otherwise pick up whatever software
+        // adapter the machine has (old Mesa lavapipe builds crash on compute shaders).
+        if std::env::var(super::super::DEVICE_ENV).as_deref() != Ok("wgpu") {
+            eprintln!("skipping wgpu tests: set SQUEEZE_DEVICE=wgpu to run them");
+            return None;
+        }
         let sel = Selection::run(Some("wgpu"));
         match &sel.chosen {
             Device::Wgpu { .. } => match WgpuBackend::open(&sel.chosen) {
@@ -952,7 +1031,12 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(5);
         let n = 150;
         let triplets: Vec<(u32, u32, u32)> = (0..n as u32)
-            .flat_map(|i| [(i, (i + 1) % n as u32, (i + 50) % n as u32), (i, (i + 2) % n as u32, (i + 80) % n as u32)])
+            .flat_map(|i| {
+                [
+                    (i, (i + 1) % n as u32, (i + 50) % n as u32),
+                    (i, (i + 2) % n as u32, (i + 80) % n as u32),
+                ]
+            })
             .collect();
         let weights: Vec<f64> = triplets.iter().map(|t| 1.0 + (t.0 % 5) as f64).collect();
         let y0 = random_matrix_f64(&mut rng, n, 2);

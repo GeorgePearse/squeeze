@@ -3,17 +3,14 @@
 //! PaCMAP uses three types of pairs (near, mid-near, far) to preserve
 //! both local and global structure during optimization.
 
-use ndarray::{Array2, Axis};
+use ndarray::Array2;
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
 use rand::prelude::*;
 use rand::SeedableRng;
 use rand_distr::Normal;
-use std::collections::BinaryHeap;
-use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 use crate::compute::cpu::center_rows;
 use crate::compute::Backend;
 
@@ -131,7 +128,7 @@ impl PaCMAP {
             // Far pairs: randomly sampled
             for _ in 0..n_fp {
                 let j = loop {
-                    let candidate = rng.gen_range(0..n_samples);
+                    let candidate = rng.random_range(0..n_samples);
                     if candidate != i {
                         break candidate;
                     }
@@ -224,6 +221,7 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
 
+    #[allow(dead_code)]
     fn create_test_data() -> Array2<f64> {
         let mut data = Array2::zeros((30, 5));
         for i in 0..30 {
@@ -300,10 +298,10 @@ mod tests {
 
         // For each point, check that near pairs are sorted by distance
         for i in 0..30 {
-            let mut pairs_for_i: Vec<_> = near_pairs
+            let pairs_for_i: Vec<_> = near_pairs
                 .iter()
                 .filter(|&&(a, _, _)| a == i)
-                .map(|&(_, j, d)| d)
+                .map(|&(_, _, d)| d)
                 .collect();
 
             // Since they come from the k-nearest, they should be the smallest distances
@@ -342,8 +340,8 @@ mod tests {
         let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42), None);
 
         // Phase 2: iter 100-199 (transition)
-        let (w_near_start, w_mn_start, w_fp_start) = pacmap.get_weights(100);
-        let (w_near_end, w_mn_end, w_fp_end) = pacmap.get_weights(199);
+        let (_w_near_start, w_mn_start, w_fp_start) = pacmap.get_weights(100);
+        let (_w_near_end, w_mn_end, w_fp_end) = pacmap.get_weights(199);
 
         // Far pair weight stays at 1.0
         assert_relative_eq!(w_fp_start, 1.0, epsilon = 1e-5);

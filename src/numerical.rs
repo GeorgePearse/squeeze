@@ -37,7 +37,7 @@ pub fn safe_log(x: f64) -> f64 {
 /// Clamp a probability to valid range [MIN_PROBABILITY, 1.0]
 #[inline]
 pub fn clamp_probability(p: f64) -> f64 {
-    p.max(MIN_PROBABILITY).min(1.0)
+    p.clamp(MIN_PROBABILITY, 1.0)
 }
 
 /// Clamp a distance to avoid zero

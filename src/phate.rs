@@ -3,8 +3,7 @@
 //! PHATE uses diffusion maps to compute potential distances, which better
 //! capture global structure than standard distances.
 
-use ndarray::{Array1, Array2, Axis};
-use ndarray_linalg::{Eigh, UPLO};
+use ndarray::Array2;
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
@@ -12,8 +11,7 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
-use crate::mds::{compute_distance_matrix, classical_mds};
+use crate::mds::classical_mds;
 
 /// PHATE dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -22,6 +20,7 @@ pub struct PHATE {
     k: usize,           // k for k-NN
     t: usize,           // diffusion time
     decay: f64,         // alpha decay for kernel
+    #[allow(dead_code)]
     random_state: Option<u64>,
     device: Option<String>,
 }
@@ -204,6 +203,7 @@ impl PHATE {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mds::compute_distance_matrix;
     use approx::assert_relative_eq;
 
     fn create_two_clusters() -> Array2<f64> {

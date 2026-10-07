@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 use crate::metrics_simd;
 use crate::metrics::{self, MetricError, MetricResult};
 use crate::hnsw_algo::{Hnsw, PruneStrategy};
-use crate::compute::{Device, Metric, BRUTEFORCE_MAX_ROWS};
+use crate::compute::{bruteforce_max_rows, Device, Metric};
 use ndarray::Array2;
 
 impl From<MetricError> for PyErr {
@@ -128,11 +128,11 @@ impl HnswIndex {
         let seed = random_state.unwrap_or(42);
 
         // Resolve the compute device. A GPU runs exact brute-force kNN for supported metrics
-        // up to BRUTEFORCE_MAX_ROWS rows; otherwise the HNSW graph is built on the CPU.
+        // up to bruteforce_max_rows() rows; otherwise the HNSW graph is built on the CPU.
         let resolved = crate::device_py::resolve(py, device.as_deref())?;
         let gpu = match resolved {
             Device::Cpu => None,
-            dev if n_samples <= BRUTEFORCE_MAX_ROWS && Metric::parse(&metric).is_some() => Some(dev),
+            dev if n_samples <= bruteforce_max_rows() && Metric::parse(&metric).is_some() => Some(dev),
             _ => None,
         };
 
@@ -489,7 +489,7 @@ impl HnswIndex {
         // The device is re-resolved on the loading machine; the graph is built lazily if needed.
         self.gpu = match crate::device_py::resolve(py, self.device.as_deref())? {
             Device::Cpu => None,
-            dev if self.data.len() <= BRUTEFORCE_MAX_ROWS && Metric::parse(&self.metric).is_some() => Some(dev),
+            dev if self.data.len() <= bruteforce_max_rows() && Metric::parse(&self.metric).is_some() => Some(dev),
             _ => None,
         };
         

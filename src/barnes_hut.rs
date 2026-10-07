@@ -3,7 +3,7 @@
 //! The Barnes-Hut algorithm approximates long-range forces by treating
 //! distant groups of points as single points located at their center of mass.
 
-use ndarray::{Array1, Array2};
+use ndarray::Array2;
 
 /// Axis-aligned bounding box for spatial partitioning
 #[derive(Clone, Debug)]
@@ -178,7 +178,7 @@ impl QuadTreeNode {
 
     /// Subdivide this node into 4 quadrants
     fn subdivide(&mut self) {
-        let mut children: [Option<QuadTreeNode>; 4] = [None, None, None, None];
+        let children: [Option<QuadTreeNode>; 4] = [None, None, None, None];
         self.children = Some(Box::new(children));
     }
 
@@ -212,12 +212,10 @@ impl QuadTreeNode {
         // Otherwise, recurse into children
         if let Some(ref children) = self.children {
             let mut force = [0.0, 0.0];
-            for child in children.iter() {
-                if let Some(ref child_node) = child {
-                    let child_force = child_node.compute_non_edge_forces(point, theta, point_idx);
-                    force[0] += child_force[0];
-                    force[1] += child_force[1];
-                }
+            for child_node in children.iter().flatten() {
+                let child_force = child_node.compute_non_edge_forces(point, theta, point_idx);
+                force[0] += child_force[0];
+                force[1] += child_force[1];
             }
             return force;
         }

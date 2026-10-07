@@ -1,11 +1,11 @@
-/// SIMD-optimized distance metrics
-///
-/// This module provides vectorized implementations of distance metrics using:
-/// - AVX2 for x86/x64 CPUs (8 floats per instruction)
-/// - NEON for ARM CPUs (4 floats per instruction)
-/// - Scalar fallback for all other platforms
-///
-/// Runtime CPU feature detection automatically selects the best implementation.
+//! SIMD-optimized distance metrics
+//!
+//! This module provides vectorized implementations of distance metrics using:
+//! - AVX2 for x86/x64 CPUs (8 floats per instruction)
+//! - NEON for ARM CPUs (4 floats per instruction)
+//! - Scalar fallback for all other platforms
+//!
+//! Runtime CPU feature detection automatically selects the best implementation.
 
 use crate::metrics::{MetricError, MetricResult};
 
@@ -75,7 +75,7 @@ pub fn euclidean(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { euclidean_avx2(a, b) });
         }
-        return Ok(euclidean_scalar(a, b));
+        Ok(euclidean_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
@@ -177,7 +177,7 @@ pub fn manhattan(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { manhattan_avx2(a, b) });
         }
-        return Ok(manhattan_scalar(a, b));
+        Ok(manhattan_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
@@ -277,7 +277,7 @@ pub fn cosine(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { cosine_avx2(a, b) });
         }
-        return Ok(cosine_scalar(a, b));
+        Ok(cosine_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]

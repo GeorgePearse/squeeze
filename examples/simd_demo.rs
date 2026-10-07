@@ -1,7 +1,7 @@
-/// SIMD performance demonstration
-/// 
-/// This example demonstrates the performance improvement from SIMD optimizations.
-/// Run with: cargo run --release --example simd_demo
+//! SIMD performance demonstration
+//! 
+//! This example demonstrates the performance improvement from SIMD optimizations.
+//! Run with: cargo run --release --example simd_demo
 
 use _hnsw_backend::{metrics, metrics_simd};
 use std::time::Instant;

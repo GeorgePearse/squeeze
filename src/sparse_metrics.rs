@@ -363,7 +363,7 @@ mod tests {
         let b_data = vec![-1.0, 2.0, -1.0];
 
         let dist = sparse_cosine(&a_idx, &a_data, &b_idx, &b_data);
-        assert!(dist >= 0.0 && dist <= 2.0, "Cosine distance {} out of bounds [0, 2]", dist);
+        assert!((0.0..=2.0).contains(&dist), "Cosine distance {} out of bounds [0, 2]", dist);
     }
 
     #[test]

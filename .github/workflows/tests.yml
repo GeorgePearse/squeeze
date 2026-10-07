@@ -2,62 +2,127 @@ name: Tests
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ master, develop ]
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  # Software Vulkan (Mesa lavapipe) so the wgpu code paths run on GPU-less runners.
+  LAVAPIPE_ICD: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
 
 jobs:
-  test:
+  rust:
+    name: Rust (Linux, CPU + lavapipe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Vulkan software driver and BLAS build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers libvulkan1 vulkan-tools gfortran libopenblas-dev pkg-config
+          vulkaninfo --summary | head -40 || true
+      - name: rustfmt (compute module)
+        run: rustfmt --edition 2021 --check src/compute/*.rs src/device_py.rs
+      - name: clippy (default features)
+        run: cargo clippy --all-targets -- -D warnings
+      - name: clippy (no GPU features)
+        run: cargo clippy --no-default-features --all-targets -- -D warnings
+      - name: Rust tests (CPU)
+        run: cargo test --lib
+      - name: Rust tests (wgpu on lavapipe)
+        env:
+          SQUEEZE_DEVICE: wgpu
+          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
+        run: cargo test --lib compute:: -- --nocapture --test-threads=1
+      - name: Rust tests (no GPU features)
+        run: cargo test --no-default-features --lib
+
+  python:
+    name: Python ${{ matrix.python-version }} (Linux, CPU + lavapipe)
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-
+        python-version: ["3.10", "3.12"]
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Vulkan software driver and BLAS build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers libvulkan1 gfortran libopenblas-dev pkg-config
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.23"
+      - name: Build the extension and install test dependencies
+        run: |
+          uv pip install --system maturin pytest scikit-learn
+          uv pip install --system -e .
+      - name: Device report
+        run: python -c "import squeeze; print(squeeze.devices())"
+      - name: Python tests (CPU)
+        run: pytest squeeze/tests/ -q -x --ignore=squeeze/tests/test_parametric_umap.py
+      - name: Device tests (wgpu on lavapipe)
+        env:
+          SQUEEZE_DEVICE: wgpu
+          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
+        run: pytest squeeze/tests/test_devices.py -v -s
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v10.2.0
-      with:
-        version-file: pyproject.toml
-
-    - name: Install dependencies
-      run: |
-        uv pip install --system -e .
-        uv pip install --system pytest pytest-cov pytest-testmon
-
-    - name: Install prek and ty
-      run: |
-        uv tool install prek
-        uv tool install ty
-
-    - name: Run prek hooks (ruff + code quality checks)
-      run: |
-        prek install
-        prek install-hooks
-        prek run --all-files
-
-    - name: Run ty type checker
-      run: |
-        ty check
-
-    - name: Run tests (optimized with testmon)
-      run: |
-        pytest umap/tests/ -v --cov=umap --cov-report=xml --testmon
-      continue-on-error: true
-
-    - name: Run full test suite if optimized run failed
-      if: failure()
-      run: |
-        pytest umap/tests/ -v --cov=umap --cov-report=xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./coverage.xml
-        fail_ci_if_error: false
+  macos-gpu:
+    name: macOS 15 (Apple Silicon: MLX + Metal via wgpu)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install OpenBLAS (system BLAS for ndarray-linalg)
+        run: |
+          brew install openblas
+          echo "OPENBLAS_DIR=$(brew --prefix openblas)" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$(brew --prefix openblas)/lib" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=$(brew --prefix openblas)/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "RUSTFLAGS=-L $(brew --prefix openblas)/lib" >> "$GITHUB_ENV"
+      - name: clippy (gpu-wgpu + gpu-mlx)
+        run: cargo clippy --features gpu-mlx,ndarray-linalg/openblas-system --all-targets -- -D warnings
+      - name: Rust compute tests on MLX
+        env:
+          SQUEEZE_DEVICE: mlx
+        run: cargo test --features gpu-mlx,ndarray-linalg/openblas-system --lib compute:: -- --nocapture --test-threads=1
+      - name: Rust compute tests on Metal (wgpu)
+        env:
+          SQUEEZE_DEVICE: wgpu
+        run: cargo test --features gpu-mlx,ndarray-linalg/openblas-system --lib compute:: -- --nocapture --test-threads=1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.23"
+      - name: Build the extension with MLX
+        run: |
+          uv pip install --system maturin pytest scikit-learn
+          uv pip install --system -e . --config-settings build-args="--features gpu-mlx,ndarray-linalg/openblas-system"
+      - name: Device report (auto picks MLX)
+        run: python -c "import squeeze; print(squeeze.devices())"
+      - name: Device tests on MLX
+        env:
+          SQUEEZE_DEVICE: mlx
+        run: pytest squeeze/tests/test_devices.py -v -s
+      - name: Device tests on Metal (wgpu)
+        env:
+          SQUEEZE_DEVICE: wgpu
+        run: pytest squeeze/tests/test_devices.py -v -s

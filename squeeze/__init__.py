@@ -69,7 +69,7 @@ except ImportError:
         """Return the device ``device="auto"`` resolves to."""
         return "cpu"
 
-    def resolve_device(device: str | None = None) -> str:  # noqa: ARG001
+    def resolve_device(device: "str | None" = None) -> str:  # noqa: ARG001
         """Return what a ``device=`` argument resolves to."""
         return "cpu"
 

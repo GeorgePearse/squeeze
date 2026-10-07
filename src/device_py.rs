@@ -34,7 +34,10 @@ pub fn backend(py: Python<'_>, device: &Device) -> Arc<dyn Backend> {
         Err(e) => {
             warn(
                 py,
-                &format!("squeeze: {} unavailable, falling back to cpu: {}", device, e),
+                &format!(
+                    "squeeze: {} unavailable, falling back to cpu: {}",
+                    device, e
+                ),
             );
             Arc::new(CpuBackend)
         }
@@ -69,7 +72,11 @@ pub fn with_fallback<T>(
 
 /// Euclidean distance matrix `[n, n]` in `f64` from `f64` data, computed on `device` in `f32`
 /// with a zero diagonal. Used by MDS, Isomap, LLE, PHATE, TriMap and PaCMAP.
-pub fn distance_matrix(py: Python<'_>, device: &Device, x: ArrayView2<f64>) -> PyResult<Array2<f64>> {
+pub fn distance_matrix(
+    py: Python<'_>,
+    device: &Device,
+    x: ArrayView2<f64>,
+) -> PyResult<Array2<f64>> {
     let x32 = x.mapv(|v| v as f32);
     let sq = with_fallback(py, device, "pairwise distances", |b| {
         b.pairwise_sqdist(x32.view(), x32.view())

@@ -3,7 +3,7 @@
 //! LLE finds a low-dimensional embedding by preserving local linear
 //! relationships between neighboring points.
 
-use ndarray::{Array1, Array2, Axis, s};
+use ndarray::{Array1, Array2};
 use ndarray_linalg::{Eigh, Solve, UPLO};
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
@@ -12,7 +12,6 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 
 /// Locally Linear Embedding
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -51,7 +50,7 @@ impl LLE {
     {
         let x = data.as_array();
         let n_samples = x.nrows();
-        let n_features = x.ncols();
+        let _n_features = x.ncols();
 
         if self.n_neighbors >= n_samples {
             return Err(PyValueError::new_err(format!(
@@ -158,7 +157,7 @@ impl LLE {
                 }
                 // Fallback: uniform weights
                 fallback_count += 1;
-                for (j_idx, &j) in neighbors[i].iter().enumerate() {
+                for &j in neighbors[i].iter() {
                     weights[[i, j]] = 1.0 / k as f64;
                 }
             } else {

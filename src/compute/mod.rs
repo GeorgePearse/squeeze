@@ -42,7 +42,16 @@ pub type Result<T> = std::result::Result<T, String>;
 pub const DEVICE_ENV: &str = "SQUEEZE_DEVICE";
 
 /// Above this many indexed rows the GPU brute-force kNN is not used and HNSW on CPU is.
+/// `SQUEEZE_BRUTEFORCE_MAX_ROWS` overrides it (benchmarks and experiments).
 pub const BRUTEFORCE_MAX_ROWS: usize = 500_000;
+
+/// The effective brute-force row limit: `SQUEEZE_BRUTEFORCE_MAX_ROWS` or the default.
+pub fn bruteforce_max_rows() -> usize {
+    std::env::var("SQUEEZE_BRUTEFORCE_MAX_ROWS")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(BRUTEFORCE_MAX_ROWS)
+}
 
 /// Above this many samples exact t-SNE is not run on the GPU (Barnes-Hut on CPU instead).
 pub const TSNE_EXACT_MAX_ROWS: usize = 20_000;
@@ -103,9 +112,14 @@ pub enum Device {
         device_type: String,
     },
     /// Apple MLX on Apple Silicon.
-    Mlx { name: String },
+    Mlx {
+        name: String,
+    },
     /// NVIDIA CUDA through `cudarc`.
-    Cuda { name: String, ordinal: usize },
+    Cuda {
+        name: String,
+        ordinal: usize,
+    },
 }
 
 impl Device {
@@ -245,7 +259,9 @@ impl Selection {
     /// names a backend, that backend is tried first and software adapters are allowed.
     pub fn run(request: Option<&str>) -> Selection {
         let req = request.map(|s| s.trim().to_ascii_lowercase());
-        let forced = req.as_deref().filter(|r| matches!(*r, "wgpu" | "mlx" | "cuda"));
+        let forced = req
+            .as_deref()
+            .filter(|r| matches!(*r, "wgpu" | "mlx" | "cuda"));
         let mut candidates = Vec::new();
         let mut chosen: Option<Device> = None;
 
@@ -513,11 +529,13 @@ pub(crate) fn triplets_to_csr(n: usize, triplets: &[(u32, u32, u32)]) -> Csr {
 }
 
 /// Convert an `f64` matrix to a contiguous `f32` vector (row-major).
+#[allow(dead_code)]
 pub(crate) fn to_f32(a: ArrayView2<f64>) -> Vec<f32> {
     a.iter().map(|&v| v as f32).collect()
 }
 
 /// Wrap a contiguous `f32` buffer as an `f64` matrix.
+#[allow(dead_code)]
 pub(crate) fn to_f64_matrix(v: &[f32], n: usize, dim: usize) -> Array2<f64> {
     Array2::from_shape_vec((n, dim), v.iter().map(|&x| x as f64).collect())
         .expect("shape matches buffer length")

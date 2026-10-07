@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 pub mod metrics;
 pub mod metrics_simd;
 pub mod sparse_metrics;

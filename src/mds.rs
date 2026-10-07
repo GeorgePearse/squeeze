@@ -8,8 +8,6 @@ use ndarray_linalg::{Eigh, UPLO};
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
-use rand::prelude::*;
-use rand_distr::Normal;
 use rayon::prelude::*;
 
 use crate::metrics_simd;
@@ -20,6 +18,7 @@ pub struct MDS {
     n_components: usize,
     metric: bool,
     n_iter: usize,
+    #[allow(dead_code)]
     random_state: Option<u64>,
     stress: Option<f64>,
     device: Option<String>,
@@ -232,9 +231,9 @@ impl MDS {
         }
 
         // New embedding = (1/n) * B * current_embedding
-        let new_embedding = b.dot(embedding) / n_samples as f64;
         
-        new_embedding
+        
+        b.dot(embedding) / n_samples as f64
     }
 
     fn compute_stress(&self, target_distances: &Array2<f64>, embedding: &Array2<f64>) -> f64 {
@@ -390,7 +389,7 @@ mod tests {
 
     #[test]
     fn test_stress_computation() {
-        let mut mds = MDS::new(2, true, 100, Some(42), None);
+        let mds = MDS::new(2, true, 100, Some(42), None);
         
         // Create a simple embedding
         let embedding = Array2::from_shape_vec((3, 2), vec![
@@ -453,7 +452,7 @@ mod tests {
         let classical_result = classical_mds(&distances, 2).unwrap();
         
         // Metric MDS (would need to be called through the struct)
-        let mut metric_mds = MDS::new(2, true, 10, Some(42), None);
+        let _metric_mds = MDS::new(2, true, 10, Some(42), None);
         // Note: Can't call metric_mds directly without Python interface
         // but the test structure is here for when it's needed
         

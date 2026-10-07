@@ -14,7 +14,6 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 use crate::compute::cpu::center_rows;
 use crate::compute::Backend;
 
@@ -141,7 +140,7 @@ impl TriMap {
             for _ in 0..self.n_random {
                 if let Some(&pos) = inliers.choose(&mut rng) {
                     let neg = loop {
-                        let candidate = rng.gen_range(0..n_samples);
+                        let candidate = rng.random_range(0..n_samples);
                         if candidate != i && candidate != pos {
                             break candidate;
                         }

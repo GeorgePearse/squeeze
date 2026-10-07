@@ -11,7 +11,6 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 use crate::mds::classical_mds;
 
 /// Isomap dimensionality reduction
@@ -90,7 +89,7 @@ impl Isomap {
     fn compute_geodesic_distances(
         &self, 
         knn_graph: &[Vec<(usize, f64)>], 
-        distances: &Array2<f64>,
+        _distances: &Array2<f64>,
         n_samples: usize
     ) -> PyResult<Array2<f64>> {
         // Use parallel Dijkstra for O(n^2 log n) instead of Floyd-Warshall's O(n^3)
@@ -107,7 +106,7 @@ impl Isomap {
         }
         
         // Check for disconnected components
-        let max_dist = geodesic.iter()
+        let _max_dist = geodesic.iter()
             .filter(|&&d| !d.is_infinite())
             .cloned()
             .fold(0.0_f64, f64::max);
@@ -171,8 +170,6 @@ impl Isomap {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use std::collections::BinaryHeap;
-    use ordered_float::OrderedFloat;
 
     #[test]
     fn test_knn_graph_construction() {

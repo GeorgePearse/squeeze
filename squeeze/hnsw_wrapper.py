@@ -314,12 +314,11 @@ class HnswIndexWrapper:
                 k,
                 ef,
             )
-        else:
-            # Ensure data is float32
-            query_data = np.asarray(query_data, dtype=np.float32)
+        # Ensure data is float32
+        query_data = np.asarray(query_data, dtype=np.float32)
 
-            # Call Rust query method with positional arguments
-            return self._index.query(query_data, k, ef, mask_arg)
+        # Call Rust query method with positional arguments
+        return self._index.query(query_data, k, ef, mask_arg)
 
     @staticmethod
     def _epsilon_to_ef(epsilon: float, k: int) -> int:

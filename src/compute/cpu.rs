@@ -105,8 +105,8 @@ impl Backend for CpuBackend {
         out.par_chunks_mut(m).enumerate().for_each(|(i, row)| {
             let ai = &a[i * d..(i + 1) * d];
             for (j, slot) in row.iter_mut().enumerate() {
-                *slot = metrics_simd::squared_euclidean(ai, &b[j * d..(j + 1) * d])
-                    .unwrap_or(f32::MAX);
+                *slot =
+                    metrics_simd::squared_euclidean(ai, &b[j * d..(j + 1) * d]).unwrap_or(f32::MAX);
             }
         });
         Array2::from_shape_vec((n, m), out).map_err(|e| e.to_string())
@@ -120,11 +120,7 @@ impl Backend for CpuBackend {
             let ai = &a[i * d..(i + 1) * d];
             for (j, slot) in row.iter_mut().enumerate() {
                 let aj = &a[j * d..(j + 1) * d];
-                let dot: f64 = ai
-                    .iter()
-                    .zip(aj)
-                    .map(|(&x, &y)| x as f64 * y as f64)
-                    .sum();
+                let dot: f64 = ai.iter().zip(aj).map(|(&x, &y)| x as f64 * y as f64).sum();
                 *slot = dot as f32;
             }
         });
@@ -339,7 +335,12 @@ mod tests {
         for i in 0..30 {
             for j in 0..30 {
                 let expect = g[[i, i]] + g[[j, j]] - 2.0 * g[[i, j]];
-                assert!((sq[[i, j]] - expect).abs() < 1e-3, "{} vs {}", sq[[i, j]], expect);
+                assert!(
+                    (sq[[i, j]] - expect).abs() < 1e-3,
+                    "{} vs {}",
+                    sq[[i, j]],
+                    expect
+                );
             }
         }
     }

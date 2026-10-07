@@ -7,7 +7,7 @@
 //! This implementation supports Barnes-Hut approximation for O(n log n) gradient
 //! computation on large datasets.
 
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array2, Axis};
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
@@ -16,8 +16,9 @@ use rand::SeedableRng;
 use rand_distr::Normal;
 use rayon::prelude::*;
 
-use crate::metrics_simd;
 use crate::barnes_hut::QuadTreeNode;
+#[cfg(test)]
+use crate::metrics_simd;
 
 /// t-SNE dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -335,10 +336,8 @@ impl TSNE {
         // Recurse into children
         if let Some(ref children) = node.children {
             let mut contrib = 0.0;
-            for child in children.iter() {
-                if let Some(ref child_node) = child {
-                    contrib += self.compute_z_contribution(child_node, point, point_idx);
-                }
+            for child_node in children.iter().flatten() {
+                contrib += self.compute_z_contribution(child_node, point, point_idx);
             }
             return contrib;
         }
@@ -377,6 +376,7 @@ impl TSNE {
         distances
     }
 
+    #[allow(clippy::needless_range_loop)]
     fn compute_joint_probabilities(&self, distances: &Array2<f64>, n_samples: usize) -> Array2<f64> {
         let target_entropy = (self.perplexity).ln();
         
@@ -530,6 +530,7 @@ impl TSNE {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::needless_range_loop)]
     use super::*;
     use approx::assert_relative_eq;
 
