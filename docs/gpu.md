@@ -180,8 +180,22 @@ includes Metal kernel compilation; the first wgpu call includes pipeline creatio
 | TriMap, 10 steps, n = 400 | 0.052 s | — | — |
 | exact t-SNE, 10 steps, n = 500 | 0.517 s | — | — |
 
+End to end on Digits (1 797 x 64) on the same runner, from the Python device tests
+(`SQUEEZE_DEVICE` forces the device, so the size thresholds do not apply; CI run 37702622258):
+
+| algorithm | CPU (s) | MLX (s) | Metal via wgpu (s) | T CPU / MLX / Metal |
+|---|---:|---:|---:|---|
+| k-NN k = 15, recall vs exact | — | 0.93 | 0.23 | 1.0 / 1.0 |
+| t-SNE | 3.5-4.0 | 3.40 | 3.55 | 0.9869 / 0.9879 / 0.9878 |
+| MDS | 5.2-5.9 | 5.33 | 5.95 | 0.8819 all |
+| Isomap | 17-19 | 18.49 | 16.83 | 0.8347 all |
+| LLE | 16-22 | 21.72 | 15.83 | 0.9141 all |
+| PHATE | 9.9-10.1 | 10.77 | 9.26 | 0.8279 all |
+| TriMap | 1.1-6.2 | 3.81 | 8.61 | 0.5027 all |
+| PaCMAP | 0.5 | 1.04 | 1.19 | 0.9804 / 0.9801 / 0.9820 |
+
 Both backends pass every kernel test against the CPU reference on the runner (recall 1.0,
-max relative distance error < 5e-7). MLX's cosine k-NN is a single matmul plus
+max relative distance error < 5e-7), and all 22 Python device tests on each. MLX's cosine k-NN is a single matmul plus
 `argpartition` and is 11x faster than the runner's CPU; its manhattan k-NN materialises a
 `[queries, n, d]` difference tensor and is CPU speed. The PaCMAP / TriMap / t-SNE MLX steps
 are gather + scatter-add array programs evaluated lazily, 5-50 ms per step at these sizes,
