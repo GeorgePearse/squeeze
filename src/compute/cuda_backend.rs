@@ -160,8 +160,7 @@ impl CudaBackend {
         let b_cols = n_b.min(TILE_COLS);
         let a_rows_max = n_a
             .min((TILE_BUDGET_BYTES / 4) / b_cols)
-            .min(65_535 * 16)
-            .max(1);
+            .clamp(1, 65_535 * 16);
         let mut tile: CudaSlice<f32> = self.zeros(a_rows_max * b_cols)?;
         let f = self.func(kernel)?;
         let d32 = d as u32;
