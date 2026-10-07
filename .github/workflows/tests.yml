@@ -38,7 +38,7 @@ jobs:
         env:
           SQUEEZE_DEVICE: wgpu
           VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
-        run: cargo test --lib compute:: -- --nocapture --test-threads=1
+        run: 'cargo test --lib "compute::" -- --nocapture --test-threads=1'
       - name: Rust tests (no GPU features)
         run: cargo test --no-default-features --lib
 
@@ -80,7 +80,7 @@ jobs:
         run: pytest squeeze/tests/test_devices.py -v -s
 
   macos-gpu:
-    name: macOS 15 (Apple Silicon: MLX + Metal via wgpu)
+    name: "macOS 15 (Apple Silicon, MLX + Metal via wgpu)"
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -100,11 +100,11 @@ jobs:
       - name: Rust compute tests on MLX
         env:
           SQUEEZE_DEVICE: mlx
-        run: cargo test --features gpu-mlx,ndarray-linalg/openblas-system --lib compute:: -- --nocapture --test-threads=1
+        run: 'cargo test --features gpu-mlx,ndarray-linalg/openblas-system --lib "compute::" -- --nocapture --test-threads=1'
       - name: Rust compute tests on Metal (wgpu)
         env:
           SQUEEZE_DEVICE: wgpu
-        run: cargo test --features gpu-mlx,ndarray-linalg/openblas-system --lib compute:: -- --nocapture --test-threads=1
+        run: 'cargo test --features gpu-mlx,ndarray-linalg/openblas-system --lib "compute::" -- --nocapture --test-threads=1'
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
