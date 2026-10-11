@@ -114,6 +114,7 @@ uses sklearn Digits by default and generates:
 - `metrics_results.csv` - Raw fit time and embedding quality measurements
 - `metrics_heatmap.png` - Algorithm comparison across fit time and quality metrics
 - `metrics_radar.png`, `metrics_radar.svg`, `metrics_radar.html` - Performance profiles
+- `fit_time.png`, `fit_time.svg` - Raw fit seconds, sorted fastest first
 
 `just benchmark` runs the separate k-NN backend comparison; it is not a substitute
 for measuring complete `fit_transform` calls.

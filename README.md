@@ -83,11 +83,20 @@ and [raw CSV](metrics_results.csv).
 
 Farther out means better **relative to the algorithms on this dataset**. The six
 axes compare rank trustworthiness, neighbor recall, global distance correlation,
-cluster separation, transductive accuracy, and speed (reversed log runtime).
+cluster separation, transductive accuracy, and fit speed (reversed log fit time).
 These shapes are not overall scores or absolute capability measurements.
 
 [Interactive Digits and Fashion-MNIST comparisons](https://georgepearse.github.io/squeeze/benchmarking/#circular-performance-profiles)
 · [Fashion-MNIST PNG](docs/assets/benchmarks/fashion-mnist-radar/metrics_radar.png)
+
+### Time to fit
+
+![Measured fit_transform time on Digits, fastest first](docs/assets/benchmarks/digits-radar/fit_time.png)
+
+Lower is better. Points use a log time axis; labels show raw seconds from the
+same saved single-seed runs, excluding warmup and scoring.
+[Digits and Fashion-MNIST fit-time plots](docs/benchmarking.md#time-to-fit)
+also appear alongside quality profiles in the interactive comparisons.
 
 ### Metrics Comparison Table
 

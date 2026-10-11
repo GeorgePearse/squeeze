@@ -1,4 +1,4 @@
-"""Render radar comparisons from saved benchmark metrics without refitting models."""
+"""Render radar and fit-time comparisons from saved metrics without refitting."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ AXES = (
     ("Spearman", "Global distance\ncorrelation"),
     ("Silhouette", "Cluster\nseparation"),
     ("Transductive Acc.", "Transductive\naccuracy"),
-    ("Time (s)", "Speed\n(reversed log time)"),
+    ("Time (s)", "Fit speed\n(reversed log time)"),
 )
 DEFAULT_METHODS = ("UMAP", "t-SNE", "PaCMAP", "NeighborMap")
 COLORS = (
@@ -113,7 +113,7 @@ def render_static(
             ax.scatter(angles, radii, color=color, s=15, zorder=3)
             seconds = frame.iloc[index]["Time (s)"]
             ax.set_title(
-                f"{name}  ·  {seconds:.3g}s",
+                f"{name}  ·  fit {seconds:.3g}s",
                 fontsize=14,
                 fontweight="bold",
                 color=color,
@@ -131,7 +131,7 @@ def render_static(
             "Farther out = better within this dataset. "
             "Each axis spans the full algorithm cohort.\n"
             "0 = worst observed · 1 = best observed · ties = 0.5 · "
-            "speed uses reversed log runtime.\n"
+            "fit speed uses reversed log time.\n"
             "Shapes are not an overall score. "
             "Single-seed results; see raw metrics and protocol.",
             ha="center",
@@ -161,11 +161,73 @@ def render_static(
         )
 
 
+def render_fit_times(frame: pd.DataFrame, output: Path, title: str) -> None:
+    """Plot raw fit seconds on a log axis, with the fastest algorithm at the top."""
+    ordered = frame.sort_values("Time (s)", kind="stable")
+    colors = {
+        name: COLORS[index % len(COLORS)]
+        for index, name in enumerate(frame["Algorithm"])
+    }
+    with plt.rc_context(
+        {
+            "font.family": "DejaVu Sans",
+            "svg.hashsalt": "squeeze-fit-time",
+            "svg.fonttype": "none",
+        },
+    ):
+        fig, ax = plt.subplots(figsize=(10, 3 + len(frame) * 0.36))
+        positions = np.arange(len(ordered))
+        ax.scatter(
+            ordered["Time (s)"],
+            positions,
+            c=[colors[name] for name in ordered["Algorithm"]],
+            s=65,
+            zorder=3,
+        )
+        ax.set_xscale("log")
+        ax.set_yticks(positions, ordered["Algorithm"])
+        ax.invert_yaxis()
+        ax.set_xlabel("fit_transform time (seconds, log scale) · lower is better")
+        ax.grid(axis="x", color="#dbe3e8")
+        ax.spines[["top", "right", "left"]].set_visible(False)
+        ax.tick_params(axis="y", length=0, pad=12)
+        for position, seconds in zip(positions, ordered["Time (s)"]):
+            ax.text(
+                1.03,
+                position,
+                f"{seconds:.5g} s",
+                transform=ax.get_yaxis_transform(),
+                va="center",
+                fontsize=10,
+            )
+        fig.suptitle(f"Squeeze · {title}\nTime to fit", fontsize=18, fontweight="bold")
+        fig.text(
+            0.5,
+            0.035,
+            "Saved single-seed measurements · one thread per library\n"
+            "Full fit_transform; warmup, loading and scoring excluded. "
+            "Compare quality alongside speed.",
+            ha="center",
+            fontsize=10,
+            color="#475569",
+        )
+        fig.subplots_adjust(left=0.17, right=0.82, top=0.83, bottom=0.2)
+        fig.savefig(output / "fit_time.png", dpi=160, facecolor="white")
+        fig.savefig(output / "fit_time.svg", facecolor="white", metadata={"Date": None})
+        plt.close(fig)
+        svg_path = output / "fit_time.svg"
+        svg_path.write_text(
+            "\n".join(line.rstrip() for line in svg_path.read_text().splitlines())
+            + "\n",
+        )
+
+
 def create_radar(frame: pd.DataFrame, output: Path, title: str) -> None:
     """Save static figures and a self-contained selectable HTML comparison."""
     scores = normalize_metrics(frame)
     output.mkdir(parents=True, exist_ok=True)
     render_static(frame, scores, output, title)
+    render_fit_times(frame, output, title)
     defaults = set(DEFAULT_METHODS) & set(frame["Algorithm"])
     selected = defaults or set(frame["Algorithm"].head(4))
     data = {
