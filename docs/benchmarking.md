@@ -36,29 +36,49 @@ improvement.
 
 ## Time to fit
 
-These plots show the saved `fit_transform` measurements for all 11 algorithms,
-sorted from fastest to slowest. **Lower is better.** The time axis is logarithmic
-to keep both sub-millisecond and multi-second fits visible; labels give raw
-seconds. They use the same single-seed runs as the heatmaps and radars below,
-with one thread per library and one excluded full-data warmup.
+These plots compare saved `fit_transform` time on the horizontal axis with
+aggregate spatial preservation on the vertical axis, for all 11 algorithms.
+**Upper left is better:** faster fitting with more of the original spatial
+relationships retained. Time uses a logarithmic scale; spatial preservation
+uses a fixed 0–1 scale.
+
+The spatial score gives equal weight to four measurements:
+
+| Component | What it measures | Weight |
+|---|---|---:|
+| Trustworthiness, k=15 | Avoiding false neighbours in the embedding | 25% |
+| Continuity, k=15 | Avoiding loss of original neighbours | 25% |
+| Neighbour recall, k=15 | Retaining the original nearest-neighbour set | 25% |
+| `(Spearman + 1) / 2` | Preserving the ordering of pairwise distances, rescaled from −1–1 to 0–1 | 25% |
+
+`Spatial preservation = (trustworthiness + continuity + neighbour recall + (Spearman + 1) / 2) / 4`.
+
+This is a descriptive aggregate of spatial relationships, not a universal
+quality score. It excludes fitting time, classification accuracy, and cluster
+separation. Its meaning does not change when algorithms are selected or removed;
+there is no normalisation against the other algorithms. The component metrics
+remain available in the CSVs and quality profiles.
+
+The plots use the same single-seed runs as the heatmaps and radars below, with
+one thread per library and one excluded full-data warmup.
 
 ### Digits fit time
 
-![Fit time in seconds for all 11 algorithms on Digits; lower is better](assets/benchmarks/digits-radar/fit_time.png)
+![Fit time versus spatial preservation for all 11 algorithms on Digits; upper left is better](assets/benchmarks/digits-radar/fit_time.png)
 
 [SVG](assets/benchmarks/digits-radar/fit_time.svg) ·
 [Raw measurements](assets/benchmarks/digits.csv)
 
 ### Fashion-MNIST fit time
 
-![Fit time in seconds for all 11 algorithms on Fashion-MNIST; lower is better](assets/benchmarks/fashion-mnist-radar/fit_time.png)
+![Fit time versus spatial preservation for all 11 algorithms on Fashion-MNIST; upper left is better](assets/benchmarks/fashion-mnist-radar/fit_time.png)
 
 [SVG](assets/benchmarks/fashion-mnist-radar/fit_time.svg) ·
 [Raw measurements](assets/benchmarks/fashion-mnist.csv)
 
-The interactive comparisons below also show fit times for the selected
-algorithms, on a fixed log axis, alongside their quality profiles. Compare fit
-speed within each dataset and inspect quality before choosing a method.
+The interactive comparisons below plot the same trade-off for the selected
+algorithms, alongside their quality profiles. Hover or focus a point for its
+fit seconds and spatial score. Compare methods within each dataset.
 
 ## Circular performance profiles
 
@@ -114,14 +134,14 @@ before comparing them. Sample selection is documented in [Datasets](datasets.md)
 [Build the current extension](installation.md), then run:
 
 ```bash
-uv run --no-sync python benchmark_metrics_heatmap.py
-uv run --no-sync python benchmark_metrics_heatmap.py --dataset fashion-mnist --samples 2000
+uv run --no-sync python -m scripts.benchmark_metrics_heatmap
+uv run --no-sync python -m scripts.benchmark_metrics_heatmap --dataset fashion-mnist --samples 2000
 ```
 
-Digits writes the root PNG/CSV and saves embeddings/protocol under
-`working_docs/heatmap_refresh/digits`. Fashion-MNIST writes its artifacts
-under `working_docs/heatmap_refresh/fashion-mnist`. `--output-dir PATH` keeps
-all output files together at a custom location. Use `--help` for options.
+Plots and CSVs go to `assets/benchmarks/digits` or
+`assets/benchmarks/fashion-mnist`. Embeddings and protocol records go under
+`working_docs/heatmap_refresh/<dataset>`. `--output-dir PATH` keeps all output
+files together at a custom location. Use `--help` for options.
 
 The benchmark also generates `metrics_radar.png`, `metrics_radar.svg`,
 `metrics_radar.html`, `fit_time.png`, and `fit_time.svg` alongside its heatmap.
@@ -129,8 +149,8 @@ To redraw the documentation figures
 from the saved results without rerunning algorithms:
 
 ```bash
-uv run --no-sync python -m scripts.benchmark_radar metrics_results.csv --output-dir docs/assets/benchmarks/digits-radar --title "Digits · 1,797 samples"
-uv run --no-sync python -m scripts.benchmark_radar working_docs/heatmap_refresh/fashion-mnist/metrics_results.csv --output-dir docs/assets/benchmarks/fashion-mnist-radar --title "Fashion-MNIST · 2,000 samples"
+uv run --no-sync python -m scripts.benchmark_radar assets/benchmarks/digits/metrics_results.csv --output-dir docs/assets/benchmarks/digits-radar --title "Digits · 1,797 samples"
+uv run --no-sync python -m scripts.benchmark_radar assets/benchmarks/fashion-mnist/metrics_results.csv --output-dir docs/assets/benchmarks/fashion-mnist-radar --title "Fashion-MNIST · 2,000 samples"
 ```
 
 ## Repeated-seed comparisons

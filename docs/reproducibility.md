@@ -7,7 +7,7 @@ thread settings as well.
 ## Control threads before starting Python
 
 ```bash
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 NUMBA_NUM_THREADS=1 RAYON_NUM_THREADS=1 uv run --no-sync python benchmark_metrics_heatmap.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 NUMBA_NUM_THREADS=1 RAYON_NUM_THREADS=1 uv run --no-sync python -m scripts.benchmark_metrics_heatmap
 ```
 
 Numba compilation and other one-time work can dominate a first call. The heatmap

@@ -90,7 +90,6 @@ line-ending = "lf"
     "D101",    # Missing class docstring
     "S101",    # Use of assert (required in tests)
 ]
-"setup.py" = ["D100"]
 "squeeze/hnsw_wrapper.py" = [
     "PLR0913",  # Too many arguments - needed for compatibility
     "N803",     # Argument name X should be lowercase - sklearn convention

@@ -13,7 +13,7 @@ Hybrid Techniques:
 6. MDS + PaCMAP Ensemble: Global + fast blend
 
 Usage:
-    python benchmark_hybrid_techniques.py
+    python -m scripts.benchmark_hybrid_techniques
 
 Output:
     - hybrid_metrics_heatmap.png: Comparison visualization
@@ -22,9 +22,11 @@ Output:
 
 from __future__ import annotations
 
+import argparse
 import time
 import warnings
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -322,7 +324,7 @@ def compute_metrics(
 
 def create_heatmap(
     df: pd.DataFrame,
-    output_path: str = "hybrid_metrics_heatmap.png",
+    output_path: str = "assets/benchmarks/hybrid/hybrid_metrics_heatmap.png",
     title: str = "Hybrid DR Techniques: Algorithm vs Metric Comparison",
 ) -> None:
     """Create a heatmap visualization."""
@@ -414,13 +416,15 @@ def create_heatmap(
     ax.tick_params(which="minor", bottom=False, left=False)
 
     plt.tight_layout()
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"\nHeatmap saved to: {output_path}")
     plt.close()
 
 
 def create_comparison_chart(
-    df: pd.DataFrame, output_path: str = "hybrid_comparison.png"
+    df: pd.DataFrame,
+    output_path: str = "assets/benchmarks/hybrid/hybrid_comparison.png",
 ) -> None:
     """Create a bar chart comparing key metrics."""
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -485,6 +489,7 @@ def create_comparison_chart(
 
     plt.suptitle("Hybrid vs Baseline Comparison", fontsize=14, fontweight="bold")
     plt.tight_layout()
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"Comparison chart saved to: {output_path}")
     plt.close()
@@ -606,6 +611,12 @@ def print_analysis(df: pd.DataFrame) -> None:
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path("assets/benchmarks/hybrid"),
+    )
+    args = parser.parse_args()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     print("=" * 80)
     print("HYBRID DIMENSIONALITY REDUCTION BENCHMARK")
     print("=" * 80)
@@ -641,17 +652,17 @@ def main():
     print()
 
     # Save results
-    df.to_csv("hybrid_results.csv", index=False)
-    print("Raw results saved to: hybrid_results.csv")
+    df.to_csv(args.output_dir / "hybrid_results.csv", index=False)
+    print(f"Raw results saved to: {args.output_dir / 'hybrid_results.csv'}")
 
     # Create visualizations
     print("\nGenerating visualizations...")
     create_heatmap(
         df,
-        "hybrid_metrics_heatmap.png",
+        str(args.output_dir / "hybrid_metrics_heatmap.png"),
         "Hybrid DR Techniques: Algorithm vs Metric Comparison",
     )
-    create_comparison_chart(df, "hybrid_comparison.png")
+    create_comparison_chart(df, str(args.output_dir / "hybrid_comparison.png"))
 
     # Print analysis
     print_analysis(df)

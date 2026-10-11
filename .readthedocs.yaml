@@ -8,4 +8,4 @@ mkdocs:
   fail_on_warning: true
 python:
   install:
-    - requirements: docs_requirements.txt
+    - requirements: docs/requirements.txt

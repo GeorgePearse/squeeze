@@ -36,17 +36,21 @@ Choose methods to compare. Hover or focus a point for its measured value.</p>
 <p id="selection-status" role="status"></p>
 </section>
 <section class="panel" aria-label="Fit time comparison">
-<h2>Time to fit · lower is better</h2>
-<p>Elapsed <code>fit_transform</code> seconds, including neighbour search and embedding optimisation.
-Warmup, data loading and scoring are excluded. Points use a log time axis, fixed across selections;
-the fastest selected algorithm appears first. These are saved single-seed measurements.</p>
+<h2>Fit time vs spatial preservation</h2>
+<p><strong>Upper left is better:</strong> less time to fit, with more spatial structure preserved.
+The vertical score averages trustworthiness, continuity, neighbour recall, and rescaled distance
+correlation: <code>(trust + continuity + recall + (Spearman + 1) / 2) / 4</code>.
+All neighbourhood metrics use k=15. This is a descriptive, equal-weight score.</p>
+<p>Time is elapsed <code>fit_transform</code> seconds, excluding warmup, loading and scoring.
+Both axes stay fixed when selecting algorithms. These are saved single-seed measurements.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Fit time chart; scroll horizontally on narrow screens">
 <svg id="fit-time" viewBox="0 0 900 500" role="img" aria-labelledby="fit-title fit-desc">
-<title id="fit-title">Measured fit_transform time</title>
-<desc id="fit-desc">Selected algorithms sorted from fastest to slowest, with raw seconds beside each point. Lower is better.</desc>
+<title id="fit-title">Fit time versus spatial preservation</title>
+<desc id="fit-desc">Horizontal axis: fit_transform seconds on a log scale, lower is better. Vertical axis: aggregate spatial preservation from zero to one, higher is better.</desc>
 <g id="fit-grid"></g><g id="fit-points"></g>
 </svg>
 </div>
+<p id="fit-detail" role="status">Hover or focus a point to inspect fit time and spatial preservation.</p>
 </section>
 <section class="panel" aria-label="Radar chart">
 <svg id="radar" viewBox="-340 -295 680 590" role="img" aria-labelledby="chart-title chart-desc">
@@ -68,7 +72,7 @@ Transductive accuracy evaluates a classifier on coordinates fitted to all sample
 <p><a href="https://georgepearse.github.io/squeeze/benchmarking/" target="_blank" rel="noopener">Benchmark protocol and metric definitions</a></p>
 </section>
 <noscript>Enable JavaScript to select algorithms, or use the accompanying PNG/SVG figure and CSV measurements.</noscript>
-<script id="radar-data" type="application/json">{"title": "Digits \u00b7 1,797 samples", "axes": [{"column": "Trust. (k=15)", "label": "Rank trust k=15"}, {"column": "Neighbor Recall", "label": "Neighbor recall k=15"}, {"column": "Spearman", "label": "Global distance correlation"}, {"column": "Silhouette", "label": "Cluster separation"}, {"column": "Transductive Acc.", "label": "Transductive accuracy"}, {"column": "Time (s)", "label": "Fit speed (reversed log time)"}], "algorithms": [{"name": "UMAP", "color": "#0072B2", "scores": [0.9953918440900377, 0.8783552255853798, 0.5357127690667859, 1.0, 0.9898909134457897, 0.277428621493011], "raw": [0.9871252078446332, 0.5215358931552587, 0.3710178275456866, 0.7629938282110987, 0.9744212318167752, 2.226415906989132], "selected": true}, {"name": "PCA", "color": "#5C677D", "scores": [0.6700654566819507, 0.24493939970810327, 0.8062806464454408, 0.16953001030638953, 0.5756983899430438, 1.0], "raw": [0.8288096554092305, 0.1512149879428677, 0.5823713896139913, 0.3924475212548914, 0.6104766326214793, 0.0009898199932649], "selected": false}, {"name": "t-SNE", "color": "#D55E00", "scores": [1.0, 1.0, 0.574147008697538, 0.7159902765687377, 0.9892392824309709, 0.06564584497989145], "raw": [0.9893677026954398, 0.5926544240400667, 0.401040657787201, 0.6362719051275996, 0.9738486536675952, 21.383497743998305], "selected": true}, {"name": "MDS", "color": "#6F42C1", "scores": [0.80853166340969, 0.32134018656006086, 1.0, 0.16461333863147015, 0.694753137515278, 0.13867626052094645], "raw": [0.896192305142585, 0.1958820255982192, 0.7336948793497147, 0.3902537580192931, 0.7150882079851438, 9.801362644997424], "selected": false}, {"name": "Isomap", "color": "#A16207", "scores": [0.6916712584066227, 0.35243353004632266, 0.7682524490196292, 0.30149247281847025, 0.6833249384472865, 0.0], "raw": [0.8393238177036051, 0.2140604711556297, 0.5526657384374702, 0.4513276779704143, 0.705046425255339, 43.11353027200676], "selected": false}, {"name": "LLE", "color": "#CC79A7", "scores": [0.5284794452060817, 0.2112443682974807, 0.3199859184405174, 0.39843226332082665, 0.5706350408414141, 0.10852036656000948], "raw": [0.7599087961751778, 0.1315154887775922, 0.202503225016466, 0.4945811149561493, 0.6060275456515012, 13.52637364900147], "selected": false}, {"name": "PHATE", "color": "#00857D", "scores": [0.6682666205301012, 0.25655181166317664, 0.7681096795133453, 0.18663270700605564, 0.5731834464588256, 0.1561187831505588], "raw": [0.8279342768658859, 0.1580040808755333, 0.5525542143201205, 0.4000785508883541, 0.6082667904673476, 8.13522549001209], "selected": false}, {"name": "TriMap", "color": "#8C564B", "scores": [0.0, 0.0, 0.0, 0.0, 0.0, 0.35704691065591687], "raw": [0.5027316394583901, 0.0080133555926544, -0.047453142048698, 0.3168051500471655, 0.1046193129062209, 0.9511576070071897], "selected": false}, {"name": "PaCMAP", "color": "#B44B86", "scores": [0.9831870121786607, 0.814772510946126, 0.41564540059592214, 0.8299981489462285, 0.9759689048724387, 0.41375764981546614], "raw": [0.9811858964908108, 0.4843628269337785, 0.2772274402301572, 0.6871409270039945, 0.9621881770349738, 0.5190009030047804], "selected": true}, {"name": "NeighborMap", "color": "#009E73", "scores": [0.9940663202814468, 0.9005647566469955, 0.7238580318304105, 0.8963127509660131, 1.0, 0.4724332662875862], "raw": [0.9864801601566936, 0.5345204971248377, 0.5179871272889764, 0.7167297516221696, 0.9833039306716188, 0.2773119360062992], "selected": true}, {"name": "SpectralMap", "color": "#5454CF", "scores": [0.849225179872872, 0.357636905895044, 0.526357048511519, 0.6565755609390226, 0.930370584319292, 0.5532499668042815], "raw": [0.9159952377935, 0.2171025783713596, 0.3637096249451834, 0.609761731697291, 0.9221216341689878, 0.1169648190116277], "selected": false}]}</script>
+<script id="radar-data" type="application/json">{"title": "Digits \u00b7 1,797 samples", "axes": [{"column": "Trust. (k=15)", "label": "Rank trust k=15"}, {"column": "Neighbor Recall", "label": "Neighbor recall k=15"}, {"column": "Spearman", "label": "Global distance correlation"}, {"column": "Silhouette", "label": "Cluster separation"}, {"column": "Transductive Acc.", "label": "Transductive accuracy"}, {"column": "Time (s)", "label": "Fit speed (reversed log time)"}], "algorithms": [{"name": "UMAP", "color": "#0072B2", "scores": [0.9953918440900377, 0.8783552255853798, 0.5357127690667859, 1.0, 0.9898909134457897, 0.277428621493011], "raw": [0.9871252078446332, 0.5215358931552587, 0.3710178275456866, 0.7629938282110987, 0.9744212318167752, 2.226415906989132], "spatial_preservation": 0.7939597164388827, "selected": true}, {"name": "PCA", "color": "#5C677D", "scores": [0.6700654566819507, 0.24493939970810327, 0.8062806464454408, 0.16953001030638953, 0.5756983899430438, 1.0], "raw": [0.8288096554092305, 0.1512149879428677, 0.5823713896139913, 0.3924475212548914, 0.6104766326214793, 0.0009898199932649], "spatial_preservation": 0.6791781035109093, "selected": false}, {"name": "t-SNE", "color": "#D55E00", "scores": [1.0, 1.0, 0.574147008697538, 0.7159902765687377, 0.9892392824309709, 0.06564584497989145], "raw": [0.9893677026954398, 0.5926544240400667, 0.401040657787201, 0.6362719051275996, 0.9738486536675952, 21.383497743998305], "spatial_preservation": 0.8163231423091374, "selected": true}, {"name": "MDS", "color": "#6F42C1", "scores": [0.80853166340969, 0.32134018656006086, 1.0, 0.16461333863147015, 0.694753137515278, 0.13867626052094645], "raw": [0.896192305142585, 0.1958820255982192, 0.7336948793497147, 0.3902537580192931, 0.7150882079851438, 9.801362644997424], "spatial_preservation": 0.7259095770208117, "selected": false}, {"name": "Isomap", "color": "#A16207", "scores": [0.6916712584066227, 0.35243353004632266, 0.7682524490196292, 0.30149247281847025, 0.6833249384472865, 0.0], "raw": [0.8393238177036051, 0.2140604711556297, 0.5526657384374702, 0.4513276779704143, 0.705046425255339, 43.11353027200676], "spatial_preservation": 0.6989619328640622, "selected": false}, {"name": "LLE", "color": "#CC79A7", "scores": [0.5284794452060817, 0.2112443682974807, 0.3199859184405174, 0.39843226332082665, 0.5706350408414141, 0.10852036656000948], "raw": [0.7599087961751778, 0.1315154887775922, 0.202503225016466, 0.4945811149561493, 0.6060275456515012, 13.52637364900147], "spatial_preservation": 0.589244600011318, "selected": false}, {"name": "PHATE", "color": "#00857D", "scores": [0.6682666205301012, 0.25655181166317664, 0.7681096795133453, 0.18663270700605564, 0.5731834464588256, 0.1561187831505588], "raw": [0.8279342768658859, 0.1580040808755333, 0.5525542143201205, 0.4000785508883541, 0.6082667904673476, 8.13522549001209], "spatial_preservation": 0.6767279920858953, "selected": false}, {"name": "TriMap", "color": "#8C564B", "scores": [0.0, 0.0, 0.0, 0.0, 0.0, 0.35704691065591687], "raw": [0.5027316394583901, 0.0080133555926544, -0.047453142048698, 0.3168051500471655, 0.1046193129062209, 0.9511576070071897], "spatial_preservation": 0.36892442659997554, "selected": false}, {"name": "PaCMAP", "color": "#B44B86", "scores": [0.9831870121786607, 0.814772510946126, 0.41564540059592214, 0.8299981489462285, 0.9759689048724387, 0.41375764981546614], "raw": [0.9811858964908108, 0.4843628269337785, 0.2772274402301572, 0.6871409270039945, 0.9621881770349738, 0.5190009030047804], "spatial_preservation": 0.7685069892511321, "selected": true}, {"name": "NeighborMap", "color": "#009E73", "scores": [0.9940663202814468, 0.9005647566469955, 0.7238580318304105, 0.8963127509660131, 1.0, 0.4724332662875862], "raw": [0.9864801601566936, 0.5345204971248377, 0.5179871272889764, 0.7167297516221696, 0.9833039306716188, 0.2773119360062992], "spatial_preservation": 0.8157430023736686, "selected": true}, {"name": "SpectralMap", "color": "#5454CF", "scores": [0.849225179872872, 0.357636905895044, 0.526357048511519, 0.6565755609390226, 0.930370584319292, 0.5532499668042815], "raw": [0.9159952377935, 0.2171025783713596, 0.3637096249451834, 0.609761731697291, 0.9221216341689878, 0.1169648190116277], "spatial_preservation": 0.6925355065769587, "selected": false}]}</script>
 <script>
 'use strict';
 const data = JSON.parse(document.getElementById('radar-data').textContent);
@@ -80,7 +84,8 @@ const timeIndex = data.axes.findIndex(axis => axis.column === 'Time (s)');
 const fitTimes = data.algorithms.map(method => method.raw[timeIndex]);
 const logMin = Math.floor(Math.log10(Math.min(...fitTimes)));
 const logMax = Math.max(logMin + 1, Math.ceil(Math.log10(Math.max(...fitTimes))));
-const timeX = seconds => 180 + 550 * (Math.log10(seconds) - logMin) / (logMax - logMin);
+const timeX = seconds => 110 + 680 * (Math.log10(seconds) - logMin) / (logMax - logMin);
+const qualityY = quality => 420 - 360 * quality;
 const metricLabel = axis => axis.column === 'Time (s)' ? 'Fit time (s)' : axis.column;
 function svg(tag, attrs, parent, text) {
   const el = document.createElementNS(svgNS, tag);
@@ -89,14 +94,19 @@ function svg(tag, attrs, parent, text) {
   parent.appendChild(el); return el;
 }
 const fitGrid = document.getElementById('fit-grid');
-const fitBaseline = 60 + 32 * data.algorithms.length;
-document.getElementById('fit-time').setAttribute('viewBox', `0 0 900 ${fitBaseline + 75}`);
+const fitBaseline = 420;
 for (let power = logMin; power <= logMax; power++) {
   const x = timeX(10 ** power);
-  svg('line', {x1:x, x2:x, y1:25, y2:fitBaseline, stroke:'#dbe3e8'}, fitGrid);
+  svg('line', {x1:x, x2:x, y1:60, y2:fitBaseline, stroke:'#dbe3e8'}, fitGrid);
   svg('text', {x, y:fitBaseline+25, 'text-anchor':'middle', 'font-size':14, fill:'#475569'}, fitGrid, `${10 ** power} s`);
 }
+for (const quality of [0, .25, .5, .75, 1]) {
+  const y = qualityY(quality);
+  svg('line', {x1:110, x2:790, y1:y, y2:y, stroke:'#dbe3e8'}, fitGrid);
+  svg('text', {x:95, y:y+5, 'text-anchor':'end', 'font-size':14, fill:'#475569'}, fitGrid, String(quality));
+}
 svg('text', {x:455, y:fitBaseline+60, 'text-anchor':'middle', 'font-size':16, fill:'#334155'}, fitGrid, 'fit_transform time · log scale · lower is better');
+svg('text', {transform:'translate(35 240) rotate(-90)', 'text-anchor':'middle', 'font-size':16, fill:'#334155'}, fitGrid, 'Spatial preservation · higher is better');
 const grid = document.getElementById('grid');
 for (const scale of [.25,.5,.75,1]) {
   svg('circle',{r:radius*scale,fill:'none',stroke:'#cbd5e1'},grid);
@@ -120,7 +130,7 @@ data.algorithms.forEach((method,i)=>{
   label.append(input,swatch,document.createTextNode(method.name));controls.appendChild(label);
 });
 const header=document.createElement('tr');
-for(const text of ['Algorithm',...data.axes.map(metricLabel)]) { const th=document.createElement('th');th.scope='col';th.textContent=text;header.appendChild(th); }
+for(const text of ['Algorithm','Spatial preservation',...data.axes.map(metricLabel)]) { const th=document.createElement('th');th.scope='col';th.textContent=text;header.appendChild(th); }
 document.getElementById('table-head').appendChild(header);
 function render() {
   const profiles=document.getElementById('profiles');profiles.replaceChildren();
@@ -128,14 +138,14 @@ function render() {
   const body=document.getElementById('table-body');body.replaceChildren();
   const selected=[...controls.querySelectorAll('input:checked')].map(el=>data.algorithms[Number(el.dataset.index)]);
   const fitPoints=document.getElementById('fit-points');fitPoints.replaceChildren();
-  [...selected].sort((a,b)=>a.raw[timeIndex]-b.raw[timeIndex]).forEach((method,index)=>{
+  document.getElementById('fit-detail').textContent='Hover or focus a point to inspect fit time and spatial preservation.';
+  selected.forEach(method=>{
     const seconds=method.raw[timeIndex];
-    const y=50+index*32;
-    const label=`${method.name} · fit_transform: ${seconds.toPrecision(5)} seconds`;
-    svg('text',{x:160,y:y+5,'text-anchor':'end','font-size':16,fill:method.color},fitPoints,method.name);
-    const point=svg('circle',{cx:timeX(seconds),cy:y,r:6,fill:method.color,tabindex:0,'aria-label':label,'data-algorithm':method.name,'data-seconds':seconds},fitPoints);
+    const quality=method.spatial_preservation;
+    const label=`${method.name} · fit_transform: ${seconds.toPrecision(5)} seconds · spatial preservation: ${quality.toFixed(4)}`;
+    const point=svg('circle',{cx:timeX(seconds),cy:qualityY(quality),r:7,fill:method.color,stroke:'white','stroke-width':1,tabindex:0,'aria-label':label,'data-algorithm':method.name,'data-seconds':seconds,'data-quality':quality},fitPoints);
     svg('title',{},point,label);
-    svg('text',{x:755,y:y+5,'font-size':16,fill:'#172b36'},fitPoints,`${seconds.toPrecision(5)} s`);
+    for(const event of ['mouseenter','focus']) point.addEventListener(event,()=>{document.getElementById('fit-detail').textContent=label;});
   });
   for(const method of selected) {
     const points=method.scores.map((score,i)=>coordinate(i,score*radius).join(',')).join(' ');
@@ -149,7 +159,7 @@ function render() {
     });
     const row=document.createElement('tr');
     const name=document.createElement('th');name.scope='row';name.textContent=method.name;name.style.color=method.color;row.appendChild(name);
-    for(const value of method.raw){const td=document.createElement('td');td.textContent=value.toPrecision(5);row.appendChild(td);}
+    for(const value of [method.spatial_preservation,...method.raw]){const td=document.createElement('td');td.textContent=value.toPrecision(5);row.appendChild(td);}
     body.appendChild(row);
   }
   document.getElementById('selection-status').textContent=selected.length ? `${selected.length} of ${data.algorithms.length} algorithms selected. Axes remain fixed.` : 'Choose an algorithm to show its profile.';

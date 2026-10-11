@@ -18,10 +18,14 @@ build:
 build-debug:
     uv run maturin develop
 
-# Run the Python k-NN benchmark (compares PyNNDescent vs HNSW backends)
+# Run the legacy strategy benchmark (writes to assets/benchmarks/strategies)
 benchmark:
     uv sync --extra benchmark
-    uv run python benchmark_optimizations.py
+    uv run python -m scripts.benchmark_optimizations
+
+# Run the fit-speed and quality benchmark (writes to assets/benchmarks/digits)
+benchmark-metrics:
+    uv run --no-sync python -m scripts.benchmark_metrics_heatmap
 
 # Run Rust benchmarks with Criterion
 benchmark-rust:
