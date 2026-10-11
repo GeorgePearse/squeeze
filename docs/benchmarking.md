@@ -9,11 +9,62 @@ These are single-seed snapshots. Use the repeated-seed runner below to inspect
 variation; no general significance or large-data scalability claim follows from
 the heatmaps alone.
 
+## Primary optimisation benchmarks
+
+**Fit speed and embedding quality are primary goals for Squeeze.** Evaluate
+algorithm changes against both:
+
+| Benchmark | Measure | Direction |
+|---|---|---|
+| Fit speed | Wall-clock seconds for the complete `fit_transform` call | Lower is better |
+| Embedding quality | Rank trustworthiness, neighbour recall, global distance correlation, cluster separation, and transductive accuracy | Higher is better; inspect each metric separately |
+
+Fit time includes the neighbour search and embedding optimisation performed by
+the reducer. Data loading, the full-data warmup, metric scoring, and plotting are
+excluded. This is warm fit performance; it does not measure cold-start latency or
+the speed of transforming new samples with an already fitted model.
+
+Raw fit seconds are saved as `Time (s)` in the heatmap/radar CSV and `seconds` in
+the repeated-seed runner. The heatmaps and radars already include this benchmark;
+their reversed log scale makes faster fits greener or farther from the centre.
+
+Compare changes using the same dataset/sample, hardware, thread limits, seeds,
+and algorithm parameters. Use [repeated runs](#repeated-seed-comparisons) to
+inspect timing variation, and report quality changes alongside speedups. A
+faster fit with worse quality is a trade-off to evaluate, not an unconditional
+improvement.
+
+## Time to fit
+
+These plots show the saved `fit_transform` measurements for all 11 algorithms,
+sorted from fastest to slowest. **Lower is better.** The time axis is logarithmic
+to keep both sub-millisecond and multi-second fits visible; labels give raw
+seconds. They use the same single-seed runs as the heatmaps and radars below,
+with one thread per library and one excluded full-data warmup.
+
+### Digits fit time
+
+![Fit time in seconds for all 11 algorithms on Digits; lower is better](assets/benchmarks/digits-radar/fit_time.png)
+
+[SVG](assets/benchmarks/digits-radar/fit_time.svg) ·
+[Raw measurements](assets/benchmarks/digits.csv)
+
+### Fashion-MNIST fit time
+
+![Fit time in seconds for all 11 algorithms on Fashion-MNIST; lower is better](assets/benchmarks/fashion-mnist-radar/fit_time.png)
+
+[SVG](assets/benchmarks/fashion-mnist-radar/fit_time.svg) ·
+[Raw measurements](assets/benchmarks/fashion-mnist.csv)
+
+The interactive comparisons below also show fit times for the selected
+algorithms, on a fixed log axis, alongside their quality profiles. Compare fit
+speed within each dataset and inspect quality before choosing a method.
+
 ## Circular performance profiles
 
 The radar charts show six complementary metrics: rank trustworthiness, neighbor
 recall, global distance correlation, cluster separation, transductive accuracy,
-and speed. **Farther from the centre is better.** Each axis is scaled from the
+and fit speed. **Farther from the centre is better.** Each axis is scaled from the
 worst to the best observed result across all 11 algorithms within that dataset;
 0 is not zero absolute capability. Speed uses reversed log runtime. Tied axes
 sit at 0.5. These relative shapes are not comparable across datasets and polygon
@@ -72,8 +123,9 @@ Digits writes the root PNG/CSV and saves embeddings/protocol under
 under `working_docs/heatmap_refresh/fashion-mnist`. `--output-dir PATH` keeps
 all output files together at a custom location. Use `--help` for options.
 
-The benchmark now also generates `metrics_radar.png`, `metrics_radar.svg` and
-`metrics_radar.html` alongside its heatmap. To redraw the documentation figures
+The benchmark also generates `metrics_radar.png`, `metrics_radar.svg`,
+`metrics_radar.html`, `fit_time.png`, and `fit_time.svg` alongside its heatmap.
+To redraw the documentation figures
 from the saved results without rerunning algorithms:
 
 ```bash

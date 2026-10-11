@@ -76,9 +76,10 @@ def test_renders_portable_outputs_and_escapes_data(
     """Render real figure formats and prevent names from breaking the HTML payload."""
     metrics.loc[0, "Algorithm"] = "</script><script>alert(1)</script>"
     create_radar(metrics, tmp_path, "Example <cohort>")
-    png = (tmp_path / "metrics_radar.png").read_bytes()
-    assert png.startswith(b"\x89PNG\r\n\x1a\n")
-    assert "<svg" in (tmp_path / "metrics_radar.svg").read_text()
+    for name in ("metrics_radar", "fit_time"):
+        png = (tmp_path / f"{name}.png").read_bytes()
+        assert png.startswith(b"\x89PNG\r\n\x1a\n")
+        assert "<svg" in (tmp_path / f"{name}.svg").read_text()
     page = (tmp_path / "metrics_radar.html").read_text()
     assert "Example &lt;cohort&gt;" in page
     assert metrics.loc[0, "Algorithm"] not in page
@@ -108,7 +109,12 @@ def test_published_charts_match_saved_measurements(dataset: str, csv: str) -> No
         "Algorithm"
     ].tolist()
     assert [axis["column"] for axis in data["axes"]] == [column for column, _ in AXES]
+    fit_svg = (
+        ROOT / f"docs/assets/benchmarks/{dataset}-radar/fit_time.svg"
+    ).read_text()
     for method in data["algorithms"]:
         row = frame.set_index("Algorithm").loc[method["name"]]
         np.testing.assert_allclose(method["raw"], [row[column] for column, _ in AXES])
         np.testing.assert_allclose(method["scores"], scores.loc[method["name"]])
+        assert f">{method['name']}</text>" in fit_svg
+        assert f">{row['Time (s)']:.5g} s</text>" in fit_svg
