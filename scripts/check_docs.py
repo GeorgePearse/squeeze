@@ -50,10 +50,10 @@ def collect_examples() -> list[tuple[str, str]]:
 def check_assets() -> None:
     """Require site figures and CSVs to match the saved benchmark evidence."""
     docs = ROOT / "docs"
-    fashion = "working_docs/heatmap_refresh/fashion-mnist/"
+    fashion = "assets/benchmarks/fashion-mnist/"
     assets = {
-        "digits.png": "metrics_heatmap.png",
-        "digits.csv": "metrics_results.csv",
+        "digits.png": "assets/benchmarks/digits/metrics_heatmap.png",
+        "digits.csv": "assets/benchmarks/digits/metrics_results.csv",
         "fashion-mnist.png": fashion + "metrics_heatmap.png",
         "fashion-mnist.csv": fashion + "metrics_results.csv",
     }

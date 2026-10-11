@@ -10,7 +10,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scripts.benchmark_radar import AXES, create_radar, normalize_metrics
+from scripts.benchmark_radar import (
+    AXES,
+    create_radar,
+    normalize_metrics,
+    spatial_preservation,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -22,7 +27,27 @@ def metrics() -> pd.DataFrame:
     frame["Algorithm"] = ["A", "B", "C"]
     frame["Time (s)"] = [1.0, 10.0, 100.0]
     frame["Trust. (k=15)"] = 0.9
+    frame["Continuity"] = 0.8
     return frame
+
+
+def test_spatial_preservation_has_fixed_meaning(metrics: pd.DataFrame) -> None:
+    """A subset must retain the same equal-weight spatial score, independent of time."""
+    np.testing.assert_allclose(spatial_preservation(metrics), [0.5875, 0.7375, 0.8875])
+    subset = metrics.iloc[[1]].copy()
+    subset["Time (s)"] = 1000
+    np.testing.assert_allclose(spatial_preservation(subset), [0.7375])
+
+
+@pytest.mark.parametrize("value", [np.nan, np.inf, -0.1, 1.1])
+def test_spatial_preservation_rejects_invalid_scores(
+    metrics: pd.DataFrame,
+    value: float,
+) -> None:
+    """Invalid spatial inputs cannot silently become a plausible aggregate."""
+    metrics.loc[0, "Continuity"] = value
+    with pytest.raises(ValueError, match=r"finite|ranges"):
+        spatial_preservation(metrics)
 
 
 def test_direction_log_spacing_and_ties(metrics: pd.DataFrame) -> None:
@@ -91,10 +116,10 @@ def test_renders_portable_outputs_and_escapes_data(
 @pytest.mark.parametrize(
     ("dataset", "csv"),
     [
-        ("digits", "metrics_results.csv"),
+        ("digits", "assets/benchmarks/digits/metrics_results.csv"),
         (
             "fashion-mnist",
-            "working_docs/heatmap_refresh/fashion-mnist/metrics_results.csv",
+            "assets/benchmarks/fashion-mnist/metrics_results.csv",
         ),
     ],
 )
@@ -117,4 +142,12 @@ def test_published_charts_match_saved_measurements(dataset: str, csv: str) -> No
         np.testing.assert_allclose(method["raw"], [row[column] for column, _ in AXES])
         np.testing.assert_allclose(method["scores"], scores.loc[method["name"]])
         assert f">{method['name']}</text>" in fit_svg
-        assert f">{row['Time (s)']:.5g} s</text>" in fit_svg
+        assert method["spatial_preservation"] == pytest.approx(
+            (
+                row["Trust. (k=15)"]
+                + row["Continuity"]
+                + row["Neighbor Recall"]
+                + (row["Spearman"] + 1) / 2
+            )
+            / 4,
+        )

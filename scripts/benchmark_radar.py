@@ -161,13 +161,32 @@ def render_static(
         )
 
 
+def spatial_preservation(frame: pd.DataFrame) -> pd.Series:
+    """Average three local scores and rescaled global distance correlation.
+
+    Use fixed metric ranges, so selecting a different cohort cannot change a
+    method's score. This descriptive equal-weight aggregate is not a validated
+    universal quality measure.
+    """
+    columns = ["Trust. (k=15)", "Continuity", "Neighbor Recall", "Spearman"]
+    missing = set(columns) - set(frame.columns)
+    if missing:
+        message = f"Missing spatial preservation columns: {sorted(missing)}"
+        raise ValueError(message)
+    values = frame[columns].astype(float).copy()
+    if not np.isfinite(values.to_numpy()).all():
+        message = "Spatial preservation metrics must be finite"
+        raise ValueError(message)
+    values["Spearman"] = (values["Spearman"] + 1) / 2
+    if ((values < 0) | (values > 1)).any().any():
+        message = "Spatial preservation metrics are outside their expected ranges"
+        raise ValueError(message)
+    return values.mean(axis=1)
+
+
 def render_fit_times(frame: pd.DataFrame, output: Path, title: str) -> None:
-    """Plot raw fit seconds on a log axis, with the fastest algorithm at the top."""
-    ordered = frame.sort_values("Time (s)", kind="stable")
-    colors = {
-        name: COLORS[index % len(COLORS)]
-        for index, name in enumerate(frame["Algorithm"])
-    }
+    """Plot fit seconds against aggregate spatial preservation; upper-left wins."""
+    quality = spatial_preservation(frame)
     with plt.rc_context(
         {
             "font.family": "DejaVu Sans",
@@ -175,43 +194,43 @@ def render_fit_times(frame: pd.DataFrame, output: Path, title: str) -> None:
             "svg.fonttype": "none",
         },
     ):
-        fig, ax = plt.subplots(figsize=(10, 3 + len(frame) * 0.36))
-        positions = np.arange(len(ordered))
-        ax.scatter(
-            ordered["Time (s)"],
-            positions,
-            c=[colors[name] for name in ordered["Algorithm"]],
-            s=65,
-            zorder=3,
-        )
-        ax.set_xscale("log")
-        ax.set_yticks(positions, ordered["Algorithm"])
-        ax.invert_yaxis()
-        ax.set_xlabel("fit_transform time (seconds, log scale) · lower is better")
-        ax.grid(axis="x", color="#dbe3e8")
-        ax.spines[["top", "right", "left"]].set_visible(False)
-        ax.tick_params(axis="y", length=0, pad=12)
-        for position, seconds in zip(positions, ordered["Time (s)"]):
-            ax.text(
-                1.03,
-                position,
-                f"{seconds:.5g} s",
-                transform=ax.get_yaxis_transform(),
-                va="center",
-                fontsize=10,
+        fig, ax = plt.subplots(figsize=(11, 7))
+        for index, (_, row) in enumerate(frame.iterrows()):
+            ax.scatter(
+                row["Time (s)"],
+                quality.iloc[index],
+                color=COLORS[index % len(COLORS)],
+                label=row["Algorithm"],
+                s=85,
+                edgecolors="white",
+                linewidths=0.7,
+                zorder=3,
             )
-        fig.suptitle(f"Squeeze · {title}\nTime to fit", fontsize=18, fontweight="bold")
+        ax.set_xscale("log")
+        ax.set_ylim(0, 1)
+        ax.set_xlabel("fit_transform time (seconds, log scale) · lower is better")
+        ax.set_ylabel("Spatial preservation (0-1) · higher is better")
+        ax.grid(color="#dbe3e8")
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), frameon=False)
+        ax.set_title("Better trade-off: upper left", loc="left", fontsize=11)
+        fig.suptitle(
+            f"Squeeze · {title}\nFit time vs spatial preservation",
+            fontsize=18,
+            fontweight="bold",
+        )
         fig.text(
             0.5,
             0.035,
-            "Saved single-seed measurements · one thread per library\n"
-            "Full fit_transform; warmup, loading and scoring excluded. "
-            "Compare quality alongside speed.",
+            "Spatial preservation = mean(trustworthiness k15, continuity k15, "
+            "neighbour recall k15, (Spearman + 1) / 2)\n"
+            "Equal-weight descriptive score. Saved single-seed fits; "
+            "warmup, loading and scoring excluded.",
             ha="center",
             fontsize=10,
             color="#475569",
         )
-        fig.subplots_adjust(left=0.17, right=0.82, top=0.83, bottom=0.2)
+        fig.subplots_adjust(left=0.09, right=0.78, top=0.81, bottom=0.2)
         fig.savefig(output / "fit_time.png", dpi=160, facecolor="white")
         fig.savefig(output / "fit_time.svg", facecolor="white", metadata={"Date": None})
         plt.close(fig)
@@ -225,6 +244,7 @@ def render_fit_times(frame: pd.DataFrame, output: Path, title: str) -> None:
 def create_radar(frame: pd.DataFrame, output: Path, title: str) -> None:
     """Save static figures and a self-contained selectable HTML comparison."""
     scores = normalize_metrics(frame)
+    quality = spatial_preservation(frame)
     output.mkdir(parents=True, exist_ok=True)
     render_static(frame, scores, output, title)
     render_fit_times(frame, output, title)
@@ -242,6 +262,7 @@ def create_radar(frame: pd.DataFrame, output: Path, title: str) -> None:
                 "color": COLORS[index % len(COLORS)],
                 "scores": scores.loc[row["Algorithm"]].tolist(),
                 "raw": [float(row[column]) for column, _ in AXES],
+                "spatial_preservation": float(quality.iloc[index]),
                 "selected": row["Algorithm"] in selected,
             }
             for index, (_, row) in enumerate(frame.iterrows())

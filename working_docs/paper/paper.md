@@ -42,6 +42,6 @@ and the ability to transform new unseen data into a pretrained embedding space.
 For details of the mathematical underpinnings see [@umap_arxiv]. The implementation
 can be found at [@umap_repo].
 
--![Fashion MNIST embedded via UMAP](images/umap_example_fashion_mnist1.png)
+-![Fashion MNIST embedded via UMAP](../../assets/images/umap_example_fashion_mnist1.png)
 
 # References

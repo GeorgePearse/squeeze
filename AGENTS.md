@@ -62,6 +62,14 @@ Fashion-MNIST is also supported at George's explicit request. Use the official t
 
 **Working Documentation:** All working documents, design notes, exploration summaries, and internal documentation should be placed in the `working_docs/` directory. This keeps the root directory clean while preserving useful context. Standard files like `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md` remain in the root.
 
+**Repository Layout:** Keep the root limited to package manifests, lockfiles,
+project configuration, and standard library documentation. Put standalone Python
+tools in `scripts/` and invoke them as modules (`python -m scripts.<name>`).
+Store benchmark plots and CSVs in `assets/benchmarks/<suite>/`, reusable images
+in `assets/images/`, and run protocols/embeddings in `working_docs/`. Do not add
+root-level scripts, images, CSVs, or logs. Historical maintenance tools live in
+`scripts/maintenance/`.
+
 Key documents in `working_docs/`:
 - `FEATURES.md` - Overview of implemented features
 - `GPU_POLICY.md` - Why we're CPU-focused
@@ -80,7 +88,7 @@ Use `just` as the command runner. Run `just` to see all available commands.
 just build
 
 # Run the full-algorithm fit-speed and quality benchmark
-uv run --no-sync python benchmark_metrics_heatmap.py
+uv run --no-sync python -m scripts.benchmark_metrics_heatmap
 
 # Run tests
 just test
@@ -108,16 +116,16 @@ quality changes alongside speedups rather than treating a faster degraded
 embedding as an unconditional improvement. See `docs/benchmarking.md` for the
 primary metrics and reproduction commands.
 
-The full-algorithm benchmark (`uv run --no-sync python benchmark_metrics_heatmap.py`)
-uses sklearn Digits by default and generates:
+The full-algorithm benchmark (`uv run --no-sync python -m scripts.benchmark_metrics_heatmap`)
+uses sklearn Digits by default and generates under `assets/benchmarks/digits/`:
 
 - `metrics_results.csv` - Raw fit time and embedding quality measurements
 - `metrics_heatmap.png` - Algorithm comparison across fit time and quality metrics
 - `metrics_radar.png`, `metrics_radar.svg`, `metrics_radar.html` - Performance profiles
-- `fit_time.png`, `fit_time.svg` - Raw fit seconds, sorted fastest first
+- `fit_time.png`, `fit_time.svg` - Fit seconds versus aggregate spatial preservation
 
-`just benchmark` runs the separate k-NN backend comparison; it is not a substitute
-for measuring complete `fit_transform` calls.
+`just benchmark-metrics` runs this suite. `just benchmark` runs the older strategy
+comparison and writes under `assets/benchmarks/strategies/`.
 
 ---
 

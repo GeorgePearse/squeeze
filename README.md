@@ -67,7 +67,7 @@ one full-data warmup, and one thread per library. Timings exclude metric scoring
 
 ### Algorithm vs Metrics Heatmap
 
-![Algorithm vs Metrics Heatmap including NeighborMap and SpectralMap](metrics_heatmap.png)
+![Algorithm vs Metrics Heatmap including NeighborMap and SpectralMap](assets/benchmarks/digits/metrics_heatmap.png)
 
 *Colors compare algorithms within each metric; green is better. Runtime is
 lower-is-better, using a reversed log scale. Cell labels show raw values.*
@@ -75,7 +75,7 @@ lower-is-better, using a reversed log scale. Cell labels show raw values.*
 Trustworthiness now uses sklearn's rank-based definition. Neighbor recall is
 reported separately; the older heatmap mislabeled overlap as trustworthiness.
 See the [methodology and reproduction commands](working_docs/heatmap_refresh/README.md)
-and [raw CSV](metrics_results.csv).
+and [raw CSV](assets/benchmarks/digits/metrics_results.csv).
 
 ### Algorithm performance radars
 
@@ -91,12 +91,13 @@ These shapes are not overall scores or absolute capability measurements.
 
 ### Time to fit
 
-![Measured fit_transform time on Digits, fastest first](docs/assets/benchmarks/digits-radar/fit_time.png)
+![Fit time versus spatial preservation on Digits](docs/assets/benchmarks/digits-radar/fit_time.png)
 
-Lower is better. Points use a log time axis; labels show raw seconds from the
-same saved single-seed runs, excluding warmup and scoring.
-[Digits and Fashion-MNIST fit-time plots](docs/benchmarking.md#time-to-fit)
-also appear alongside quality profiles in the interactive comparisons.
+Upper left is better: faster fitting with more spatial relationships preserved.
+The horizontal axis is fit seconds (log scale); the vertical axis averages
+trustworthiness, continuity, neighbour recall, and rescaled distance correlation.
+[See the formula and both datasets](docs/benchmarking.md#time-to-fit).
+The interactive comparisons show exact fit times and spatial scores on hover.
 
 ### Metrics Comparison Table
 
@@ -127,19 +128,32 @@ This single-seed snapshot complements the earlier
 sampling seed. Each image contributes 784 raw pixel features. Downloaded files
 are checksummed and cached; sample indices are saved for reproducibility.
 
-![Fashion-MNIST Algorithm vs Metrics Heatmap](working_docs/heatmap_refresh/fashion-mnist/metrics_heatmap.png)
+![Fashion-MNIST Algorithm vs Metrics Heatmap](assets/benchmarks/fashion-mnist/metrics_heatmap.png)
 
-[Raw Fashion-MNIST results](working_docs/heatmap_refresh/fashion-mnist/metrics_results.csv)
+[Raw Fashion-MNIST results](assets/benchmarks/fashion-mnist/metrics_results.csv)
 · [Sampling and evaluation protocol](working_docs/heatmap_refresh/README.md)
 
 ```bash
-uv run --no-sync python benchmark_metrics_heatmap.py --dataset fashion-mnist --samples 2000
+uv run --no-sync python -m scripts.benchmark_metrics_heatmap --dataset fashion-mnist --samples 2000
 ```
 
 `--samples` is configurable up to the 10,000-image test split. Larger samples
 increase the cost of quadratic algorithms. The repeated-seed benchmark and its
 HTML report also accept `--dataset fashion-mnist`; see the protocol link above.
 
+
+## Repository layout
+
+- `squeeze/` and `src/`: Python API and Rust implementation.
+- `scripts/`: benchmark runners and development tools; see the [command guide](scripts/README.md).
+- `assets/`: saved benchmark plots, CSVs, and reusable images.
+- `docs/`: maintained documentation and its published assets.
+- `working_docs/`: experiment records, historical material, and archived logs.
+- `examples/`, `notebooks/`, and `demos/`: usage examples and demonstrations.
+
+Keep standalone scripts and generated results in these folders. The root is
+reserved for package manifests, lockfiles, project configuration, and standard
+library documentation.
 
 ## Contributing and attribution
 

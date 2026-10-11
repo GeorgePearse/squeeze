@@ -18,7 +18,9 @@ This benchmark measures:
 3. Generates visualization of results
 """
 
+import argparse
 import time
+from pathlib import Path
 from typing import Any
 
 import matplotlib
@@ -29,7 +31,6 @@ from sklearn.manifold import trustworthiness
 matplotlib.use("Agg")  # Non-interactive backend for saving plots
 import matplotlib.pyplot as plt
 
-import squeeze as sqz
 from squeeze import STRATEGIES, list_strategies
 
 # Default k values for trustworthiness evaluation
@@ -104,7 +105,7 @@ def benchmark_strategy(
 def plot_results(
     results: list[dict],
     k_values: list[int] = K_VALUES,
-    output_file: str = "benchmark_results.png",
+    output_file: str = "assets/benchmarks/strategies/benchmark_results.png",
 ):
     """Generate benchmark visualization with trustworthiness vs k plot."""
     successful = [r for r in results if r["success"]]
@@ -209,6 +210,7 @@ def plot_results(
     )
 
     plt.tight_layout()
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_file, dpi=150, bbox_inches="tight")
     print(f"\nPlot saved to: {output_file}")
     plt.close()
@@ -217,7 +219,7 @@ def plot_results(
 def plot_embeddings(
     results: list[dict],
     labels: np.ndarray,
-    output_file: str = "embeddings_comparison.png",
+    output_file: str = "assets/benchmarks/strategies/embeddings_comparison.png",
 ):
     """Plot all embeddings in a grid."""
     successful = [r for r in results if r["success"]]
@@ -251,6 +253,7 @@ def plot_embeddings(
         axes[idx].set_visible(False)
 
     plt.tight_layout()
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_file, dpi=150, bbox_inches="tight")
     print(f"Embeddings plot saved to: {output_file}")
     plt.close()
@@ -258,6 +261,11 @@ def plot_embeddings(
 
 def main():
     """Run comprehensive benchmarks for all strategies."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path("assets/benchmarks/strategies"),
+    )
+    args = parser.parse_args()
     print("=" * 60)
     print("Squeeze Dimensionality Reduction Benchmark")
     print("=" * 60)
@@ -329,8 +337,8 @@ def main():
         )
 
     # Generate plots
-    plot_results(results, K_VALUES)
-    plot_embeddings(results, y)
+    plot_results(results, K_VALUES, str(args.output_dir / "benchmark_results.png"))
+    plot_embeddings(results, y, str(args.output_dir / "embeddings_comparison.png"))
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ computes comprehensive evaluation metrics, then visualizes the results as a heat
 with green indicating good performance and red indicating poor performance.
 
 Usage:
-    python benchmark_metrics_heatmap.py
+    python -m scripts.benchmark_metrics_heatmap
 
 Output:
     - metrics_heatmap.png: Heatmap visualization of all algorithms vs metrics
@@ -173,7 +173,7 @@ def compute_metrics(
 
 def create_heatmap(
     df: pd.DataFrame,
-    output_path: str = "metrics_heatmap.png",
+    output_path: str = "assets/benchmarks/digits/metrics_heatmap.png",
     dataset_title: str = "Digits",
 ) -> None:
     """Create a heatmap visualization of algorithms vs metrics."""
@@ -275,6 +275,7 @@ def create_heatmap(
     ax.tick_params(which="minor", bottom=False, left=False)
 
     plt.tight_layout()
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"\nHeatmap saved to: {output_path}")
     plt.close()
@@ -335,11 +336,7 @@ def main() -> None:
     parser.add_argument("--cache-dir", type=Path)
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
-    output = args.output_dir or (
-        Path()
-        if args.dataset == "digits"
-        else Path("working_docs/heatmap_refresh/fashion-mnist")
-    )
+    output = args.output_dir or Path("assets/benchmarks") / args.dataset
     output.mkdir(parents=True, exist_ok=True)
     print("=" * 80)
     print("DIMENSIONALITY REDUCTION METRICS BENCHMARK")
@@ -416,7 +413,7 @@ def main() -> None:
 
     # Save raw results
     df.to_csv(output / "metrics_results.csv", index=False)
-    print("Raw results saved to: metrics_results.csv")
+    print(f"Raw results saved to: {output / 'metrics_results.csv'}")
 
     # Create heatmap
     print("\nGenerating heatmap visualization...")

@@ -160,13 +160,13 @@ stages:
           displayName: 'Build package'
 
         - bash: |
-            export PACKAGE_VERSION="$(python setup.py --version)"
+            export PACKAGE_VERSION="$(python -c 'from importlib.metadata import version; print(version("squeeze"))')"
             echo "Package Version: ${PACKAGE_VERSION}"
             echo "##vso[task.setvariable variable=packageVersionFormatted;]release-${PACKAGE_VERSION}"
           displayName: 'Get package version'
 
         - script: |
-            echo "Version in git tag $(Build.SourceBranchName) does not match version derived from setup.py $(packageVersionFormatted)"
+            echo "Version in git tag $(Build.SourceBranchName) does not match installed package version $(packageVersionFormatted)"
             exit 1
           displayName: Raise error if version doesnt match tag
           condition: and(succeeded(), ne(variables['Build.SourceBranchName'], variables['packageVersionFormatted']))

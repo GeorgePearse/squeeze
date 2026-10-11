@@ -25,7 +25,7 @@ belongs in `docs/`.
 
 ```bash
 uv venv .venv-docs --python 3.10
-uv pip install --python .venv-docs/bin/python -r docs_requirements.txt
+uv pip install --python .venv-docs/bin/python -r docs/requirements.txt
 .venv-docs/bin/mkdocs build --strict
 .venv-docs/bin/mkdocs serve
 ```

@@ -27,9 +27,10 @@ larger counts are expensive for the quadratic implementations.
 
 ## Outputs
 
-- Digits: root `metrics_heatmap.png` and `metrics_results.csv`.
-- Fashion-MNIST: [heatmap](fashion-mnist/metrics_heatmap.png) and
-  [CSV](fashion-mnist/metrics_results.csv).
+- Digits: [heatmap](../../assets/benchmarks/digits/metrics_heatmap.png) and
+  [CSV](../../assets/benchmarks/digits/metrics_results.csv).
+- Fashion-MNIST: [heatmap](../../assets/benchmarks/fashion-mnist/metrics_heatmap.png) and
+  [CSV](../../assets/benchmarks/fashion-mnist/metrics_results.csv).
 - Per-dataset `embeddings.npz` and `protocol.json` preserve raw coordinates and
   run settings. The Fashion sample is independent of the algorithm seed.
 
@@ -65,8 +66,8 @@ Build the current Rust extension first, as described in the root README. Install
 the benchmark extra (`uv sync --extra dev --extra benchmark --no-install-project`).
 
 ```bash
-uv run --no-sync python benchmark_metrics_heatmap.py
-uv run --no-sync python benchmark_metrics_heatmap.py --dataset fashion-mnist --samples 2000
+uv run --no-sync python -m scripts.benchmark_metrics_heatmap
+uv run --no-sync python -m scripts.benchmark_metrics_heatmap --dataset fashion-mnist --samples 2000
 ```
 
 The repeated-seed comparison runner and HTML explorer also support Fashion-MNIST:

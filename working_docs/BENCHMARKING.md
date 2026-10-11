@@ -1,6 +1,6 @@
 # Performance Benchmarking Guide
 
-**Date:** November 20, 2025  
+**Date:** November 20, 2025
 **Status:** Production-Ready Benchmarking Infrastructure
 
 ---
@@ -23,7 +23,7 @@ This project uses a comprehensive benchmarking system to track performance and p
 
 ```bash
 # Using uv (recommended)
-uv run python benchmark_optimizations.py
+uv run python -m scripts.benchmark_optimizations
 
 # Using just
 just benchmark
@@ -46,7 +46,7 @@ The Python benchmark (`benchmark_optimizations.py`) compares different k-NN back
 k-NN BACKEND COMPARISON
 ============================================================
 
-Configuration             Build Time   Recall     Speedup   
+Configuration             Build Time   Recall     Speedup
 ---------------------------------------------------------
 PyNNDescent                    6.512s     93.3%      1.00x
 HNSW Simple                    0.242s     95.1%     26.96x
@@ -90,11 +90,11 @@ def benchmark_knn_backend(X, config_name, backend_class, **kwargs):
     index = backend_class(X, **kwargs)
     indices, distances = index.neighbor_graph
     knn_time = time.time() - start
-    
+
     # 2. Compute recall against exact k-NN
     exact_indices = compute_exact_knn(X, k)
     recall = compute_knn_recall(indices, exact_indices)
-    
+
     return {"knn_time": knn_time, "recall": recall}
 ```
 
@@ -162,7 +162,7 @@ cargo bench -- --baseline mybranch
 
 **Benchmarks:**
 - Euclidean distance
-- Manhattan distance  
+- Manhattan distance
 - Cosine distance
 
 **Test dimensions:** 8, 16, 32, 64, 128, 256, 512, 1024
@@ -503,8 +503,8 @@ echo "$(date): SIMD euclidean - 12.7ns → 6.3ns (-50%)" >> PERFORMANCE_LOG.md
 
 ### Phase 2 Targets (SIMD + RobustPrune)
 
-**Distance metrics:** 2-4x speedup via SIMD  
-**Graph quality:** 5-10% improvement via RobustPrune  
+**Distance metrics:** 2-4x speedup via SIMD
+**Graph quality:** 5-10% improvement via RobustPrune
 **Overall speedup:** 3-5x vs PyNNDescent (currently 1.5-1.7x)
 
 ---
@@ -629,14 +629,14 @@ Add to `benches/hnsw_benchmarks.rs`:
 ```rust
 fn bench_my_feature(c: &mut Criterion) {
     let mut group = c.benchmark_group("my_feature");
-    
+
     group.bench_function("my_benchmark", |b| {
         b.iter(|| {
             // Your code here
             black_box(my_function());
         });
     });
-    
+
     group.finish();
 }
 
@@ -647,19 +647,19 @@ criterion_group!(benches, bench_my_feature);
 
 ## FAQ
 
-**Q: Why are benchmarks required for commits?**  
+**Q: Why are benchmarks required for commits?**
 A: To prevent performance regressions from sneaking into the codebase. It's much easier to fix regressions before they're committed.
 
-**Q: Can I skip benchmarks for documentation changes?**  
+**Q: Can I skip benchmarks for documentation changes?**
 A: The hook automatically skips if no Rust files changed. For docs-only commits in Rust files, use `SKIP_BENCHMARKS=1`.
 
-**Q: What if my change legitimately makes things slower?**  
+**Q: What if my change legitimately makes things slower?**
 A: If trading performance for correctness/features, document the tradeoff and use `--no-verify`. Discuss in PR.
 
-**Q: How accurate are the benchmarks?**  
+**Q: How accurate are the benchmarks?**
 A: Criterion uses statistical analysis (100 samples by default) to account for noise. Results are typically ±2% accurate.
 
-**Q: Can I benchmark Python code too?**  
+**Q: Can I benchmark Python code too?**
 A: This system is Rust-only. For Python, use `pytest-benchmark` or `timeit`.
 
 ---
@@ -672,6 +672,6 @@ A: This system is Rust-only. For Python, use `pytest-benchmark` or `timeit`.
 
 ---
 
-**Created:** November 20, 2025  
-**Author:** UMAP Development Team  
+**Created:** November 20, 2025
+**Author:** UMAP Development Team
 **Maintainer:** OpenCode AI Assistant
