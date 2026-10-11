@@ -9,6 +9,31 @@ These are single-seed snapshots. Use the repeated-seed runner below to inspect
 variation; no general significance or large-data scalability claim follows from
 the heatmaps alone.
 
+## Primary optimisation benchmarks
+
+**Fit speed and embedding quality are primary goals for Squeeze.** Evaluate
+algorithm changes against both:
+
+| Benchmark | Measure | Direction |
+|---|---|---|
+| Fit speed | Wall-clock seconds for the complete `fit_transform` call | Lower is better |
+| Embedding quality | Rank trustworthiness, neighbour recall, global distance correlation, cluster separation, and transductive accuracy | Higher is better; inspect each metric separately |
+
+Fit time includes the neighbour search and embedding optimisation performed by
+the reducer. Data loading, the full-data warmup, metric scoring, and plotting are
+excluded. This is warm fit performance; it does not measure cold-start latency or
+the speed of transforming new samples with an already fitted model.
+
+Raw fit seconds are saved as `Time (s)` in the heatmap/radar CSV and `seconds` in
+the repeated-seed runner. The heatmaps and radars already include this benchmark;
+their reversed log scale makes faster fits greener or farther from the centre.
+
+Compare changes using the same dataset/sample, hardware, thread limits, seeds,
+and algorithm parameters. Use [repeated runs](#repeated-seed-comparisons) to
+inspect timing variation, and report quality changes alongside speedups. A
+faster fit with worse quality is a trade-off to evaluate, not an unconditional
+improvement.
+
 ## Circular performance profiles
 
 The radar charts show six complementary metrics: rank trustworthiness, neighbor

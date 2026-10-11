@@ -79,8 +79,8 @@ Use `just` as the command runner. Run `just` to see all available commands.
 # Build the Rust extension
 just build
 
-# Run the benchmark (generates graphs)
-just benchmark
+# Run the full-algorithm fit-speed and quality benchmark
+uv run --no-sync python benchmark_metrics_heatmap.py
 
 # Run tests
 just test
@@ -95,11 +95,28 @@ just install
 
 ### Benchmarking
 
-The benchmark (`just benchmark`) runs all DR algorithms on the sklearn Digits dataset and generates:
-- `benchmark_results.png` - Execution time, trustworthiness bar charts, and trustworthiness vs k line plot
-- `embeddings_comparison.png` - Visual comparison of all embeddings
+**Primary optimisation goals are fit speed and embedding quality.** Report both
+for algorithm changes. Fit speed means wall-clock seconds for the complete
+`fit_transform` call (lower is better), including neighbour search and embedding
+optimisation. Exclude data loading, the full-data warmup, metric scoring, and
+plotting. Retain raw seconds in benchmark outputs (`Time (s)` in the heatmap/radar
+CSV and `seconds` in the repeated-seed runner).
 
-Trustworthiness is evaluated at multiple k values: k=5, 10, 15, 20, 30, 50.
+Compare timings on the same dataset/sample, hardware, thread limits, seeds, and
+algorithm parameters. Use repeated runs to assess timing variation, and report
+quality changes alongside speedups rather than treating a faster degraded
+embedding as an unconditional improvement. See `docs/benchmarking.md` for the
+primary metrics and reproduction commands.
+
+The full-algorithm benchmark (`uv run --no-sync python benchmark_metrics_heatmap.py`)
+uses sklearn Digits by default and generates:
+
+- `metrics_results.csv` - Raw fit time and embedding quality measurements
+- `metrics_heatmap.png` - Algorithm comparison across fit time and quality metrics
+- `metrics_radar.png`, `metrics_radar.svg`, `metrics_radar.html` - Performance profiles
+
+`just benchmark` runs the separate k-NN backend comparison; it is not a substitute
+for measuring complete `fit_transform` calls.
 
 ---
 

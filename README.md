@@ -56,6 +56,11 @@ are separate wrappers with explicit limitations.
 
 ## Benchmark Results
 
+**Fit speed and embedding quality are primary optimisation goals.** Measure fit
+speed as elapsed `fit_transform` time in seconds: lower is better. Compare it
+alongside structure preservation and downstream quality, so faster fits do not
+hide quality regressions. See the [benchmark protocol](docs/benchmarking.md#primary-optimisation-benchmarks).
+
 The default comparison uses sklearn Digits (1,797 samples, 64 raw pixel features).
 Both new Rust algorithms are included below. All rows were refitted with seed 42,
 one full-data warmup, and one thread per library. Timings exclude metric scoring.
@@ -86,7 +91,7 @@ These shapes are not overall scores or absolute capability measurements.
 
 ### Metrics Comparison Table
 
-| Algorithm | Trust. k15 | Neighbor recall k15 | Spearman | Silhouette | Transductive acc. | Time (s) |
+| Algorithm | Trust. k15 | Neighbor recall k15 | Spearman | Silhouette | Transductive acc. | Fit time (s) ↓ |
 |---|---:|---:|---:|---:|---:|---:|
 | **UMAP** | 0.987 | 0.522 | 0.371 | 0.763 | 0.974 | 2.23 |
 | **PCA** | 0.829 | 0.151 | 0.582 | 0.392 | 0.610 | 0.00099 |
@@ -128,6 +133,8 @@ HTML report also accept `--dataset fashion-mnist`; see the protocol link above.
 
 
 ## Contributing and attribution
+
+Reusable images, diagrams, screenshots, and demo media belong in [assets/](assets/README.md).
 
 See [Contributing](CONTRIBUTING.md) for tests, documentation builds, and PRs.
 Squeeze derives its UMAP code from umap-learn; original authorship and license
