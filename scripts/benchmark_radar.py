@@ -206,13 +206,24 @@ def render_fit_times(frame: pd.DataFrame, output: Path, title: str) -> None:
                 linewidths=0.7,
                 zorder=3,
             )
+            ax.annotate(
+                row["Algorithm"],
+                (row["Time (s)"], quality.iloc[index]),
+                xytext=(0, 8),
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                color=COLORS[index % len(COLORS)],
+                bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.5},
+                zorder=4,
+            )
         ax.set_xscale("log")
         ax.set_ylim(0, 1)
         ax.set_xlabel("fit_transform time (seconds, log scale) · lower is better")
         ax.set_ylabel("Spatial preservation (0-1) · higher is better")
         ax.grid(color="#dbe3e8")
         ax.spines[["top", "right"]].set_visible(False)
-        ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), frameon=False)
         ax.set_title("Better trade-off: upper left", loc="left", fontsize=11)
         fig.suptitle(
             f"Squeeze · {title}\nFit time vs spatial preservation",
@@ -230,7 +241,7 @@ def render_fit_times(frame: pd.DataFrame, output: Path, title: str) -> None:
             fontsize=10,
             color="#475569",
         )
-        fig.subplots_adjust(left=0.09, right=0.78, top=0.81, bottom=0.2)
+        fig.subplots_adjust(left=0.09, right=0.96, top=0.81, bottom=0.2)
         fig.savefig(output / "fit_time.png", dpi=160, facecolor="white")
         fig.savefig(output / "fit_time.svg", facecolor="white", metadata={"Date": None})
         plt.close(fig)

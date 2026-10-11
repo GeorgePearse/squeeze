@@ -147,6 +147,9 @@ function render() {
     svg('title',{},point,label);
     for(const event of ['mouseenter','focus']) point.addEventListener(event,()=>{document.getElementById('fit-detail').textContent=label;});
   });
+  selected.forEach(method=>{
+    svg('text',{x:timeX(method.raw[timeIndex]),y:qualityY(method.spatial_preservation)-13,'text-anchor':'middle','font-size':12,fill:method.color,stroke:'white','stroke-width':3,'stroke-linejoin':'round','paint-order':'stroke','pointer-events':'none','data-algorithm':method.name},fitPoints,method.name);
+  });
   for(const method of selected) {
     const points=method.scores.map((score,i)=>coordinate(i,score*radius).join(',')).join(' ');
     svg('polygon',{points,fill:method.color,'fill-opacity':.07,stroke:method.color,'stroke-width':2.5,'data-algorithm':method.name},profiles);
