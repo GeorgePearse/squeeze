@@ -3,7 +3,7 @@
 //! LLE finds a low-dimensional embedding by preserving local linear
 //! relationships between neighboring points.
 
-use ndarray::{Array1, Array2, Axis, s};
+use ndarray::{Array1, Array2};
 use ndarray_linalg::{Eigh, Solve, UPLO};
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
@@ -12,8 +12,6 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
-use crate::mds::compute_distance_matrix;
 
 /// Locally Linear Embedding
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -23,18 +21,26 @@ pub struct LLE {
     reg: f64,
     /// Whether to raise an error on singular weight matrices
     error_on_singular: bool,
+    device: Option<String>,
 }
 
 #[pymethods]
 impl LLE {
     #[new]
-    #[pyo3(signature = (n_components=2, n_neighbors=12, reg=1e-3, error_on_singular=false))]
-    pub fn new(n_components: usize, n_neighbors: usize, reg: f64, error_on_singular: bool) -> Self {
+    #[pyo3(signature = (n_components=2, n_neighbors=12, reg=1e-3, error_on_singular=false, device=None))]
+    pub fn new(
+        n_components: usize,
+        n_neighbors: usize,
+        reg: f64,
+        error_on_singular: bool,
+        device: Option<String>,
+    ) -> Self {
         Self {
             n_components,
             n_neighbors,
             reg,
             error_on_singular,
+            device,
         }
     }
 
@@ -44,7 +50,7 @@ impl LLE {
     {
         let x = data.as_array();
         let n_samples = x.nrows();
-        let n_features = x.ncols();
+        let _n_features = x.ncols();
 
         if self.n_neighbors >= n_samples {
             return Err(PyValueError::new_err(format!(
@@ -53,14 +59,9 @@ impl LLE {
             )));
         }
 
-        // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
-            .into_iter()
-            .map(|row| row.iter().map(|&v| v as f32).collect())
-            .collect();
-
-        // Compute pairwise distances and find k-NN
-        let distances = compute_distance_matrix(&x_f32);
+        // Pairwise distances on the selected device, then k-NN
+        let device = crate::device_py::resolve_for(py, self.device.as_deref(), n_samples, crate::device_py::Work::Pairwise)?;
+        let distances = crate::device_py::distance_matrix(py, &device, x)?;
         let neighbors = self.find_neighbors(&distances, n_samples);
 
         // Step 1: Compute reconstruction weights
@@ -156,7 +157,7 @@ impl LLE {
                 }
                 // Fallback: uniform weights
                 fallback_count += 1;
-                for (j_idx, &j) in neighbors[i].iter().enumerate() {
+                for &j in neighbors[i].iter() {
                     weights[[i, j]] = 1.0 / k as f64;
                 }
             } else {
@@ -222,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_find_neighbors() {
-        let lle = LLE::new(2, 2, 1e-3, false);
+        let lle = LLE::new(2, 2, 1e-3, false, None);
 
         let distances = Array2::from_shape_vec((4, 4), vec![
             0.0, 1.0, 2.0, 3.0,
@@ -249,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_find_neighbors_distances() {
-        let lle = LLE::new(2, 3, 1e-3, false);
+        let lle = LLE::new(2, 3, 1e-3, false, None);
 
         // More complex distance matrix
         let distances = Array2::from_shape_vec((5, 5), vec![
@@ -271,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_reconstruction_weights_sum_to_one() {
-        let lle = LLE::new(2, 3, 1e-3, false);
+        let lle = LLE::new(2, 3, 1e-3, false, None);
 
         // Simple test data
         let x = Array2::from_shape_vec((5, 2), vec![
@@ -301,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_embedding_eigendecomposition() {
-        let lle = LLE::new(2, 2, 1e-3, false);
+        let lle = LLE::new(2, 2, 1e-3, false, None);
 
         // Simple weight matrix
         let weights = Array2::from_shape_vec((3, 3), vec![
@@ -319,17 +320,17 @@ mod tests {
     #[test]
     fn test_error_on_singular_flag() {
         // Default should be false
-        let lle = LLE::new(2, 3, 1e-3, false);
+        let lle = LLE::new(2, 3, 1e-3, false, None);
         assert!(!lle.error_on_singular);
 
         // Can be set to true
-        let lle_strict = LLE::new(2, 3, 1e-3, true);
+        let lle_strict = LLE::new(2, 3, 1e-3, true, None);
         assert!(lle_strict.error_on_singular);
     }
 
     #[test]
     fn test_weights_non_negative() {
-        let lle = LLE::new(2, 3, 1e-1, false);  // Higher reg for stability
+        let lle = LLE::new(2, 3, 1e-1, false, None);  // Higher reg for stability
 
         let x = Array2::from_shape_vec((4, 2), vec![
             0.0, 0.0,

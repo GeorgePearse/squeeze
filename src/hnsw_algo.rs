@@ -77,7 +77,7 @@ impl PartialEq for MaxDistCandidate {
 impl Eq for MaxDistCandidate {}
 impl PartialOrd for MaxDistCandidate {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.0.distance.partial_cmp(&other.0.distance)
+        Some(self.cmp(other))
     }
 }
 impl Ord for MaxDistCandidate {

@@ -17,7 +17,9 @@ UMAP's subsequent layout is Python/Numba code.
 
 ## Rust reducers
 
-The Rust reducers use CPU distance, linear algebra, and optimization routines.
+The Rust reducers use CPU distance, linear algebra, and optimization routines;
+with a GPU present the pairwise distances, exact k-NN and the PaCMAP, TriMap and
+exact t-SNE gradients run on it instead (see [GPU compute](gpu.md)).
 The new graph methods parallelize exact neighbor construction with Rayon and
 use runtime-selected SIMD squared-distance kernels where supported. They retain
 only the nearest edges, but still compare all pairs: graph construction time is

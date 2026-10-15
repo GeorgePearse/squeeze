@@ -330,6 +330,7 @@ def nearest_neighbors(
     hnsw_alpha=1.2,
     n_jobs=-1,
     verbose=False,
+    device=None,
 ):
     """Compute the ``n_neighbors`` nearest points for each data point in ``X``
     under ``metric``. This may be exact, but more likely is approximated via
@@ -430,6 +431,7 @@ def nearest_neighbors(
         if NNBackend.__name__ == "HnswIndexWrapper":
             backend_kwargs["prune_strategy"] = hnsw_prune_strategy
             backend_kwargs["prune_alpha"] = hnsw_alpha
+            backend_kwargs["device"] = device
 
         knn_search_index = NNBackend(X, **backend_kwargs)
         knn_indices, knn_dists = knn_search_index.neighbor_graph
@@ -1832,6 +1834,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         use_hnsw=None,
         hnsw_prune_strategy="simple",
         hnsw_alpha=1.2,
+        device=None,
     ) -> None:
         self.n_neighbors = n_neighbors
         self.metric = metric
@@ -1875,6 +1878,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
         self.use_hnsw = use_hnsw
         self.hnsw_prune_strategy = hnsw_prune_strategy
         self.hnsw_alpha = hnsw_alpha
+        self.device = device
 
         self.n_jobs = n_jobs
 
@@ -2841,6 +2845,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     hnsw_alpha=self.hnsw_alpha,
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
+                    device=self.device,
                 )
             else:
                 self._knn_indices = self.knn_indices
@@ -3697,6 +3702,7 @@ class UMAP(BaseEstimator, ClassNamePrefixFeaturesOutMixin):
                     hnsw_alpha=self.hnsw_alpha,
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
+                    device=self.device,
                 )
 
                 self.graph_, self._sigmas, self._rhos = fuzzy_simplicial_set(

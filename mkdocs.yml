@@ -91,6 +91,7 @@ nav:
       - Metric definitions: evaluation_metrics.md
       - Reproducibility: reproducibility.md
       - CPU performance: performance.md
+      - GPU compute: gpu.md
   - Reference:
       - Python API: api.md
       - Troubleshooting: troubleshooting.md

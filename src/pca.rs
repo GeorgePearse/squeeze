@@ -8,7 +8,6 @@ use ndarray_linalg::{Eigh, UPLO};
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
-use rayon::prelude::*;
 
 /// PCA dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -35,7 +34,7 @@ impl PCA {
     }
 
     /// Fit PCA to the data
-    pub fn fit(&mut self, py: Python<'_>, data: PyReadonlyArray2<f64>) -> PyResult<()> {
+    pub fn fit(&mut self, _py: Python<'_>, data: PyReadonlyArray2<f64>) -> PyResult<()> {
         let x = data.as_array();
         let (n_samples, n_features) = (x.nrows(), x.ncols());
 
@@ -163,7 +162,7 @@ mod tests {
     #[test]
     fn test_pca_internal_fit() {
         let data = create_test_data();
-        let mut pca = PCA::new(2);
+        let _pca = PCA::new(2);
         
         // Test internal logic without Python
         let mean = data.mean_axis(Axis(0)).unwrap();
@@ -191,7 +190,7 @@ mod tests {
     fn test_explained_variance_decreasing() {
         let data = create_test_data();
         let n_samples = data.nrows();
-        let n_features = data.ncols();
+        let _n_features = data.ncols();
         
         // Compute mean and center
         let mean = data.mean_axis(Axis(0)).unwrap();

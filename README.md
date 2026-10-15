@@ -1,11 +1,15 @@
 # Squeeze
 
-CPU dimensionality reduction for Python, with UMAP, ten Rust reducers, and
-reproducible comparisons on Digits and Fashion-MNIST.
+Dimensionality reduction for Python, with UMAP, ten Rust reducers, and
+reproducible comparisons on Digits and Fashion-MNIST. Everything runs on the
+CPU; when a GPU is present the heavy kernels (pairwise distances, exact k-NN,
+embedding gradients) run on it through wgpu (Vulkan, Metal, DX12) or MLX on
+Apple Silicon, with the CPU as the fallback and numerical reference. See
+[GPU compute](docs/gpu.md).
 
 **[Documentation](https://georgepearse.github.io/squeeze/)** ·
 [Installation](docs/installation.md) · [Algorithm guide](docs/algorithms/index.md) ·
-[API reference](docs/api.md)
+[GPU compute](docs/gpu.md) · [API reference](docs/api.md)
 
 Squeeze is an alpha research library. UMAP uses Python/Numba with optional Rust
 neighbor search. The other core methods use the compiled Rust extension.

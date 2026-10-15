@@ -1,10 +1,10 @@
-/// Cache-aligned data structures for better memory access patterns
-///
-/// This module provides:
-/// - 64-byte aligned allocations (CPU cache line size)
-/// - Reduced cache misses
-/// - Better SIMD performance
-/// - 10-20% speedup from improved memory access
+//! Cache-aligned data structures for better memory access patterns
+//!
+//! This module provides:
+//! - 64-byte aligned allocations (CPU cache line size)
+//! - Reduced cache misses
+//! - Better SIMD performance
+//! - 10-20% speedup from improved memory access
 
 use std::alloc::{alloc, dealloc, Layout};
 use std::ptr::NonNull;
