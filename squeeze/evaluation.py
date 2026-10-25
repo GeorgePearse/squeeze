@@ -9,6 +9,7 @@ of dimensionality reduction embeddings, covering:
 4. Stability metrics (bootstrap, noise robustness, parameter sensitivity)
 5. Downstream task metrics (clustering quality, classification accuracy)
 6. Reconstruction metrics (reconstruction error)
+7. Label structure on the 2D embedding (confusion and neighborhood matrices)
 
 Example usage:
     >>> from squeeze.evaluation import DREvaluator, trustworthiness, continuity
@@ -29,7 +30,7 @@ License: BSD 3 clause
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 from sklearn.base import BaseEstimator, clone
@@ -47,6 +48,9 @@ from sklearn.metrics import (
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import NearestNeighbors
 
+if TYPE_CHECKING:
+    from ._hnsw_backend import LabelGraph
+
 __all__ = [
     # Individual metrics
     "trustworthiness",
@@ -58,6 +62,9 @@ __all__ = [
     "reconstruction_error",
     "clustering_quality",
     "classification_accuracy",
+    "label_confusion",
+    "label_neighborhood",
+    "compare_label_structure",
     "bootstrap_stability",
     "noise_robustness",
     "parameter_sensitivity",
@@ -985,7 +992,205 @@ def classification_accuracy(
 
 
 # =============================================================================
-# Part 6: Comprehensive Evaluator
+# Part 6: Label Structure on the 2D Embedding
+# =============================================================================
+
+
+def _label_graph(embedding: np.ndarray) -> LabelGraph:
+    from ._hnsw_backend import LabelGraph
+
+    embedding = np.ascontiguousarray(embedding, dtype=np.float64)
+    if embedding.ndim != 2 or embedding.shape[1] != 2:
+        msg = (
+            "label metrics need an embedding of shape (n_samples, 2), "
+            f"got {embedding.shape}"
+        )
+        raise ValueError(msg)
+    return LabelGraph(embedding)
+
+
+def _label_codes(labels: np.ndarray, n_samples: int) -> tuple[np.ndarray, np.ndarray]:
+    labels = np.asarray(labels)
+    if labels.shape != (n_samples,):
+        msg = f"labels must have shape ({n_samples},), got {labels.shape}"
+        raise ValueError(msg)
+    classes, codes = np.unique(labels, return_inverse=True)
+    return classes, np.ascontiguousarray(codes.reshape(-1), dtype=np.int64)
+
+
+def label_confusion(
+    embedding: np.ndarray,
+    labels: np.ndarray,
+    normalize: bool = False,
+) -> np.ndarray:
+    """Count how much of each class falls inside the region another class occupies.
+
+    The 2D embedding is triangulated (Delaunay) and each edge weighted by its
+    length. A label's region is its own points plus every point one edge away
+    along an edge no longer than ``mean + 3 * std`` of that label's intra-label
+    edge lengths. Row ``i`` is the label histogram of label ``i``'s region, so
+    the diagonal is the class size and off-diagonals are the points of other
+    classes the region swallows.
+
+    Parameters
+    ----------
+    embedding : ndarray of shape (n_samples, 2)
+        Two-dimensional embedding. Other widths raise ``ValueError``.
+
+    labels : ndarray of shape (n_samples,)
+        Class labels; any hashable dtype. Rows and columns follow
+        ``np.unique(labels)``.
+
+    normalize : bool, default=False
+        Divide each row by its sum so entries are fractions of the region.
+
+    Returns
+    -------
+    ndarray of shape (n_labels, n_labels)
+        Counts (or row fractions when ``normalize=True``).
+
+    Examples
+    --------
+    >>> from squeeze.evaluation import label_confusion
+    >>> C = label_confusion(X_reduced, y)
+    >>> off_diag = 1 - np.trace(C) / C.sum()
+
+    Notes
+    -----
+    A label with no intra-label edge (a singleton, or points never adjacent in
+    the triangulation) follows no edges and only counts itself. Empty input
+    returns an empty matrix.
+
+    References
+    ----------
+    Manz, T., et al. (2024). A General Framework for Comparing Embedding
+    Visualizations Across Class-Label Hierarchies. IEEE VIS.
+
+    """
+    embedding = np.asarray(embedding, dtype=np.float64)
+    graph = _label_graph(embedding)
+    _, codes = _label_codes(labels, embedding.shape[0])
+    matrix = np.asarray(graph.confusion(codes), dtype=np.float64)
+    if normalize:
+        row_sums = matrix.sum(axis=1, keepdims=True)
+        matrix = np.divide(
+            matrix,
+            row_sums,
+            out=np.zeros_like(matrix),
+            where=row_sums > 0,
+        )
+    return matrix
+
+
+def label_neighborhood(
+    embedding: np.ndarray,
+    labels: np.ndarray,
+    max_depth: int = 1,
+) -> np.ndarray:
+    """Score how close and how large each class is just outside another's region.
+
+    Starting from the boundary of each label's confusion region (see
+    :func:`label_confusion`), walk outward up to ``max_depth`` hops over the
+    Delaunay graph and record, per other label, how many points were reached
+    and their mean path distance. Each cell is scored
+    ``ECDF(count) * (1 - ECDF(mean distance))`` with both empirical
+    distributions taken over all non-empty cells, so a value near 1 means label
+    ``j`` is a large, close neighbor of label ``i``.
+
+    Parameters
+    ----------
+    embedding : ndarray of shape (n_samples, 2)
+        Two-dimensional embedding.
+
+    labels : ndarray of shape (n_samples,)
+        Class labels. Rows and columns follow ``np.unique(labels)``.
+
+    max_depth : int, default=1
+        Number of hops to walk outward from each region's boundary.
+
+    Returns
+    -------
+    ndarray of shape (n_labels, n_labels)
+        Neighborhood scores in [0, 1]; the diagonal is always 0.
+
+    Examples
+    --------
+    >>> from squeeze.evaluation import label_neighborhood
+    >>> N = label_neighborhood(X_reduced, y, max_depth=2)
+    >>> closest = N.argmax(axis=1)
+
+    """
+    if max_depth < 1:
+        msg = f"max_depth must be at least 1, got {max_depth}"
+        raise ValueError(msg)
+    embedding = np.asarray(embedding, dtype=np.float64)
+    graph = _label_graph(embedding)
+    _, codes = _label_codes(labels, embedding.shape[0])
+    return np.asarray(graph.neighborhood(codes, max_depth=max_depth), dtype=np.float64)
+
+
+def compare_label_structure(
+    embedding_a: np.ndarray,
+    embedding_b: np.ndarray,
+    labels: np.ndarray,
+    max_depth: int = 1,
+) -> dict[str, np.ndarray]:
+    """Compare the class-label structure of two 2D embeddings of the same points.
+
+    Parameters
+    ----------
+    embedding_a, embedding_b : ndarray of shape (n_samples, 2)
+        Two embeddings of the same samples in the same row order.
+
+    labels : ndarray of shape (n_samples,)
+        Class labels shared by both embeddings.
+
+    max_depth : int, default=1
+        Passed to :func:`label_neighborhood`.
+
+    Returns
+    -------
+    dict
+        - 'labels': the sorted unique labels indexing every matrix
+        - 'confusion_a', 'confusion_b': row-normalized confusion matrices
+        - 'confusion_diff': ``confusion_b - confusion_a``
+        - 'neighborhood_a', 'neighborhood_b': neighborhood score matrices
+        - 'neighborhood_diff': ``neighborhood_b - neighborhood_a``
+
+    Examples
+    --------
+    >>> from squeeze.evaluation import compare_label_structure
+    >>> cmp = compare_label_structure(umap_emb, pacmap_emb, y)
+    >>> cmp["confusion_diff"].round(2)
+
+    """
+    embedding_a = np.asarray(embedding_a, dtype=np.float64)
+    embedding_b = np.asarray(embedding_b, dtype=np.float64)
+    if embedding_a.shape != embedding_b.shape:
+        msg = (
+            "embeddings must share a shape, "
+            f"got {embedding_a.shape} and {embedding_b.shape}"
+        )
+        raise ValueError(msg)
+    classes, _ = _label_codes(labels, embedding_a.shape[0])
+
+    confusion_a = label_confusion(embedding_a, labels, normalize=True)
+    confusion_b = label_confusion(embedding_b, labels, normalize=True)
+    neighborhood_a = label_neighborhood(embedding_a, labels, max_depth=max_depth)
+    neighborhood_b = label_neighborhood(embedding_b, labels, max_depth=max_depth)
+    return {
+        "labels": classes,
+        "confusion_a": confusion_a,
+        "confusion_b": confusion_b,
+        "confusion_diff": confusion_b - confusion_a,
+        "neighborhood_a": neighborhood_a,
+        "neighborhood_b": neighborhood_b,
+        "neighborhood_diff": neighborhood_b - neighborhood_a,
+    }
+
+
+# =============================================================================
+# Part 7: Comprehensive Evaluator
 # =============================================================================
 
 
