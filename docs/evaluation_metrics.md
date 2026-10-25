@@ -55,6 +55,17 @@ optional stability/noise evaluations. `evaluate_all(include_stability=False)`
 avoids repeated stability fits. Its `EvaluationReport` has `summary()` and
 `to_dict()` methods. [API details](api.md) describe the exported metric functions.
 
+## Label structure on the 2D embedding
+
+`label_confusion(embedding, labels)` and `label_neighborhood(embedding, labels, max_depth=1)`
+build the Delaunay graph of a 2D embedding and return `n_labels x n_labels` matrices.
+Confusion row `i` counts, per class, the points inside class `i`'s region (its points
+plus anything one short edge away); off-diagonal mass is other classes it swallows.
+Neighborhood scores how large and how close each class is just outside that region.
+`compare_label_structure(emb_a, emb_b, labels)` returns both matrices for two embeddings
+of the same rows plus their difference. These follow Manz et al. (IEEE VIS 2024); see
+[credits](credits.md).
+
 For predictive evaluation, split data before fitting the embedding. Cross-validation
 of a classifier on a full-data embedding is transductive, even when no labels were
 used to fit the embedding itself.

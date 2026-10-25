@@ -20,6 +20,9 @@ pub mod trimap;
 pub mod pacmap;
 pub mod neighbor_map;
 
+// Embedding evaluation
+pub mod label_metrics;
+
 #[cfg(not(test))]
 #[pyo3::pymodule]
 fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> pyo3::PyResult<()> {
@@ -38,6 +41,9 @@ fn _hnsw_backend(_py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) 
     m.add_class::<pacmap::PaCMAP>()?;
     m.add_class::<neighbor_map::NeighborMap>()?;
     m.add_class::<neighbor_map::SpectralMap>()?;
+
+    // Embedding evaluation
+    m.add_class::<label_metrics::LabelGraph>()?;
 
     Ok(())
 }

@@ -13,8 +13,11 @@ from squeeze.evaluation import (
     classification_accuracy,
     clustering_quality,
     co_ranking_quality,
+    compare_label_structure,
     continuity,
     global_structure_preservation,
+    label_confusion,
+    label_neighborhood,
     local_density_preservation,
     noise_robustness,
     parameter_sensitivity,
@@ -424,3 +427,150 @@ class TestEdgeCases:
         X_reduced = np.random.randn(10, 2)
         T = trustworthiness(X, X_reduced, k=3)
         assert 0 <= T <= 1
+
+
+def _blobs(
+    separation: float,
+    n_per_class: int = 60,
+    seed: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(seed)
+    a = rng.normal(size=(n_per_class, 2))
+    b = rng.normal(size=(n_per_class, 2)) + np.array([separation, 0.0])
+    X = np.vstack([a, b])
+    y = np.array([0] * n_per_class + [1] * n_per_class)
+    return X, y
+
+
+class TestLabelMetrics:
+    """Tests for Delaunay-graph label confusion and neighborhood metrics."""
+
+    def test_separated_blobs_confusion_is_diagonal(self):
+        """Well-separated classes only count themselves."""
+        X, y = _blobs(separation=50.0)
+        C = label_confusion(X, y)
+        assert C.shape == (2, 2)
+        assert np.array_equal(np.diag(C), [60, 60])
+        assert C[0, 1] == 0
+        assert C[1, 0] == 0
+
+    def test_overlapping_blobs_have_off_diagonal_mass(self):
+        """Overlapping classes swallow each other's points."""
+        X, y = _blobs(separation=0.5)
+        C = label_confusion(X, y)
+        assert np.array_equal(np.diag(C), [60, 60])
+        assert C[0, 1] > 10
+        assert C[1, 0] > 10
+
+    def test_normalize_gives_row_fractions(self):
+        """normalize=True yields rows summing to one."""
+        X, y = _blobs(separation=0.5)
+        C = label_confusion(X, y, normalize=True)
+        np.testing.assert_allclose(C.sum(axis=1), 1.0)
+        assert np.all((C >= 0) & (C <= 1))
+
+    def test_labels_follow_np_unique_order(self):
+        """Matrix rows follow the sorted unique labels."""
+        X, y = _blobs(separation=50.0)
+        names = np.where(y == 0, "zebra", "ant")
+        C = label_confusion(X, names)
+        # np.unique sorts: "ant" is row 0, so its diagonal is the ant class size.
+        assert C[0, 0] == np.sum(names == "ant")
+
+    def test_isolated_label_counts_only_itself(self):
+        """A singleton label follows no edges."""
+        X, y = _blobs(separation=50.0)
+        X = np.vstack([X, [[25.0, 40.0]]])
+        y = np.append(y, 2)
+        C = label_confusion(X, y)
+        assert np.array_equal(C[2], [0, 0, 1])
+
+    def test_empty_input_returns_empty_matrix(self):
+        """Empty input gives an empty matrix instead of failing."""
+        C = label_confusion(np.empty((0, 2)), np.empty(0, dtype=int))
+        assert C.shape == (0, 0)
+        N = label_neighborhood(np.empty((0, 2)), np.empty(0, dtype=int))
+        assert N.shape == (0, 0)
+
+    def test_collinear_points_do_not_fail(self):
+        """Collinear points fall back to a chain graph."""
+        X = np.column_stack([np.arange(6, dtype=float), np.zeros(6)])
+        y = np.array([0, 0, 0, 1, 1, 1])
+        C = label_confusion(X, y)
+        assert np.array_equal(np.diag(C), [3, 3])
+
+    def test_non_2d_embedding_raises(self):
+        """Only two-column embeddings are accepted."""
+        X, y = _blobs(separation=5.0)
+        with pytest.raises(ValueError, match="shape"):
+            label_confusion(np.hstack([X, X]), y)
+        with pytest.raises(ValueError, match="shape"):
+            label_confusion(X[:, :1], y)
+
+    def test_label_length_mismatch_raises(self):
+        """Label length must match the embedding."""
+        X, y = _blobs(separation=5.0)
+        with pytest.raises(ValueError, match="labels"):
+            label_confusion(X, y[:-1])
+
+    def test_neighborhood_range_and_zero_diagonal(self):
+        """Scores lie in [0, 1], the diagonal is 0, the nearest class scores highest."""
+        rng = np.random.default_rng(0)
+        shifts = np.array([[0.0, 0.0], [4.0, 0.0], [8.0, 0.0]])
+        X = np.vstack([rng.normal(size=(60, 2)) + shift for shift in shifts])
+        y = np.repeat([0, 1, 2], 60)
+        N = label_neighborhood(X, y)
+        assert N.shape == (3, 3)
+        assert np.all((N >= 0) & (N <= 1))
+        assert np.all(np.diag(N) == 0)
+        # The middle blob is the close, large neighbor of both outer blobs.
+        assert N[0, 1] > N[0, 2]
+        assert N[2, 1] > N[2, 0]
+
+    def test_neighborhood_max_depth_changes_output(self):
+        """max_depth is honoured and changes the scores."""
+        rng = np.random.default_rng(1)
+        X = rng.uniform(size=(300, 2))
+        y = rng.integers(0, 5, size=300)
+        N1 = label_neighborhood(X, y, max_depth=1)
+        N3 = label_neighborhood(X, y, max_depth=3)
+        assert N1.shape == N3.shape == (5, 5)
+        assert not np.allclose(N1, N3)
+
+    def test_neighborhood_invalid_depth_raises(self):
+        """max_depth below one is rejected."""
+        X, y = _blobs(separation=3.0)
+        with pytest.raises(ValueError, match="max_depth"):
+            label_neighborhood(X, y, max_depth=0)
+
+    def test_compare_label_structure(self):
+        """Comparison returns both matrices and their difference."""
+        X_sep, y = _blobs(separation=50.0)
+        X_mix, _ = _blobs(separation=0.5)
+        result = compare_label_structure(X_sep, X_mix, y)
+        assert set(result) == {
+            "labels",
+            "confusion_a",
+            "confusion_b",
+            "confusion_diff",
+            "neighborhood_a",
+            "neighborhood_b",
+            "neighborhood_diff",
+        }
+        assert np.array_equal(result["labels"], [0, 1])
+        np.testing.assert_allclose(
+            result["confusion_diff"],
+            result["confusion_b"] - result["confusion_a"],
+        )
+        # The mixed embedding has more off-diagonal confusion than the separated one.
+        assert result["confusion_diff"][0, 1] > 0
+        with pytest.raises(ValueError, match="shape"):
+            compare_label_structure(X_sep, X_mix[:-1], y)
+
+    def test_digits_pca_confusion_is_mostly_diagonal(self, reduced_data):
+        """PCA on digits keeps the diagonal well above the 1/10 chance level."""
+        _, X_reduced, y = reduced_data
+        C = label_confusion(X_reduced, y)
+        assert C.shape == (10, 10)
+        assert np.array_equal(np.diag(C), np.bincount(y))
+        assert np.trace(C) / C.sum() > 0.3

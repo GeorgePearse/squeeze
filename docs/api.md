@@ -238,6 +238,30 @@ Cross-validates a classifier on the supplied embedding; it does not refit the em
 squeeze.classification_accuracy(X_reduced: 'np.ndarray', labels: 'np.ndarray', cv: 'int' = 5, classifier: 'BaseEstimator | None' = None) -> 'dict[str, float]'
 ```
 
+### label_confusion
+
+Per-class confusion counts on the Delaunay graph of a 2D embedding; rows follow `np.unique(labels)`.
+
+```text
+squeeze.label_confusion(embedding: 'np.ndarray', labels: 'np.ndarray', normalize: 'bool' = False) -> 'np.ndarray'
+```
+
+### label_neighborhood
+
+Scores in [0, 1] for how close and large each class is just outside another's region.
+
+```text
+squeeze.label_neighborhood(embedding: 'np.ndarray', labels: 'np.ndarray', max_depth: 'int' = 1) -> 'np.ndarray'
+```
+
+### compare_label_structure
+
+Both label matrices for two 2D embeddings of the same points plus their difference.
+
+```text
+squeeze.compare_label_structure(embedding_a: 'np.ndarray', embedding_b: 'np.ndarray', labels: 'np.ndarray', max_depth: 'int' = 1) -> 'dict[str, np.ndarray]'
+```
+
 ### bootstrap_stability
 
 Refits on resampled data and compares stability; additional fit cost.

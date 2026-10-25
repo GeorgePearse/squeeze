@@ -21,6 +21,16 @@ Squeeze's Rust implementations should be distinguished from the original authors
 reference implementations. Matching an algorithm name does not imply identical
 numerics, parameters, behavior, or measured results.
 
+## Label structure metrics
+
+`label_confusion`, `label_neighborhood` and `compare_label_structure` follow the
+Delaunay-graph method of Manz et al., *A General Framework for Comparing Embedding
+Visualizations Across Class-Label Hierarchies*, IEEE VIS 2024, from the
+[comparative-embedding-visualization](https://github.com/OzetteTech/comparative-embedding-visualization)
+project (Apache-2.0) and its [cev-metrics](https://github.com/manzt/cev-metrics) core.
+Squeeze's `src/label_metrics.rs` is an independent reimplementation; no cev-metrics
+code was copied. See `.memetics/cev-label-metrics.md` for the behavioural differences.
+
 ## Datasets and dependencies
 
 Digits is loaded through scikit-learn. Fashion-MNIST is provided by Zalando Research;
